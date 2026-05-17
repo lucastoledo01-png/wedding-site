@@ -1,6 +1,6 @@
 import { Calendar, Clock, Heart } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useConfig } from "@/features/invitation/hooks/use-config";
 import { formatEventDate } from "@/lib/format-event-date";
 import { getGuestName } from "@/lib/invitation-storage";
@@ -18,7 +18,7 @@ export default function Hero() {
   }, []);
 
   const CountdownTimer = ({ targetDate }) => {
-    const calculateTimeLeft = () => {
+    const calculateTimeLeft = useCallback(() => {
       const difference = +new Date(targetDate) - +new Date();
       let timeLeft = {};
 
@@ -31,7 +31,7 @@ export default function Hero() {
         };
       }
       return timeLeft;
-    };
+    }, [targetDate]);
 
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
@@ -40,7 +40,7 @@ export default function Hero() {
         setTimeLeft(calculateTimeLeft());
       }, 1000);
       return () => clearInterval(timer);
-    }, [targetDate]);
+    }, [calculateTimeLeft]);
 
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
