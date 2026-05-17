@@ -43,14 +43,14 @@ export default [
       // Allow target="_blank" without noreferrer
       "react/jsx-no-target-blank": "off",
 
-      // Fast refresh - warn on non-component exports
+      // Fast refresh - error on non-component exports
       "react-refresh/only-export-components": [
-        "warn",
+        "error",
         { allowConstantExport: true },
       ],
 
-      // Keep hook dependency warnings (not errors)
-      "react-hooks/exhaustive-deps": "warn",
+      // Keep hook dependency warnings (errors for strictness)
+      "react-hooks/exhaustive-deps": "error",
     },
   },
 
@@ -107,7 +107,7 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       "no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
