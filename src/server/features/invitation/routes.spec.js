@@ -12,6 +12,7 @@ import {
   createMockAgenda,
   createMockBank,
 } from "../../lib/test-helpers.js";
+import { AppError } from "../../lib/errors.js";
 
 // Mock the db-client module
 vi.mock("../../lib/db-client.js", () => ({
@@ -28,6 +29,18 @@ describe("invitation routes", () => {
     vi.clearAllMocks();
 
     app = new Hono();
+
+    // Add error handler identical to src/server/index.js
+    app.onError((err, c) => {
+      if (err instanceof AppError) {
+        return c.json(
+          { success: false, error: err.message, code: err.code },
+          err.status,
+        );
+      }
+      return c.json({ success: false, error: "Internal server error" }, 500);
+    });
+
     app.route("/invitation", invitationRoutes);
   });
 
