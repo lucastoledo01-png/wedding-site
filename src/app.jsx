@@ -16,12 +16,13 @@
 
 // src/App.jsx
 import { useState, lazy, Suspense } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { Heart } from "lucide-react";
 import { useInvitation } from "@/features/invitation";
 import { useAudio } from "@/hooks/use-audio";
 import staticConfig from "@/config/config";
+import { useMotionPreset } from "@/lib/motion";
 
 // Lazy load components for better performance
 const Layout = lazy(() => import("@/components/layout/layout"));
@@ -53,6 +54,8 @@ const LandingPage = lazy(
 function App() {
   const [isInvitationOpen, setIsInvitationOpen] = useState(false);
   const { config, isLoading, error } = useInvitation();
+  const pageEnter = useMotionPreset("pageEnter");
+  const pageExit = useMotionPreset("pageExit");
 
   // Use config from API if available, otherwise fall back to static config
   const activeConfig = config || staticConfig.data;
@@ -159,11 +162,27 @@ function App() {
       >
         <AnimatePresence mode="wait">
           {!isInvitationOpen ? (
-            <LandingPage onOpenInvitation={handleOpenInvitation} />
+            <motion.div
+              key="landing"
+              variants={pageEnter}
+              initial="hidden"
+              animate="visible"
+              exit={pageExit}
+            >
+              <LandingPage onOpenInvitation={handleOpenInvitation} />
+            </motion.div>
           ) : (
-            <Layout audioControls={audioControls}>
-              <MainContent />
-            </Layout>
+            <motion.div
+              key="main"
+              variants={pageEnter}
+              initial="hidden"
+              animate="visible"
+              exit={pageExit}
+            >
+              <Layout audioControls={audioControls}>
+                <MainContent />
+              </Layout>
+            </motion.div>
           )}
         </AnimatePresence>
       </Suspense>
