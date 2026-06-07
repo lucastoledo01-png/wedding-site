@@ -20,10 +20,14 @@ import { formatEventDate } from "@/lib/format-event-date";
 import { useInvitation } from "@/features/invitation";
 import { fetchWishes, createWish, checkWishSubmitted } from "@/services/api";
 import { getGuestName } from "@/lib/invitation-storage";
+import { useMotionPreset, staggerContainer, stagger } from "@/lib/motion";
 
 export default function Wishes() {
   const { uid } = useInvitation();
   const queryClient = useQueryClient();
+  const fade = useMotionPreset("fade");
+  const fadeUp = useMotionPreset("fadeUp");
+  const scaleIn = useMotionPreset("scaleIn");
   const [showConfetti, setShowConfetti] = useState(false);
   const [newWish, setNewWish] = useState("");
   const [guestName, setGuestName] = useState("");
@@ -182,24 +186,20 @@ export default function Wishes() {
         <div className="container mx-auto px-4 py-20 relative z-10">
           {/* Section Header */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            variants={staggerContainer()}
+            initial="hidden"
+            animate="visible"
             className="text-center space-y-4 mb-16"
           >
             <motion.span
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              variants={fadeUp}
               className="inline-block text-rose-500 font-medium"
             >
               Kirimkan Doa dan Harapan Terbaik Anda
             </motion.span>
 
             <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              variants={fadeUp}
               className="text-4xl md:text-5xl font-serif text-gray-800"
             >
               Pesan dan Doa
@@ -207,9 +207,7 @@ export default function Wishes() {
 
             {/* Decorative Divider */}
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.4 }}
+              variants={scaleIn}
               className="flex items-center justify-center gap-4 pt-4"
             >
               <div className="h-[1px] w-12 bg-rose-200" />
@@ -255,7 +253,7 @@ export default function Wishes() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={stagger(index, 0.1)}
                       className="group relative w-[300px] h-[160px] flex-shrink-0 cursor-pointer"
                       onClick={() => setSelectedWish(wish)}
                       whileHover={{ scale: 1.02 }}
@@ -324,9 +322,10 @@ export default function Wishes() {
               <>
                 {/* Backdrop */}
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  variants={fade}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   onClick={() => setSelectedWish(null)}
                   className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                 >
@@ -418,9 +417,9 @@ export default function Wishes() {
 
           {/* Wishes Form */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
             className="max-w-2xl mx-auto mt-12"
           >
             {hasSubmittedWish ? (
@@ -496,9 +495,9 @@ export default function Wishes() {
                       />
                     </div>
                     <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
+                      variants={fadeUp}
+                      initial="hidden"
+                      animate="visible"
                       className="space-y-2 relative"
                       ref={dropdownRef}
                     >
