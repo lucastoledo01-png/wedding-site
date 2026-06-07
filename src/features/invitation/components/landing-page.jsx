@@ -2,15 +2,24 @@ import { useConfig } from "@/features/invitation/hooks/use-config";
 import { formatEventDate } from "@/lib/format-event-date";
 import { motion } from "framer-motion";
 import { Calendar, Clock } from "lucide-react";
+import {
+  useMotionPreset,
+  staggerContainer,
+  LOOP,
+  useReducedMotionFlag,
+} from "@/lib/motion";
 
 const LandingPage = ({ onOpenInvitation }) => {
   const config = useConfig(); // Use hook to get config from API or fallback to static
+  const reduceMotion = useReducedMotionFlag();
+  const fade = useMotionPreset("fade");
+  const fadeUp = useMotionPreset("fadeUp");
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      variants={fade}
+      initial="hidden"
+      animate="visible"
       className="min-h-screen relative overflow-hidden"
     >
       {/* Decorative Background */}
@@ -21,9 +30,9 @@ const LandingPage = ({ onOpenInvitation }) => {
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4">
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8 }}
+          variants={staggerContainer()}
+          initial="hidden"
+          animate="visible"
           className="w-full max-w-md"
         >
           {/* Card Container */}
@@ -37,9 +46,7 @@ const LandingPage = ({ onOpenInvitation }) => {
 
             {/* Date and Time */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              variants={fadeUp}
               className="flex flex-col gap-4 mb-6 sm:mb-8 items-center"
             >
               <div className="inline-flex flex-col items-center space-y-1 bg-white/80 px-4 sm:px-6 py-2 sm:py-3 rounded-xl">
@@ -56,12 +63,7 @@ const LandingPage = ({ onOpenInvitation }) => {
             </motion.div>
 
             {/* Couple Names */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="text-center space-y-4"
-            >
+            <motion.div variants={fadeUp} className="text-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-gray-800 leading-tight">
                   {config.groomName}
@@ -73,12 +75,7 @@ const LandingPage = ({ onOpenInvitation }) => {
             </motion.div>
 
             {/* Open Invitation Button */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              className="mt-6 sm:mt-8"
-            >
+            <motion.div variants={fadeUp} className="mt-6 sm:mt-8">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -88,8 +85,12 @@ const LandingPage = ({ onOpenInvitation }) => {
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <span>Buka Undangan</span>
                   <motion.span
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    animate={reduceMotion ? undefined : { x: [0, 4, 0] }}
+                    transition={
+                      reduceMotion
+                        ? undefined
+                        : { repeat: Infinity, duration: LOOP.nudge }
+                    }
                   >
                     →
                   </motion.span>
