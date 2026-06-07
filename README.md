@@ -28,7 +28,7 @@ Sakeenah is a production-ready, database-driven wedding invitation platform desi
 
 ### User Experience
 
-- Smooth animations powered by Framer Motion
+- Consistent and intentional animations powered by Framer Motion, with `prefers-reduced-motion` support
 - Background music controls with autoplay support
 - Countdown timer to wedding date
 - Google Maps integration for venue directions
@@ -41,9 +41,9 @@ Sakeenah is a production-ready, database-driven wedding invitation platform desi
 | Runtime    | Bun 1.3.5          | Package management and server execution   |
 | Frontend   | React 18 + Vite    | Fast build tooling and reactive UI        |
 | Backend    | Hono               | Lightweight edge-compatible API framework |
-| Database   | PostgreSQL         | Multi-tenant data storage                 |
+| Database   | PostgreSQL         | Multi-tenant data storage, robust connection handling |
 | Styling    | Tailwind CSS       | Utility-first responsive design           |
-| Deployment | Cloudflare Workers | Global edge network distribution          |
+| Deployment | Cloudflare Workers | Global edge network distribution, Hyperdrive compatible |
 
 ## Quick Start
 
@@ -70,6 +70,8 @@ For detailed setup instructions, see [Getting Started](docs/tutorials/getting-st
 
 | Section                                                  | Description                                     |
 | -------------------------------------------------------- | ----------------------------------------------- |
+| **OpenSpec**                                             |                                                 |
+| [Project Specs](openspec/specs/)                         | Documented API contracts and design decisions   |
 | **Tutorials**                                            |                                                 |
 | [Getting Started](docs/tutorials/getting-started.md)     | Set up your first wedding invitation            |
 | **How-To Guides**                                        |                                                 |
