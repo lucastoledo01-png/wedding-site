@@ -36,9 +36,15 @@ const Modal = ({ isOpen, onClose, children }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={cn("fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[90%] max-w-sm")}
+            className={cn(
+              "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[90%] max-w-sm",
+            )}
           >
-            <div className={cn("bg-white transform -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6 shadow-2xl border border-gray-100")}>
+            <div
+              className={cn(
+                "bg-white transform -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6 shadow-2xl border border-gray-100",
+              )}
+            >
               {children}
             </div>
           </motion.div>
@@ -145,7 +151,9 @@ END:VCALENDAR`;
   return (
     <div className={cn("relative")}>
       <motion.div
-        className={cn("bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4")}
+        className={cn(
+          "bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4",
+        )}
         variants={fadeUp}
         initial="hidden"
         animate="visible"
@@ -157,7 +165,9 @@ END:VCALENDAR`;
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={cn("text-rose-500 hover:text-rose-600 transition-colors")}
+            className={cn(
+              "text-rose-500 hover:text-rose-600 transition-colors",
+            )}
             onClick={() => setShowCalendarModal(true)}
           >
             <CalendarPlus className={cn("w-5 h-5")} />
@@ -220,7 +230,10 @@ END:VCALENDAR`;
 
             <CalendarButton
               icon={(props) => (
-                <CalendarIcon {...props} className={cn("w-5 h-5 text-blue-600")} />
+                <CalendarIcon
+                  {...props}
+                  className={cn("w-5 h-5 text-blue-600")}
+                />
               )}
               label="Outlook Calendar"
               onClick={downloadICSFile}
