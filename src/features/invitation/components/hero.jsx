@@ -41,11 +41,12 @@ export default function Hero() {
       >
         <motion.div variants={fadeUp} className={cn("space-y-5")}>
           <p className={cn("super-label")}>Convite oficial</p>
-          <h1 className={cn("super-heading text-[4.05rem]")}>
-            <span className={cn("whitespace-nowrap")}>
-              LUCAS <span className={cn("italic text-[#ff4582]")}>&</span>
-            </span>
-            <span className={cn("block")}>ANDRESSA</span>
+          <h1
+            className={cn(
+              "wedding-script-title whitespace-nowrap text-[4.45rem] text-[#262626]",
+            )}
+          >
+            Lucas <span className={cn("text-[#ff4582]")}>&</span> Andressa
           </h1>
           <p className={cn("super-copy text-[1.35rem] font-medium")}>
             Nossa historia foi construida entre encontros, escolhas e muitos

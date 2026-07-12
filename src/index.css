@@ -33,6 +33,13 @@ textarea {
   line-height: 0.9;
 }
 
+.wedding-script-title {
+  font-family: "Allura", cursive;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 0.9;
+}
+
 .super-copy {
   color: rgb(38 38 38 / 0.7);
   line-height: 1.6;
