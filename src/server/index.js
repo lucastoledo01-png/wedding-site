@@ -11,6 +11,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { zValidator } from "@hono/zod-validator";
+import { serveStatic } from "@hono/node-server/serve-static";
 
 // Feature routes and schemas
 import { invitationRoutes, wishesRoutes } from "./features/index.js";
@@ -111,6 +112,22 @@ api.get("/:uid/stats", zValidator("param", uidParamSchema), async (c) => {
 // ============ Mount API Routes ============
 
 app.route("/api", api);
+
+// ============ Frontend Static Files ============
+
+app.use(
+  "/assets/*",
+  serveStatic({
+    root: "./dist",
+    onFound: (_path, c) => {
+      c.header("Cache-Control", "public, immutable, max-age=31536000");
+    },
+  }),
+);
+app.use("/images/*", serveStatic({ root: "./dist" }));
+app.use("/uploads/*", serveStatic({ root: "./public" }));
+app.use("/favicon.ico", serveStatic({ root: "./dist" }));
+app.use("*", serveStatic({ root: "./dist", path: "index.html" }));
 
 // ============ Export ============
 
