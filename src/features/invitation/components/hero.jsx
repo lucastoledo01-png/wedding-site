@@ -1,10 +1,6 @@
-import { Calendar, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useConfig } from "@/features/invitation/hooks/use-config";
-import { formatEventDate } from "@/lib/format-event-date";
-import { getGuestName } from "@/lib/invitation-storage";
 import { useMotionPreset, staggerContainer } from "@/lib/motion";
 
 const heroSlides = [
@@ -17,17 +13,10 @@ const heroSlides = [
 ];
 
 export default function Hero() {
-  const config = useConfig();
-  const [guestName, setGuestName] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const fadeUp = useMotionPreset("fadeUp");
-
-  useEffect(() => {
-    const storedGuestName = getGuestName();
-    if (storedGuestName) setGuestName(storedGuestName);
-  }, []);
 
   const showNextSlide = () => {
     setActiveSlide((current) => (current + 1) % heroSlides.length);
@@ -48,13 +37,6 @@ export default function Hero() {
 
     return () => window.clearInterval(timer);
   }, [isCarouselPaused]);
-
-  const getSlideOffset = (index) => {
-    const rawOffset = index - activeSlide;
-    if (rawOffset > heroSlides.length / 2) return rawOffset - heroSlides.length;
-    if (rawOffset < -heroSlides.length / 2) return rawOffset + heroSlides.length;
-    return rawOffset;
-  };
 
   return (
     <section
@@ -77,7 +59,7 @@ export default function Hero() {
         >
           <p className={cn("super-label text-center")}>Convite oficial</p>
           <img
-            src="/images/hero-logo.png"
+            src="/images/hero-logo.webp"
             alt="Lucas & Andressa"
             className={cn(
               "mx-auto block w-full max-w-[310px] object-contain",
@@ -134,56 +116,38 @@ export default function Hero() {
               setIsCarouselPaused(false);
             }}
             className={cn(
-              "relative left-1/2 aspect-[3/4] w-[112%] -translate-x-1/2 cursor-pointer overflow-hidden outline-none",
+              "relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-[24px] outline-none",
             )}
           >
-            {heroSlides.map((slide, index) => {
-              const offset = getSlideOffset(index);
-              const isVisible = Math.abs(offset) <= 1;
-
-              return (
-                <div
-                  key={slide}
-                  className={cn(
-                    "absolute left-1/2 top-0 h-full w-[82%] overflow-hidden rounded-[24px] transition-all duration-700",
-                    isVisible ? "opacity-100" : "pointer-events-none opacity-0",
-                    offset === 0 && "z-20 scale-100",
-                    offset !== 0 && "z-10 scale-[0.92]",
-                  )}
-                  style={{
-                    transform: `translateX(calc(-50% + ${offset * 88}%)) scale(${offset === 0 ? 1 : 0.92})`,
-                    transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-                  }}
-                  aria-hidden={offset !== 0}
-                >
-                  <img
-                    src={slide}
-                    alt={`Lucas e Andressa ${index + 1}`}
-                    className={cn(
-                      "block h-full w-full object-cover object-center",
-                    )}
-                    loading={index === 0 ? "eager" : "lazy"}
-                  />
-                </div>
-              );
-            })}
+            {heroSlides.map((slide, index) => (
+              <img
+                key={slide}
+                src={slide}
+                alt={`Lucas e Andressa ${index + 1}`}
+                className={cn(
+                  "absolute inset-0 block h-full w-full object-cover object-center transition-opacity duration-1000",
+                  index === activeSlide
+                    ? "z-10 opacity-100"
+                    : "pointer-events-none z-0 opacity-0",
+                )}
+                style={{
+                  transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+                }}
+                loading={index === 0 ? "eager" : "lazy"}
+                aria-hidden={index !== activeSlide}
+              />
+            ))}
             <div
               className={cn(
-                "super-badge absolute right-8 top-3 z-30 flex h-24 w-24 flex-col items-center justify-center rounded-full bg-[#ff4582] text-[#262626] shadow-[0_18px_48px_rgba(255,69,130,0.45)]",
+                "super-badge absolute right-8 top-3 z-30 flex h-24 w-24 flex-col items-center justify-center rounded-full bg-[#ff4582] text-[#fdf8f3] shadow-[0_18px_48px_rgba(255,69,130,0.45)]",
               )}
             >
-              <span className={cn("text-[0.92rem] font-semibold italic")}>
-                14/11
-              </span>
-              <span className={cn("text-[0.78rem] font-semibold italic")}>
-                2026
-              </span>
               <span
                 className={cn(
-                  "mt-1 text-[7px] font-medium uppercase tracking-[0.22em]",
+                  "max-w-[70px] text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.22em]",
                 )}
               >
-                Save the date
+                Save the Date
               </span>
             </div>
           </div>
@@ -204,32 +168,6 @@ export default function Hero() {
                 )}
               />
             ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          variants={fadeUp}
-          className={cn("grid gap-3 border-y border-[#262626]/10 py-5")}
-        >
-          <div className={cn("flex items-center gap-3 text-[#262626]")}>
-            <Calendar className={cn("h-5 w-5 text-[#ff4582]")} />
-            <span className={cn("text-lg font-medium")}>
-              {formatEventDate(config.date, "full")}
-            </span>
-          </div>
-          <div className={cn("flex items-center gap-3 text-[#262626]")}>
-            <MapPin className={cn("h-5 w-5 text-[#ff4582]")} />
-            <span className={cn("text-lg font-medium")}>{config.location}</span>
-          </div>
-          <div className={cn("mt-2")}>
-            <p className={cn("super-label")}>Para</p>
-            <p
-              className={cn(
-                "mt-1 text-3xl font-medium uppercase tracking-tight text-[#262626]",
-              )}
-            >
-              {guestName || "nosso convidado"}
-            </p>
           </div>
         </motion.div>
       </motion.div>

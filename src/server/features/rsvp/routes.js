@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { getDbClient } from "../../lib/db-client.js";
 import { findBestGuestMatch, normalizeName } from "../../lib/text-match.js";
 import { NotFoundError } from "../../lib/errors.js";
+import { appendRsvpBackup } from "../../lib/google-sheets-backup.js";
 
 const rsvpRoutes = new Hono();
 
@@ -78,7 +79,18 @@ rsvpRoutes.post("/confirm", async (c) => {
     [attendance, partySize, message, best.id, uid],
   );
 
-  return c.json({ success: true, data: result.rows[0] });
+  const confirmedGuest = result.rows[0];
+
+  try {
+    await appendRsvpBackup(c, {
+      name: confirmedGuest.full_name,
+      attendance: confirmedGuest.attendance,
+    });
+  } catch (error) {
+    console.error("Google Sheets RSVP backup failed:", error.message);
+  }
+
+  return c.json({ success: true, data: confirmedGuest });
 });
 
 rsvpRoutes.get("/summary", async (c) => {

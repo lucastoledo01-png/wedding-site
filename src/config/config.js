@@ -41,9 +41,9 @@ const config = {
         // Event date (format: YYYY-MM-DD)
         date: "2026-11-14",
         // Start time (format: HH:MM)
-        startTime: "16:00",
+        startTime: "20:00",
         // End time (format: HH:MM)
-        endTime: "17:00",
+        endTime: "21:00",
         // Event venue
         location: "Santuario Nossa Senhora da Medalha Milagrosa",
         // Full address
@@ -53,8 +53,8 @@ const config = {
         // Second event name
         title: "Recepcao",
         date: "2026-11-14",
-        startTime: "17:00",
-        endTime: "22:00",
+        startTime: "21:30",
+        endTime: "23:59",
         location: "Restaurante Farol",
         address:
           "Bairro Por do Sol - R. Maria R. C. Silva, 3850 - Por do Sol, Monte Siao - MG, 37580-000",

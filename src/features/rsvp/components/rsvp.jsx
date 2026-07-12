@@ -2,9 +2,70 @@ import { useMemo, useState } from "react";
 import Confetti from "react-confetti";
 import { CheckCircle, Loader2, Search, UserCheck, XCircle } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { confirmPresence, searchGuest } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
+
+const attendanceLabels = {
+  ATTENDING: "Nome já confirmou presença.",
+  NOT_ATTENDING: "Nome já confirmou ausência.",
+  PENDING: "Nome encontrado. Você pode confirmar abaixo.",
+};
+
+function FeedbackModal({ feedback, onClose }) {
+  if (!feedback || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className={cn(
+        "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/35 px-5 backdrop-blur-sm",
+      )}
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        className={cn(
+          "w-full max-w-sm rounded-[28px] border border-white/70 bg-[#fdf8f3] p-6 text-center shadow-[0_24px_80px_rgba(38,38,38,0.22)]",
+        )}
+      >
+        <div
+          className={cn(
+            "mx-auto grid h-14 w-14 place-items-center rounded-full",
+            feedback.type === "success"
+              ? "bg-emerald-500 text-white"
+              : "bg-[#ff4582] text-white",
+          )}
+        >
+          {feedback.type === "success" ? (
+            <CheckCircle className={cn("h-7 w-7")} />
+          ) : (
+            <XCircle className={cn("h-7 w-7")} />
+          )}
+        </div>
+        <h3 className={cn("mt-5 text-2xl font-medium text-[#262626]")}>
+          {feedback.title}
+        </h3>
+        <p className={cn("mt-3 text-base leading-relaxed text-[#262626]/65")}>
+          {feedback.message}
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className={cn(
+            "mt-6 w-full rounded-full bg-[#262626] px-5 py-4 text-sm font-medium uppercase tracking-[0.16em] text-white transition hover:bg-[#ff4582]",
+          )}
+        >
+          Fechar
+        </button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 export default function Rsvp() {
   const { uid } = useInvitation();
@@ -12,16 +73,23 @@ export default function Rsvp() {
   const [attendance, setAttendance] = useState("ATTENDING");
   const [showConfetti, setShowConfetti] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [feedback, setFeedback] = useState(null);
 
   const canSearch = name.trim().length >= 3 && !!uid;
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, error: searchError } = useQuery({
     queryKey: ["guest-search", uid, name],
     queryFn: async () => (await searchGuest(uid, name)).data,
     enabled: canSearch,
     staleTime: 5 * 1000,
+    retry: false,
   });
 
   const match = data?.match;
+  const hasSearchResult = canSearch && !isFetching && Boolean(data);
+  const attendanceStatus = match?.attendance || "PENDING";
+  const hasAlreadyAnswered =
+    attendanceStatus === "ATTENDING" || attendanceStatus === "NOT_ATTENDING";
+  const canConfirm = Boolean(match) && !hasAlreadyAnswered;
   const confidence = useMemo(() => {
     if (!match?.matchScore) return "";
     return `${Math.round(match.matchScore * 100)}%`;
@@ -30,22 +98,40 @@ export default function Rsvp() {
   const mutation = useMutation({
     mutationFn: () =>
       confirmPresence(uid, {
-        name,
+        name: match?.full_name || name,
         attendance,
         message: "",
         partySize: 1,
       }),
-    onSuccess: () => {
+    onSuccess: (response) => {
       setSuggestions([]);
       setShowConfetti(true);
+      setFeedback({
+        type: "success",
+        title: "Presença confirmada!",
+        message:
+          response.data?.attendance === "NOT_ATTENDING"
+            ? "Registramos que você não poderá ir. Obrigado por avisar."
+            : "Sua presença foi confirmada com sucesso. Esperamos você!",
+      });
       setTimeout(() => setShowConfetti(false), 3200);
     },
-    onError: (error) => setSuggestions(error.suggestions || []),
+    onError: (error) => {
+      setSuggestions(error.suggestions || []);
+      setFeedback({
+        type: "error",
+        title: "Não foi possível confirmar",
+        message:
+          error.message ||
+          "Tente novamente em alguns instantes ou confira se o nome está igual ao convite.",
+      });
+    },
   });
 
   return (
     <section id="rsvp" className={cn("relative overflow-hidden bg-[#f5f0eb]")}>
       {showConfetti && <Confetti recycle={false} numberOfPieces={220} />}
+      <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
       <img
         src="/images/flowers.png"
         alt=""
@@ -53,7 +139,7 @@ export default function Rsvp() {
           "pointer-events-none absolute -left-24 top-14 w-52 -rotate-12 opacity-25",
         )}
       />
-      <div className={cn("mx-auto px-5 py-20")}>
+      <div className={cn("relative z-10 mx-auto px-5 py-20")}>
         <div className={cn("space-y-5")}>
           <p className={cn("super-label")}>RSVP</p>
           <h2 className={cn("super-heading text-5xl")}>
@@ -84,7 +170,11 @@ export default function Rsvp() {
               />
               <input
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  setSuggestions([]);
+                  mutation.reset();
+                }}
                 className={cn(
                   "super-transition w-full rounded-full border border-[#262626]/10 bg-white py-4 pl-11 pr-4 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]",
                 )}
@@ -105,31 +195,78 @@ export default function Rsvp() {
             </p>
           )}
 
-          {match && (
+          {searchError && (
             <div
               className={cn(
-                "flex items-center justify-between rounded-2xl bg-[#f5f0eb] p-4 text-left",
+                "rounded-2xl bg-[#ff4582]/10 p-4 text-sm font-medium text-[#b91853]",
               )}
             >
-              <div>
-                <p className={cn("super-label text-[#262626]/45")}>
-                  Encontramos
-                </p>
-                <p className={cn("mt-1 text-xl font-semibold text-[#262626]")}>
-                  {match.full_name}
-                </p>
-              </div>
-              <span
-                className={cn(
-                  "rounded-full bg-[#ff4582] px-3 py-1 text-sm font-semibold text-[#262626]",
-                )}
-              >
-                {confidence}
-              </span>
+              Não foi possível buscar o nome agora. Tente novamente em alguns
+              instantes.
             </div>
           )}
 
-          <div className={cn("grid gap-3 sm:grid-cols-2")}>
+          {hasSearchResult && !match && (
+            <div
+              className={cn(
+                "rounded-2xl border border-[#ff4582]/20 bg-white p-4 text-sm font-medium text-[#262626]",
+              )}
+            >
+              Nome não existe na lista.
+              {data?.suggestions?.length > 0 && (
+                <p className={cn("mt-2 text-[#262626]/55")}>
+                  Talvez seja:{" "}
+                  {data.suggestions
+                    .map((suggestion) => suggestion.fullName)
+                    .join(", ")}
+                </p>
+              )}
+            </div>
+          )}
+
+          {match && (
+            <div
+              className={cn(
+                "rounded-2xl bg-[#f5f0eb] p-4 text-left",
+              )}
+            >
+              <div className={cn("flex items-center justify-between gap-3")}>
+                <div>
+                  <p className={cn("super-label text-[#262626]/45")}>
+                    Encontramos
+                  </p>
+                  <p
+                    className={cn("mt-1 text-xl font-semibold text-[#262626]")}
+                  >
+                    {match.full_name}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "rounded-full bg-[#ff4582] px-3 py-1 text-sm font-semibold text-white",
+                  )}
+                >
+                  {confidence}
+                </span>
+              </div>
+              <p
+                className={cn(
+                  "mt-3 rounded-2xl px-4 py-3 text-sm font-semibold",
+                  attendanceStatus === "ATTENDING" &&
+                    "bg-emerald-500/10 text-emerald-700",
+                  attendanceStatus === "NOT_ATTENDING" &&
+                    "bg-[#ff4582]/10 text-[#b91853]",
+                  !hasAlreadyAnswered && "bg-white text-[#262626]/65",
+                )}
+              >
+                {attendanceLabels[attendanceStatus] ||
+                  "Nome encontrado. Você pode confirmar abaixo."}
+              </p>
+            </div>
+          )}
+
+          {canConfirm && (
+            <div className={cn("grid gap-3 sm:grid-cols-2")}>
             <button
               type="button"
               onClick={() => setAttendance("ATTENDING")}
@@ -156,7 +293,8 @@ export default function Rsvp() {
               <XCircle className={cn("h-4 w-4")} />
               Não poderei ir
             </button>
-          </div>
+            </div>
+          )}
 
           {mutation.error && (
             <div
@@ -173,19 +311,9 @@ export default function Rsvp() {
             </div>
           )}
 
-          {mutation.isSuccess && (
-            <div
-              className={cn(
-                "rounded-2xl bg-[#ff4582] p-4 text-sm font-semibold text-[#262626]",
-              )}
-            >
-              Presenca registrada com sucesso. Obrigado!
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={mutation.isPending || !name.trim()}
+            disabled={mutation.isPending || !canConfirm}
             className={cn(
               "super-transition flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 font-medium uppercase tracking-[0.18em] text-white shadow-lg hover:bg-[#ff4582] hover:text-[#262626] disabled:cursor-not-allowed disabled:opacity-60",
             )}

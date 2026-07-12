@@ -1,4 +1,27 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:3000" : "");
+
+function apiUrl(path) {
+  if (API_URL) return `${API_URL}${path}`;
+  return path;
+}
+
+function apiUrlObject(path) {
+  const url = apiUrl(path);
+  return new URL(
+    url,
+    typeof window !== "undefined" ? window.location.origin : "http://localhost",
+  );
+}
+
+async function readJsonResponse(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Fetch all wishes for an invitation
@@ -8,16 +31,16 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
  */
 export async function fetchWishes(uid, options = {}) {
   const { limit = 50, offset = 0 } = options;
-  const url = new URL(`${API_URL}/api/${uid}/wishes`);
+  const url = apiUrlObject(`/api/${uid}/wishes`);
   url.searchParams.set("limit", limit);
   url.searchParams.set("offset", offset);
 
   const response = await fetch(url);
   if (!response.ok) {
-    const error = await response.json();
+    const error = await readJsonResponse(response);
     throw new Error(error.error || "Failed to fetch wishes");
   }
-  return response.json();
+  return readJsonResponse(response);
 }
 
 /**
@@ -27,7 +50,7 @@ export async function fetchWishes(uid, options = {}) {
  * @returns {Promise<object>} Response with created wish
  */
 export async function createWish(uid, wishData) {
-  const response = await fetch(`${API_URL}/api/${uid}/wishes`, {
+  const response = await fetch(apiUrl(`/api/${uid}/wishes`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -35,7 +58,7 @@ export async function createWish(uid, wishData) {
     body: JSON.stringify(wishData),
   });
 
-  const data = await response.json();
+  const data = await readJsonResponse(response);
 
   if (!response.ok) {
     // Preserve error code for duplicate wish detection
@@ -54,13 +77,13 @@ export async function createWish(uid, wishData) {
  */
 export async function checkWishSubmitted(uid, name) {
   const response = await fetch(
-    `${API_URL}/api/${uid}/wishes/check/${encodeURIComponent(name)}`,
+    apiUrl(`/api/${uid}/wishes/check/${encodeURIComponent(name)}`),
   );
   if (!response.ok) {
-    const error = await response.json();
+    const error = await readJsonResponse(response);
     throw new Error(error.error || "Failed to check wish status");
   }
-  return response.json();
+  return readJsonResponse(response);
 }
 
 /**
@@ -70,15 +93,15 @@ export async function checkWishSubmitted(uid, name) {
  * @returns {Promise<object>} Response with deletion confirmation
  */
 export async function deleteWish(uid, wishId) {
-  const response = await fetch(`${API_URL}/api/${uid}/wishes/${wishId}`, {
+  const response = await fetch(apiUrl(`/api/${uid}/wishes/${wishId}`), {
     method: "DELETE",
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await readJsonResponse(response);
     throw new Error(error.error || "Failed to delete wish");
   }
-  return response.json();
+  return readJsonResponse(response);
 }
 
 /**
@@ -87,12 +110,12 @@ export async function deleteWish(uid, wishId) {
  * @returns {Promise<object>} Response with stats data
  */
 export async function fetchAttendanceStats(uid) {
-  const response = await fetch(`${API_URL}/api/${uid}/stats`);
+  const response = await fetch(apiUrl(`/api/${uid}/stats`));
   if (!response.ok) {
-    const error = await response.json();
+    const error = await readJsonResponse(response);
     throw new Error(error.error || "Failed to fetch stats");
   }
-  return response.json();
+  return readJsonResponse(response);
 }
 
 /**
@@ -101,30 +124,30 @@ export async function fetchAttendanceStats(uid) {
  * @returns {Promise<object>} Response with invitation data
  */
 export async function fetchInvitation(uid) {
-  const response = await fetch(`${API_URL}/api/invitation/${uid}`);
+  const response = await fetch(apiUrl(`/api/invitation/${uid}`));
   if (!response.ok) {
-    const error = await response.json();
+    const error = await readJsonResponse(response);
     throw new Error(error.error || "Failed to fetch invitation");
   }
-  return response.json();
+  return readJsonResponse(response);
 }
 
 export async function searchGuest(uid, name) {
-  const url = new URL(`${API_URL}/api/${uid}/rsvp/search`);
+  const url = apiUrlObject(`/api/${uid}/rsvp/search`);
   url.searchParams.set("name", name);
   const response = await fetch(url);
-  const data = await response.json();
+  const data = await readJsonResponse(response);
   if (!response.ok) throw new Error(data.error || "Nao foi possivel buscar o convidado");
   return data;
 }
 
 export async function confirmPresence(uid, payload) {
-  const response = await fetch(`${API_URL}/api/${uid}/rsvp/confirm`, {
+  const response = await fetch(apiUrl(`/api/${uid}/rsvp/confirm`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await response.json();
+  const data = await readJsonResponse(response);
   if (!response.ok) {
     const error = new Error(data.error || "Nao foi possivel confirmar presenca");
     error.suggestions = data.suggestions || [];
@@ -134,8 +157,8 @@ export async function confirmPresence(uid, payload) {
 }
 
 export async function fetchGiftProducts(uid) {
-  const response = await fetch(`${API_URL}/api/${uid}/gifts`);
-  const data = await response.json();
+  const response = await fetch(apiUrl(`/api/${uid}/gifts`));
+  const data = await readJsonResponse(response);
   if (!response.ok) throw new Error(data.error || "Nao foi possivel carregar presentes");
   return data;
 }
@@ -148,23 +171,23 @@ function adminHeaders(token, hasFormData = false) {
 }
 
 export async function adminLogin(payload) {
-  const response = await fetch(`${API_URL}/api/admin/auth/login`, {
+  const response = await fetch(apiUrl("/api/admin/auth/login"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await response.json();
+  const data = await readJsonResponse(response);
   if (!response.ok) throw new Error(data.error || "Nao foi possivel entrar no painel");
   return data;
 }
 
 export async function adminActivateTwoFactor(payload) {
-  const response = await fetch(`${API_URL}/api/admin/auth/activate-2fa`, {
+  const response = await fetch(apiUrl("/api/admin/auth/activate-2fa"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await response.json();
+  const data = await readJsonResponse(response);
   if (!response.ok) throw new Error(data.error || "Nao foi possivel ativar o 2FA");
   return data;
 }
@@ -172,14 +195,14 @@ export async function adminActivateTwoFactor(payload) {
 export async function adminRequest(path, token, options = {}) {
   const hasFormData =
     typeof FormData !== "undefined" && options.body instanceof FormData;
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(apiUrl(path), {
     ...options,
     headers: {
       ...adminHeaders(token, hasFormData),
       ...(options.headers || {}),
     },
   });
-  const data = await response.json();
+  const data = await readJsonResponse(response);
   if (!response.ok) throw new Error(data.error || "Erro administrativo");
   return data;
 }

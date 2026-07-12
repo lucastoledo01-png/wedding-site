@@ -7,24 +7,22 @@ import { cn } from "@/lib/utils";
 
 const venues = [
   {
-    type: "Cerimonia",
-    name: "Santuario Nossa Senhora da Medalha Milagrosa",
-    address: "Rua Padre Cornelio, 27 - Centro, Monte Siao - MG, 37580-000",
-    plusCode: "HC9H+3X Monte Siao, Minas Gerais",
-    time: "16:00",
+    type: "Cerimônia",
+    name: "Santuário Nossa Senhora da Medalha Milagrosa",
+    address: "Rua Padre Cornélio, 27 - Centro, Monte Sião - MG, 37580-000",
+    time: "20h",
     image: "/images/igreja-medalha-milagrosa.webp",
     query:
-      "Santuario Nossa Senhora da Medalha Milagrosa HC9H+3X Monte Siao Minas Gerais",
+      "Santuário Nossa Senhora da Medalha Milagrosa HC9H+3X Monte Sião Minas Gerais",
   },
   {
-    type: "Recepcao/Festa",
+    type: "Recepção",
     name: "Restaurante Farol",
     address:
-      "Bairro Por do Sol - R. Maria R. C. Silva, 3850 - Por do Sol, Monte Siao - MG, 37580-000",
-    plusCode: "HCCW+76 Monte Siao, Minas Gerais",
-    time: "17:00",
+      "Bairro Por do Sol - R. Maria R. C. Silva, 3850 - Por do Sol, Monte Sião - MG, 37580-000",
+    time: "21:30h",
     image: "/images/restaurante-farol.jpg",
-    query: "Restaurante Farol HCCW+76 Monte Siao Minas Gerais",
+    query: "Restaurante Farol HCCW+76 Monte Sião Minas Gerais",
   },
 ];
 
@@ -61,7 +59,7 @@ function VenueCard({ venue, date }) {
         />
         <div
           className={cn(
-            "absolute left-4 top-4 rounded-full bg-white/75 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[#262626] backdrop-blur-xl",
+            "absolute left-4 top-4 rounded-full bg-[#ff4582] px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[#fdf8f3] backdrop-blur-xl",
           )}
         >
           {venue.type}
@@ -90,9 +88,6 @@ function VenueCard({ venue, date }) {
           <p className={cn("flex items-center gap-3")}>
             <Clock className={cn("h-5 w-5 text-[#ff4582]")} />
             <span>{venue.time}</span>
-          </p>
-          <p className={cn("rounded-2xl bg-[#f5f0eb] px-4 py-3 text-sm")}>
-            Plus code: {venue.plusCode}
           </p>
         </div>
 
@@ -158,18 +153,18 @@ export default function Location() {
             variants={fadeUp}
             className={cn("super-label inline-block")}
           >
-            Cerimonia e festa
+            Agenda
           </motion.span>
 
           <motion.h2 variants={fadeUp} className={cn("super-heading text-6xl")}>
-            Locais
+            O nosso dia
           </motion.h2>
           <motion.p
             variants={fadeUp}
             className={cn("super-copy max-w-sm text-[1.125rem]")}
           >
-            Primeiro a celebracao no Santuario. Depois, a recepcao no
-            Restaurante Farol.
+            Queremos celebrar esse dia especial ao lado das pessoas que fazem
+            parte da nossa história.
           </motion.p>
         </motion.div>
 

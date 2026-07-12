@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Music, PauseCircle, PlayCircle } from "lucide-react";
 import { useConfig } from "@/features/invitation/hooks/use-config";
 import BottomBar from "@/components/layout/bottom-bar";
+import InvitationFooter from "@/components/layout/invitation-footer";
 import SoundCloudPlayer from "@/components/layout/soundcloud-player";
 import { useMotionPreset } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,7 @@ const Layout = ({ children, audioControls }) => {
         )}
         style={{
           backgroundImage:
-            "linear-gradient(rgba(253,248,243,0.94), rgba(253,248,243,0.98)), url('/images/lucas-andressa-background.png')",
+            "linear-gradient(rgba(253,248,243,0.94), rgba(253,248,243,0.98)), url('/images/lucas-andressa-background.webp')",
           backgroundPosition: "center top",
           backgroundSize: "cover",
           backgroundAttachment: "fixed",
@@ -94,6 +95,7 @@ const Layout = ({ children, audioControls }) => {
 
         <main className={cn("relative h-full w-full pb-[100px]")}>
           {children}
+          <InvitationFooter />
         </main>
         <BottomBar />
 

@@ -14,9 +14,342 @@
  * the runtime instance, so we never construct a new pool per request.
  */
 
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import staticConfig from "../../config/config.js";
+
 // Module-scoped cache: connectionString -> pg.Pool
 // Reused across requests within the same runtime instance.
 const poolCache = new Map();
+const FILE_DB_KEY = "__file_db__";
+
+function shouldUseFileDb(connectionString) {
+  return (
+    !connectionString ||
+    connectionString.includes("username:password@localhost") ||
+    process.env.USE_FILE_DB === "true"
+  );
+}
+
+function normalizeLocalName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function defaultStore() {
+  const config = staticConfig.data;
+
+  return {
+    invitations: [
+      {
+        uid: "lucas-andressa",
+        title: config.title,
+        description: config.description,
+        groom_name: config.groomName,
+        bride_name: config.brideName,
+        parent_groom: config.parentGroom,
+        parent_bride: config.parentBride,
+        wedding_date: config.date,
+        time: config.time,
+        location: config.location,
+        address: config.address,
+        maps_url: config.maps_url,
+        maps_embed: config.maps_embed,
+        og_image: config.ogImage,
+        favicon: config.favicon,
+        audio: config.audio,
+      },
+    ],
+    agenda: config.agenda.map((item, index) => ({
+      id: index + 1,
+      invitation_uid: "lucas-andressa",
+      order_index: index,
+      title: item.title,
+      date: item.date,
+      start_time: item.startTime,
+      end_time: item.endTime,
+      location: item.location,
+      address: item.address,
+    })),
+    banks: config.banks.map((item, index) => ({
+      id: index + 1,
+      invitation_uid: "lucas-andressa",
+      order_index: index,
+      bank: item.bank,
+      account_number: item.accountNumber,
+      account_name: item.accountName,
+    })),
+    guests: [],
+    wishes: [],
+    gift_products: [],
+    counters: {
+      guests: 1,
+      wishes: 1,
+      gift_products: 1,
+    },
+  };
+}
+
+async function readStore() {
+  const filePath = path.join(process.cwd(), "data", "local-db.json");
+
+  try {
+    return JSON.parse(await readFile(filePath, "utf8"));
+  } catch {
+    const store = defaultStore();
+    await writeStore(store);
+    return store;
+  }
+}
+
+async function writeStore(store) {
+  const filePath = path.join(process.cwd(), "data", "local-db.json");
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, JSON.stringify(store, null, 2));
+}
+
+async function withStore(mutator) {
+  const store = await readStore();
+  const result = await mutator(store);
+  await writeStore(store);
+  return result;
+}
+
+function createFileDbClient() {
+  return {
+    async query(sql, params = []) {
+      const compactSql = sql.replace(/\s+/g, " ").trim();
+
+      return withStore(async (store) => {
+        const uid = params[0];
+
+        if (compactSql.startsWith("SELECT * FROM invitations WHERE uid = $1")) {
+          return {
+            rows: store.invitations.filter((item) => item.uid === uid),
+          };
+        }
+
+        if (compactSql.startsWith("SELECT uid FROM invitations WHERE uid = $1")) {
+          return {
+            rows: store.invitations
+              .filter((item) => item.uid === uid)
+              .map((item) => ({ uid: item.uid })),
+          };
+        }
+
+        if (compactSql.includes("FROM agenda WHERE invitation_uid = $1")) {
+          return {
+            rows: store.agenda
+              .filter((item) => item.invitation_uid === uid)
+              .sort((a, b) => a.order_index - b.order_index)
+              .map(({ id, title, date, start_time, end_time, location, address }) => ({
+                id,
+                title,
+                date,
+                start_time,
+                end_time,
+                location,
+                address,
+              })),
+          };
+        }
+
+        if (compactSql.includes("FROM banks WHERE invitation_uid = $1")) {
+          return {
+            rows: store.banks
+              .filter((item) => item.invitation_uid === uid)
+              .sort((a, b) => a.order_index - b.order_index)
+              .map(({ id, bank, account_number, account_name }) => ({
+                id,
+                bank,
+                account_number,
+                account_name,
+              })),
+          };
+        }
+
+        if (compactSql.includes("FROM guests") && compactSql.includes("WHERE invitation_uid = $1")) {
+          return {
+            rows: store.guests
+              .filter((item) => item.invitation_uid === uid)
+              .sort((a, b) => a.full_name.localeCompare(b.full_name)),
+          };
+        }
+
+        if (compactSql.startsWith("INSERT INTO guests")) {
+          const [invitationUid, fullName, normalizedName, partySize] = params;
+          const normalized = normalizedName || normalizeLocalName(fullName);
+          let guest = store.guests.find(
+            (item) =>
+              item.invitation_uid === invitationUid &&
+              item.normalized_name === normalized,
+          );
+
+          if (guest) {
+            guest.full_name = fullName;
+            guest.party_size = Number(partySize || 1);
+            guest.updated_at = nowIso();
+          } else {
+            guest = {
+              id: store.counters.guests++,
+              invitation_uid: invitationUid,
+              full_name: fullName,
+              normalized_name: normalized,
+              party_size: Number(partySize || 1),
+              attendance: "PENDING",
+              confirmed_at: null,
+              message: "",
+              created_at: nowIso(),
+              updated_at: nowIso(),
+            };
+            store.guests.push(guest);
+          }
+
+          return { rows: [guest] };
+        }
+
+        if (compactSql.startsWith("UPDATE guests")) {
+          const isAdminPatch = params.length >= 7;
+          const guestId = Number(isAdminPatch ? params[5] : params[3]);
+          const invitationUid = isAdminPatch ? params[6] : params[4];
+          const guest = store.guests.find(
+            (item) => item.id === guestId && item.invitation_uid === invitationUid,
+          );
+
+          if (!guest) return { rows: [] };
+
+          if (isAdminPatch) {
+            const [fullName, normalizedName, partySize, attendance, message] = params;
+            if (fullName) guest.full_name = fullName;
+            if (normalizedName) guest.normalized_name = normalizedName;
+            if (partySize !== null && partySize !== undefined) {
+              guest.party_size = Number(partySize);
+            }
+            if (attendance) guest.attendance = attendance;
+            if (message !== null && message !== undefined) guest.message = message;
+          } else {
+            const [attendance, partySize, message] = params;
+            guest.attendance = attendance;
+            if (partySize !== null && partySize !== undefined) {
+              guest.party_size = Number(partySize);
+            }
+            guest.message = message;
+            guest.confirmed_at = nowIso();
+          }
+
+          guest.updated_at = nowIso();
+          return { rows: [guest] };
+        }
+
+        if (compactSql.startsWith("DELETE FROM guests")) {
+          const [id, invitationUid] = params;
+          store.guests = store.guests.filter(
+            (item) => !(item.id === Number(id) && item.invitation_uid === invitationUid),
+          );
+          return { rows: [] };
+        }
+
+        if (compactSql.includes("COUNT(*) FILTER") && compactSql.includes("FROM guests")) {
+          const guests = store.guests.filter((item) => item.invitation_uid === uid);
+          return {
+            rows: [
+              {
+                total: guests.length,
+                attending: guests.filter((item) => item.attendance === "ATTENDING").length,
+                not_attending: guests.filter((item) => item.attendance === "NOT_ATTENDING").length,
+                pending: guests.filter((item) => item.attendance === "PENDING").length,
+                people_confirmed: guests
+                  .filter((item) => item.attendance === "ATTENDING")
+                  .reduce((total, item) => total + Number(item.party_size || 1), 0),
+              },
+            ],
+          };
+        }
+
+        if (compactSql.includes("FROM wishes") && compactSql.includes("ORDER BY created_at DESC")) {
+          const [invitationUid, limit = 50, offset = 0] = params;
+          return {
+            rows: store.wishes
+              .filter((item) => item.invitation_uid === invitationUid)
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .slice(Number(offset), Number(offset) + Number(limit))
+              .map(({ invitation_uid, ...wish }) => wish),
+          };
+        }
+
+        if (compactSql.startsWith("SELECT COUNT(*) FROM wishes")) {
+          return {
+            rows: [
+              {
+                count: String(
+                  store.wishes.filter((item) => item.invitation_uid === uid).length,
+                ),
+              },
+            ],
+          };
+        }
+
+        if (compactSql.startsWith("SELECT id FROM wishes")) {
+          const [invitationUid, name] = params;
+          return {
+            rows: store.wishes
+              .filter(
+                (item) => item.invitation_uid === invitationUid && item.name === name,
+              )
+              .map((item) => ({ id: item.id })),
+          };
+        }
+
+        if (compactSql.startsWith("INSERT INTO wishes")) {
+          const [invitationUid, name, message, attendance] = params;
+          const wish = {
+            id: store.counters.wishes++,
+            invitation_uid: invitationUid,
+            name,
+            message,
+            attendance,
+            created_at: nowIso(),
+          };
+          store.wishes.push(wish);
+          return { rows: [{ id: wish.id, name, message, attendance, created_at: wish.created_at }] };
+        }
+
+        if (compactSql.startsWith("DELETE FROM wishes")) {
+          const [id, invitationUid] = params;
+          store.wishes = store.wishes.filter(
+            (item) => !(item.id === Number(id) && item.invitation_uid === invitationUid),
+          );
+          return { rows: [] };
+        }
+
+        if (compactSql.includes("COUNT(*) FILTER") && compactSql.includes("FROM wishes")) {
+          const wishes = store.wishes.filter((item) => item.invitation_uid === uid);
+          return {
+            rows: [
+              {
+                attending: wishes.filter((item) => item.attendance === "ATTENDING").length,
+                not_attending: wishes.filter((item) => item.attendance === "NOT_ATTENDING").length,
+                maybe: wishes.filter((item) => item.attendance === "MAYBE").length,
+                total: wishes.length,
+              },
+            ],
+          };
+        }
+
+        throw new Error(`File database does not support query: ${compactSql}`);
+      });
+    },
+  };
+}
 
 /**
  * Resolve the database connection string for the current request context.
@@ -57,10 +390,11 @@ function resolveConnectionString(c) {
 export async function getDbClient(c) {
   const connectionString = resolveConnectionString(c);
 
-  if (!connectionString) {
-    throw new Error(
-      "No database connection available. Configure a Hyperdrive binding (env.DB) or DATABASE_URL.",
-    );
+  if (shouldUseFileDb(connectionString)) {
+    if (!poolCache.has(FILE_DB_KEY)) {
+      poolCache.set(FILE_DB_KEY, createFileDbClient());
+    }
+    return poolCache.get(FILE_DB_KEY);
   }
 
   // Reuse an existing pool for this connection string if we have one.

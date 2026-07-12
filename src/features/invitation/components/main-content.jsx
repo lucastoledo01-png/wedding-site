@@ -1,5 +1,4 @@
 import Hero from "@/features/invitation/components/hero";
-import { Events } from "@/features/events";
 import { Location } from "@/features/location";
 import { Gifts } from "@/features/gifts";
 import Rsvp from "@/features/rsvp/components/rsvp";
@@ -11,7 +10,6 @@ export default function MainContent() {
     <>
       <Hero />
       <Rsvp />
-      <Events />
       <Location />
       <Gifts />
       <Wishes />
