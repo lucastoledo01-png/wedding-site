@@ -21,6 +21,7 @@ export default function Hero() {
   const [guestName, setGuestName] = useState("");
   const [activeSlide, setActiveSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const fadeUp = useMotionPreset("fadeUp");
 
   useEffect(() => {
@@ -37,6 +38,16 @@ export default function Hero() {
       (current) => (current - 1 + heroSlides.length) % heroSlides.length,
     );
   };
+
+  useEffect(() => {
+    if (isCarouselPaused) return undefined;
+
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % heroSlides.length);
+    }, 4200);
+
+    return () => window.clearInterval(timer);
+  }, [isCarouselPaused]);
 
   const getSlideOffset = (index) => {
     const rawOffset = index - activeSlide;
@@ -89,6 +100,11 @@ export default function Hero() {
             tabIndex={0}
             aria-label="Avancar foto"
             onClick={showNextSlide}
+            onMouseEnter={() => setIsCarouselPaused(true)}
+            onMouseLeave={() => setIsCarouselPaused(false)}
+            onPointerDown={() => setIsCarouselPaused(true)}
+            onPointerUp={() => setIsCarouselPaused(false)}
+            onPointerCancel={() => setIsCarouselPaused(false)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
@@ -98,10 +114,14 @@ export default function Hero() {
               if (event.key === "ArrowRight") showNextSlide();
             }}
             onTouchStart={(event) => {
+              setIsCarouselPaused(true);
               setTouchStart(event.touches[0]?.clientX ?? null);
             }}
             onTouchEnd={(event) => {
-              if (touchStart === null) return;
+              if (touchStart === null) {
+                setIsCarouselPaused(false);
+                return;
+              }
               const endX = event.changedTouches[0]?.clientX ?? touchStart;
               const delta = endX - touchStart;
               if (Math.abs(delta) > 36) {
@@ -111,6 +131,7 @@ export default function Hero() {
                 showNextSlide();
               }
               setTouchStart(null);
+              setIsCarouselPaused(false);
             }}
             className={cn(
               "relative left-1/2 aspect-[3/4] w-[112%] -translate-x-1/2 cursor-pointer overflow-hidden outline-none",
@@ -124,7 +145,7 @@ export default function Hero() {
                 <div
                   key={slide}
                   className={cn(
-                    "absolute left-1/2 top-0 h-full w-[82%] rounded-[24px] bg-[#f5f0eb] shadow-[0_24px_70px_rgba(38,38,38,0.16)] transition-all duration-700",
+                    "absolute left-1/2 top-0 h-full w-[82%] overflow-hidden rounded-[24px] transition-all duration-700",
                     isVisible ? "opacity-100" : "pointer-events-none opacity-0",
                     offset === 0 && "z-20 scale-100",
                     offset !== 0 && "z-10 scale-[0.92]",
@@ -139,7 +160,7 @@ export default function Hero() {
                     src={slide}
                     alt={`Lucas e Andressa ${index + 1}`}
                     className={cn(
-                      "block h-full w-full rounded-[24px] object-cover object-center",
+                      "block h-full w-full object-cover object-center",
                     )}
                     loading={index === 0 ? "eager" : "lazy"}
                   />

@@ -10,8 +10,6 @@ export default function Rsvp() {
   const { uid } = useInvitation();
   const [name, setName] = useState("");
   const [attendance, setAttendance] = useState("ATTENDING");
-  const [message, setMessage] = useState("");
-  const [partySize, setPartySize] = useState(1);
   const [showConfetti, setShowConfetti] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
 
@@ -34,8 +32,8 @@ export default function Rsvp() {
       confirmPresence(uid, {
         name,
         attendance,
-        message,
-        partySize,
+        message: "",
+        partySize: 1,
       }),
     onSuccess: () => {
       setSuggestions([]);
@@ -57,12 +55,10 @@ export default function Rsvp() {
       />
       <div className={cn("mx-auto px-5 py-20")}>
         <div className={cn("space-y-5")}>
-          <p className={cn("super-label")}>Confirme sua presenca</p>
-          <h2 className={cn("super-heading text-6xl")}>RSVP</h2>
-          <p className={cn("super-copy max-w-sm text-[1.125rem] font-medium")}>
-            Digite seu nome como esta no convite. O sistema confere com a lista
-            oficial e aceita pequenas diferencas de escrita.
-          </p>
+          <p className={cn("super-label")}>RSVP</p>
+          <h2 className={cn("super-heading text-5xl")}>
+            Confirmação de Presença
+          </h2>
         </div>
 
         <form
@@ -79,7 +75,7 @@ export default function Rsvp() {
               "grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]",
             )}
           >
-            Nome completo
+            Nome Completo (Presente no Convite)
             <div className={cn("relative")}>
               <Search
                 className={cn(
@@ -140,12 +136,12 @@ export default function Rsvp() {
               className={cn(
                 "super-transition flex items-center justify-center gap-2 rounded-full border px-4 py-3 font-semibold",
                 attendance === "ATTENDING"
-                  ? "border-[#262626] bg-[#262626] text-white"
+                  ? "border-emerald-500 bg-emerald-500 text-white"
                   : "border-[#262626]/10 bg-white text-[#262626]",
               )}
             >
               <CheckCircle className={cn("h-4 w-4")} />
-              Vou comparecer
+              Vou Comparecer
             </button>
             <button
               type="button"
@@ -158,43 +154,9 @@ export default function Rsvp() {
               )}
             >
               <XCircle className={cn("h-4 w-4")} />
-              Nao poderei ir
+              Não poderei ir
             </button>
           </div>
-
-          <label
-            className={cn(
-              "grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]",
-            )}
-          >
-            Quantas pessoas do convite?
-            <input
-              type="number"
-              min="1"
-              value={partySize}
-              onChange={(event) => setPartySize(event.target.value)}
-              className={cn(
-                "super-transition w-full rounded-full border border-[#262626]/10 bg-white px-4 py-4 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]",
-              )}
-            />
-          </label>
-
-          <label
-            className={cn(
-              "grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]",
-            )}
-          >
-            Mensagem opcional
-            <textarea
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              rows={3}
-              className={cn(
-                "super-transition w-full rounded-3xl border border-[#262626]/10 bg-white px-4 py-4 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]",
-              )}
-              placeholder="Deixe um recado para os noivos"
-            />
-          </label>
 
           {mutation.error && (
             <div
@@ -233,7 +195,7 @@ export default function Rsvp() {
             ) : (
               <UserCheck className={cn("h-4 w-4")} />
             )}
-            Confirmar
+            Confirmar!
           </button>
         </form>
       </div>

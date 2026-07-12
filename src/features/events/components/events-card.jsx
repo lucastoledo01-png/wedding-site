@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Apple,
@@ -32,17 +33,23 @@ const Modal = ({ isOpen, onClose, children }) => {
   const fade = useMotionPreset("fade");
   const fadeUp = useMotionPreset("fadeUp");
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <>
+        <div
+          className={cn(
+            "fixed inset-0 z-[9999] flex items-center justify-center px-5 py-6",
+          )}
+        >
           <motion.div
             variants={fade}
             initial="hidden"
             animate="visible"
             exit="exit"
             onClick={onClose}
-            className={cn("fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm")}
+            className={cn("absolute inset-0 bg-black/50 backdrop-blur-sm")}
           />
           <motion.div
             variants={fadeUp}
@@ -50,7 +57,7 @@ const Modal = ({ isOpen, onClose, children }) => {
             animate="visible"
             exit="exit"
             className={cn(
-              "fixed left-1/2 top-1/2 z-[70] w-[90%] max-w-sm -translate-x-1/2 -translate-y-1/2",
+              "relative z-10 w-full max-w-sm",
             )}
           >
             <div
@@ -61,22 +68,24 @@ const Modal = ({ isOpen, onClose, children }) => {
               {children}
             </div>
           </motion.div>
-        </>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };
 
 const SingleEventCard = ({ eventData }) => {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const fadeUp = useMotionPreset("fadeUp");
+  const calendarTitle = `${eventData.title} Casamento Lucas e Andressa`;
 
   const googleCalendarLink = () => {
     const startDate = new Date(`${eventData.date}T${eventData.startTime}:00`);
     const endDate = new Date(`${eventData.date}T${eventData.endTime}:00`);
     const formatDate = (date) => date.toISOString().replace(/-|:|\.\d+/g, "");
 
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventData.title)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(eventData.description || "")}&location=${encodeURIComponent(eventData.location)}&ctz=America/Sao_Paulo`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calendarTitle)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(eventData.description || "")}&location=${encodeURIComponent(eventData.location)}&ctz=America/Sao_Paulo`;
   };
 
   const downloadICSFile = () => {
@@ -90,7 +99,7 @@ BEGIN:VEVENT
 URL:${window.location.href}
 DTSTART:${formatICSDate(startDate)}
 DTEND:${formatICSDate(endDate)}
-SUMMARY:${eventData.title}
+SUMMARY:${calendarTitle}
 LOCATION:${eventData.location}
 END:VEVENT
 END:VCALENDAR`;
@@ -99,7 +108,7 @@ END:VCALENDAR`;
     });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventData.title.toLowerCase().replace(/ /g, "-")}.ics`;
+    link.download = `${calendarTitle.toLowerCase().replace(/ /g, "-")}.ics`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
