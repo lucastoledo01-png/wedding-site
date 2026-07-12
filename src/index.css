@@ -61,9 +61,11 @@ textarea {
   transition: transform 1s var(--super-ease);
 }
 
-.group:hover .super-image,
-.super-image:hover {
-  transform: scale(1.08);
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .super-image,
+  .super-image:hover {
+    transform: scale(1.08);
+  }
 }
 
 @keyframes bounce-slow {

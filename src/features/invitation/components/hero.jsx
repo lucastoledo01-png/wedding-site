@@ -21,7 +21,7 @@ export default function Hero() {
     <section
       id="home"
       className={cn(
-        "relative min-h-screen overflow-hidden bg-[#fdf8f3] px-5 py-16",
+        "relative min-h-screen w-full overflow-hidden bg-[#fdf8f3] px-5 py-14",
       )}
     >
       <img
@@ -36,54 +36,64 @@ export default function Hero() {
         initial="hidden"
         animate="visible"
         className={cn(
-          "relative z-10 mx-auto grid min-h-[calc(100vh-8rem)] max-w-sm content-center gap-8",
+          "relative z-10 mx-auto grid min-h-[calc(100vh-7rem)] w-full max-w-sm content-center gap-8 overflow-hidden",
         )}
       >
-        <motion.div variants={fadeUp} className={cn("space-y-5")}>
+        <motion.div variants={fadeUp} className={cn("w-full space-y-5")}>
           <p className={cn("super-label")}>Convite oficial</p>
           <h1
             className={cn(
-              "wedding-script-title whitespace-nowrap text-[4.45rem] text-[#262626]",
+              "wedding-script-title max-w-full text-[4.35rem] text-[#262626]",
             )}
           >
-            Lucas <span className={cn("text-[#ff4582]")}>&</span> Andressa
+            <span className={cn("block whitespace-nowrap")}>
+              Lucas <span className={cn("text-[#ff4582]")}>&</span>
+            </span>
+            <span className={cn("block")}>Andressa</span>
           </h1>
-          <p className={cn("super-copy text-[1.35rem] font-medium")}>
+          <p
+            className={cn(
+              "super-copy max-w-full text-[1.18rem] font-medium leading-[1.5]",
+            )}
+          >
             Nossa historia foi construida entre encontros, escolhas e muitos
             momentos que nos trouxeram ate aqui. Agora chegou a hora de celebrar
             este ciclo ao lado de quem faz parte dele.
           </p>
         </motion.div>
 
-        <motion.div variants={fadeUp} className={cn("group relative")}>
+        <motion.div variants={fadeUp} className={cn("group relative w-full")}>
           <div
             className={cn(
-              "overflow-hidden rounded-[24px] bg-[#f5f0eb] shadow-[0_24px_70px_rgba(38,38,38,0.16)]",
+              "relative w-full overflow-hidden rounded-[24px] bg-[#f5f0eb] shadow-[0_24px_70px_rgba(38,38,38,0.16)]",
             )}
           >
             <img
               src="/images/lucas-andressa-background.png"
               alt="Lucas e Andressa"
               className={cn(
-                "super-image aspect-[3/4] w-full object-cover object-center",
+                "super-image block aspect-[3/4] w-full max-w-full object-cover object-center",
               )}
             />
-          </div>
-          <div
-            className={cn(
-              "super-badge absolute -right-4 top-8 flex h-32 w-32 flex-col items-center justify-center rounded-full bg-[#ff4582] text-[#262626] shadow-[0_18px_48px_rgba(255,69,130,0.45)]",
-            )}
-          >
-            <span className={cn("text-[1.15rem] font-semibold italic")}>
-              14/11/2026
-            </span>
-            <span
+            <div
               className={cn(
-                "mt-1 text-[8px] font-medium uppercase tracking-[0.35em]",
+                "super-badge absolute right-3 top-3 flex h-24 w-24 flex-col items-center justify-center rounded-full bg-[#ff4582] text-[#262626] shadow-[0_18px_48px_rgba(255,69,130,0.45)]",
               )}
             >
-              Save date
-            </span>
+              <span className={cn("text-[0.92rem] font-semibold italic")}>
+                14/11
+              </span>
+              <span className={cn("text-[0.78rem] font-semibold italic")}>
+                2026
+              </span>
+              <span
+                className={cn(
+                  "mt-1 text-[7px] font-medium uppercase tracking-[0.22em]",
+                )}
+              >
+                Save date
+              </span>
+            </div>
           </div>
         </motion.div>
 
