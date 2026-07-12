@@ -45,22 +45,36 @@ function VenueCard({ venue, date }) {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className={cn("overflow-hidden rounded-[28px] border border-[#262626]/10 bg-[#fdf8f3] shadow-[0_24px_70px_rgba(38,38,38,0.10)]")}
+      className={cn(
+        "overflow-hidden rounded-[28px] border border-[#262626]/10 bg-[#fdf8f3] shadow-[0_24px_70px_rgba(38,38,38,0.10)]",
+      )}
     >
-      <div className={cn("group relative aspect-[4/3] overflow-hidden bg-[#f5f0eb]")}>
+      <div
+        className={cn(
+          "group relative aspect-[4/3] overflow-hidden bg-[#f5f0eb]",
+        )}
+      >
         <img
           src={venue.image}
           alt={venue.name}
           className={cn("super-image h-full w-full object-cover")}
         />
-        <div className={cn("absolute left-4 top-4 rounded-full bg-white/75 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[#262626] backdrop-blur-xl")}>
+        <div
+          className={cn(
+            "absolute left-4 top-4 rounded-full bg-white/75 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[#262626] backdrop-blur-xl",
+          )}
+        >
           {venue.type}
         </div>
       </div>
 
       <div className={cn("p-5")}>
         <p className={cn("super-label")}>Local</p>
-        <h3 className={cn("mt-2 text-3xl font-normal leading-none tracking-tight text-[#262626]")}>
+        <h3
+          className={cn(
+            "mt-2 text-3xl font-normal leading-none tracking-tight text-[#262626]",
+          )}
+        >
           {venue.name}
         </h3>
 
@@ -82,7 +96,11 @@ function VenueCard({ venue, date }) {
           </p>
         </div>
 
-        <div className={cn("mt-6 overflow-hidden rounded-[22px] border border-[#262626]/10 bg-[#f5f0eb] p-2")}>
+        <div
+          className={cn(
+            "mt-6 overflow-hidden rounded-[22px] border border-[#262626]/10 bg-[#f5f0eb] p-2",
+          )}
+        >
           <iframe
             src={mapEmbedUrl(venue.query)}
             width="100%"
@@ -100,7 +118,9 @@ function VenueCard({ venue, date }) {
           href={mapSearchUrl(venue.query)}
           target="_blank"
           rel="noopener noreferrer"
-          className={cn("mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 text-sm font-medium uppercase tracking-[0.18em] text-[#fdf8f3] transition hover:bg-[#ff4582] hover:text-white")}
+          className={cn(
+            "mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 text-sm font-medium uppercase tracking-[0.18em] text-[#fdf8f3] transition hover:bg-[#ff4582] hover:text-white",
+          )}
         >
           <ExternalLink className={cn("h-4 w-4")} />
           Ver rota
@@ -115,11 +135,16 @@ export default function Location() {
   const fadeUp = useMotionPreset("fadeUp");
 
   return (
-    <section id="location" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
+    <section
+      id="location"
+      className={cn("relative overflow-hidden bg-[#fdf8f3]")}
+    >
       <img
         src="/images/flowers.png"
         alt=""
-        className={cn("pointer-events-none absolute -left-28 top-16 w-56 -rotate-12 opacity-25")}
+        className={cn(
+          "pointer-events-none absolute -left-28 top-16 w-56 -rotate-12 opacity-25",
+        )}
       />
       <div className={cn("relative z-10 mx-auto px-5 py-20")}>
         <motion.div
@@ -129,14 +154,20 @@ export default function Location() {
           viewport={{ once: true }}
           className={cn("mb-12 space-y-5")}
         >
-          <motion.span variants={fadeUp} className={cn("super-label inline-block")}>
+          <motion.span
+            variants={fadeUp}
+            className={cn("super-label inline-block")}
+          >
             Cerimonia e festa
           </motion.span>
 
           <motion.h2 variants={fadeUp} className={cn("super-heading text-6xl")}>
             Locais
           </motion.h2>
-          <motion.p variants={fadeUp} className={cn("super-copy max-w-sm text-xl")}>
+          <motion.p
+            variants={fadeUp}
+            className={cn("super-copy max-w-sm text-[1.125rem]")}
+          >
             Primeiro a celebracao no Santuario. Depois, a recepcao no
             Restaurante Farol.
           </motion.p>

@@ -11,11 +11,16 @@ export default function Events() {
   return (
     <>
       {/* Event Section */}
-      <section id="event" className={cn("relative overflow-hidden bg-[#f5f0eb]")}>
+      <section
+        id="event"
+        className={cn("relative overflow-hidden bg-[#f5f0eb]")}
+      >
         <img
           src="/images/flowers.png"
           alt=""
-          className={cn("pointer-events-none absolute -right-28 top-8 w-56 rotate-12 opacity-25")}
+          className={cn(
+            "pointer-events-none absolute -right-28 top-8 w-56 rotate-12 opacity-25",
+          )}
         />
         <motion.div
           variants={fade}
@@ -47,7 +52,7 @@ export default function Events() {
 
             <motion.p
               variants={fadeUp}
-              className={cn("super-copy max-w-sm text-xl font-medium")}
+              className={cn("super-copy max-w-sm text-[1.125rem] font-medium")}
             >
               Queremos celebrar esse dia especial ao lado das pessoas que fazem
               parte da nossa historia.

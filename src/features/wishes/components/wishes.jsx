@@ -1,6 +1,7 @@
 import { MessageCircle, Send, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { fetchWishes, createWish } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
@@ -10,13 +11,17 @@ export default function Wishes() {
   const queryClient = useQueryClient();
   const recaptchaMode = import.meta.env.VITE_RECAPTCHA_MODE || "checkbox";
   const enterpriseSiteKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY;
-  const classicSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const classicSiteKey =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
+    "6LcPOFAtAAAAAA3OjfyBiOVYv98Dxf10Ey1ehunD";
   const recaptchaSiteKey =
     recaptchaMode === "enterprise" ? enterpriseSiteKey : classicSiteKey;
   const recaptchaAction =
     import.meta.env.VITE_RECAPTCHA_ENTERPRISE_ACTION || "wedding_wish";
-  const shouldUseEnterprise = recaptchaMode === "enterprise" && Boolean(recaptchaSiteKey);
-  const shouldUseCheckbox = recaptchaMode !== "enterprise" && Boolean(recaptchaSiteKey);
+  const shouldUseEnterprise =
+    recaptchaMode === "enterprise" && Boolean(recaptchaSiteKey);
+  const shouldUseCheckbox =
+    recaptchaMode !== "enterprise" && Boolean(recaptchaSiteKey);
   const recaptchaRef = useRef(null);
   const recaptchaWidgetRef = useRef(null);
   const [name, setName] = useState("");
@@ -31,11 +36,14 @@ export default function Wishes() {
 
     window.onWeddingRecaptchaReady = () => {
       if (!window.grecaptcha || recaptchaWidgetRef.current !== null) return;
-      recaptchaWidgetRef.current = window.grecaptcha.render(recaptchaRef.current, {
-        sitekey: recaptchaSiteKey,
-        callback: (token) => setRecaptchaToken(token),
-        "expired-callback": () => setRecaptchaToken(""),
-      });
+      recaptchaWidgetRef.current = window.grecaptcha.render(
+        recaptchaRef.current,
+        {
+          sitekey: recaptchaSiteKey,
+          callback: (token) => setRecaptchaToken(token),
+          "expired-callback": () => setRecaptchaToken(""),
+        },
+      );
     };
 
     if (!document.querySelector('script[src*="recaptcha/api.js"]')) {
@@ -97,10 +105,10 @@ export default function Wishes() {
 
           window.grecaptcha.enterprise.ready(async () => {
             try {
-              const enterpriseToken = await window.grecaptcha.enterprise.execute(
-                recaptchaSiteKey,
-                { action: recaptchaAction },
-              );
+              const enterpriseToken =
+                await window.grecaptcha.enterprise.execute(recaptchaSiteKey, {
+                  action: recaptchaAction,
+                });
               resolve(enterpriseToken);
             } catch (error) {
               reject(error);
@@ -150,146 +158,203 @@ export default function Wishes() {
     mutation.mutate();
   };
 
-  return (
-    <section id="wishes" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
-      <img
-        src="/images/flowers.png"
-        alt=""
-        className={cn("pointer-events-none absolute -right-24 top-6 w-56 rotate-12 opacity-35")}
-      />
-      <img
-        src="/images/flowers.png"
-        alt=""
-        className={cn("pointer-events-none absolute -left-28 bottom-10 w-52 -rotate-12 opacity-25")}
-      />
-      <div className={cn("mx-auto px-5 py-20")}>
-        <div className={cn("space-y-5")}>
-          <p className={cn("super-label")}>Mensagens</p>
-          <h2 className={cn("super-heading text-6xl")}>Deixe sua mensagem</h2>
-          <p className={cn("super-copy max-w-sm text-xl")}>
-            Escreva algumas palavras para nos. Vamos guardar cada recado como
-            uma lembranca deste dia.
-          </p>
-        </div>
-
-        <div className={cn("mt-10 grid gap-4")}>
-          {wishes.length === 0 ? (
-            <div className={cn("rounded-[24px] border border-[#262626]/10 bg-[#f5f0eb] p-7 text-center")}>
-              <MessageCircle className={cn("mx-auto h-10 w-10 text-[#ff4582]")} />
-              <p className={cn("mt-4 text-lg font-normal text-[#262626]/70")}>
-                As mensagens aparecerão aqui.
-              </p>
-            </div>
-          ) : (
-            wishes.slice(0, 8).map((wish) => (
-              <article
-                key={wish.id}
-                className={cn("rounded-[24px] border border-[#262626]/10 bg-[#f5f0eb] p-5")}
-              >
-                <p className={cn("text-lg font-medium text-[#262626]")}>
-                  {wish.name}
-                </p>
-                <p className={cn("mt-2 text-base leading-relaxed text-[#262626]/65")}>
-                  {wish.message}
-                </p>
-              </article>
-            ))
-          )}
-        </div>
-
-        <div className={cn("mt-8 flex justify-center")}>
-          <button
-            type="button"
-            onClick={() => {
-              setFormError("");
-              setIsFormOpen(true);
+  const wishDialog =
+    isFormOpen && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className={cn(
+              "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/35 px-4 py-6 backdrop-blur-sm",
+            )}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wish-dialog-title"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setIsFormOpen(false);
             }}
-            className={cn("inline-flex items-center gap-2 rounded-full border border-[#262626]/10 bg-white/55 px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#262626]/70 backdrop-blur transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
           >
-            <MessageCircle className={cn("h-4 w-4")} />
-            Enviar recado
-          </button>
-        </div>
-      </div>
-
-      {isFormOpen && (
-        <div
-          className={cn("fixed inset-0 z-50 flex items-end justify-center bg-[#262626]/35 px-4 pb-4 backdrop-blur-sm sm:items-center sm:pb-0")}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="wish-dialog-title"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setIsFormOpen(false);
-          }}
-        >
-          <form
-            onSubmit={submit}
-            className={cn("w-full max-w-md rounded-[28px] border border-white/70 bg-[#fdf8f3] p-5 shadow-[0_24px_80px_rgba(38,38,38,0.22)]")}
-          >
-            <div className={cn("flex items-start justify-between gap-4")}>
-              <div>
-                <p className={cn("super-label text-[#ff4582]")}>Mensagem</p>
-                <h3 id="wish-dialog-title" className={cn("mt-1 text-3xl font-medium tracking-tight text-[#262626]")}>
-                  Deixar recado
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsFormOpen(false)}
-                className={cn("grid h-10 w-10 place-items-center rounded-full bg-white text-[#262626]/55 transition hover:text-[#ff4582]")}
-                aria-label="Fechar"
-              >
-                <X className={cn("h-4 w-4")} />
-              </button>
-            </div>
-
-            <div className={cn("mt-5 grid gap-4")}>
-              <input
-                value={name}
-                onChange={(event) => {
-                  setFormError("");
-                  setName(event.target.value);
-                }}
-                placeholder="Seu nome"
-                className={cn("rounded-full border border-[#262626]/10 bg-white px-5 py-4 text-base outline-none transition focus:border-[#ff4582]")}
-              />
-              <textarea
-                value={message}
-                onChange={(event) => {
-                  setFormError("");
-                  setMessage(event.target.value);
-                }}
-                placeholder="Escreva sua mensagem"
-                rows={4}
-                className={cn("rounded-3xl border border-[#262626]/10 bg-white px-5 py-4 text-base outline-none transition focus:border-[#ff4582]")}
-              />
-              {shouldUseCheckbox ? (
-                <div className={cn("overflow-hidden rounded-2xl")}>
-                  <div ref={recaptchaRef} />
+            <form
+              onSubmit={submit}
+              className={cn(
+                "max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/70 bg-[#fdf8f3] p-5 shadow-[0_24px_80px_rgba(38,38,38,0.22)]",
+              )}
+            >
+              <div className={cn("flex items-start justify-between gap-4")}>
+                <div>
+                  <p className={cn("super-label text-[#ff4582]")}>Mensagem</p>
+                  <h3
+                    id="wish-dialog-title"
+                    className={cn(
+                      "mt-1 text-3xl font-medium tracking-tight text-[#262626]",
+                    )}
+                  >
+                    Deixar recado
+                  </h3>
                 </div>
-              ) : null}
-              {shouldUseEnterprise ? (
-                <p className={cn("text-center text-xs leading-relaxed text-[#262626]/45")}>
-                  Protegido por reCAPTCHA.
-                </p>
-              ) : null}
-              {formError ? (
-                <p className={cn("rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
-                  {formError}
-                </p>
-              ) : null}
-              <button
-                type="submit"
-                disabled={mutation.isPending || (shouldUseCheckbox && !recaptchaToken)}
-                className={cn("flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 text-sm font-medium uppercase tracking-[0.16em] text-white transition hover:bg-[#ff4582] disabled:opacity-60")}
+                <button
+                  type="button"
+                  onClick={() => setIsFormOpen(false)}
+                  className={cn(
+                    "grid h-10 w-10 place-items-center rounded-full bg-white text-[#262626]/55 transition hover:text-[#ff4582]",
+                  )}
+                  aria-label="Fechar"
+                >
+                  <X className={cn("h-4 w-4")} />
+                </button>
+              </div>
+
+              <div className={cn("mt-5 grid gap-4")}>
+                <input
+                  value={name}
+                  onChange={(event) => {
+                    setFormError("");
+                    setName(event.target.value);
+                  }}
+                  placeholder="Seu nome"
+                  className={cn(
+                    "rounded-full border border-[#262626]/10 bg-white px-5 py-4 text-base outline-none transition focus:border-[#ff4582]",
+                  )}
+                />
+                <textarea
+                  value={message}
+                  onChange={(event) => {
+                    setFormError("");
+                    setMessage(event.target.value);
+                  }}
+                  placeholder="Escreva sua mensagem"
+                  rows={4}
+                  className={cn(
+                    "rounded-3xl border border-[#262626]/10 bg-white px-5 py-4 text-base outline-none transition focus:border-[#ff4582]",
+                  )}
+                />
+                {shouldUseCheckbox ? (
+                  <div
+                    className={cn("min-h-[78px] overflow-hidden rounded-2xl")}
+                  >
+                    <div ref={recaptchaRef} />
+                  </div>
+                ) : null}
+                {shouldUseEnterprise ? (
+                  <p
+                    className={cn(
+                      "text-center text-xs leading-relaxed text-[#262626]/45",
+                    )}
+                  >
+                    Protegido por reCAPTCHA.
+                  </p>
+                ) : null}
+                {formError ? (
+                  <p
+                    className={cn(
+                      "rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]",
+                    )}
+                  >
+                    {formError}
+                  </p>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={
+                    mutation.isPending || (shouldUseCheckbox && !recaptchaToken)
+                  }
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 text-sm font-medium uppercase tracking-[0.16em] text-white transition hover:bg-[#ff4582] disabled:opacity-60",
+                  )}
+                >
+                  <Send className={cn("h-4 w-4")} />
+                  {mutation.isPending ? "Enviando..." : "Enviar recado"}
+                </button>
+              </div>
+            </form>
+          </div>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <>
+      <section
+        id="wishes"
+        className={cn("relative overflow-hidden bg-[#fdf8f3]")}
+      >
+        <img
+          src="/images/flowers.png"
+          alt=""
+          className={cn(
+            "pointer-events-none absolute -right-24 top-6 w-56 rotate-12 opacity-35",
+          )}
+        />
+        <img
+          src="/images/flowers.png"
+          alt=""
+          className={cn(
+            "pointer-events-none absolute -left-28 bottom-10 w-52 -rotate-12 opacity-25",
+          )}
+        />
+        <div className={cn("mx-auto px-5 py-20")}>
+          <div className={cn("space-y-5")}>
+            <p className={cn("super-label")}>Mensagens</p>
+            <h2 className={cn("super-heading text-6xl")}>Deixe sua mensagem</h2>
+            <p className={cn("super-copy max-w-sm text-[1.125rem]")}>
+              Escreva algumas palavras para nos. Vamos guardar cada recado como
+              uma lembranca deste dia.
+            </p>
+          </div>
+
+          <div className={cn("mt-10 grid gap-4")}>
+            {wishes.length === 0 ? (
+              <div
+                className={cn(
+                  "rounded-[24px] border border-[#262626]/10 bg-[#f5f0eb] p-7 text-center",
+                )}
               >
-                <Send className={cn("h-4 w-4")} />
-                {mutation.isPending ? "Enviando..." : "Enviar recado"}
-              </button>
-            </div>
-          </form>
+                <MessageCircle
+                  className={cn("mx-auto h-10 w-10 text-[#ff4582]")}
+                />
+                <p className={cn("mt-4 text-lg font-normal text-[#262626]/70")}>
+                  As mensagens aparecerão aqui.
+                </p>
+              </div>
+            ) : (
+              wishes.slice(0, 8).map((wish) => (
+                <article
+                  key={wish.id}
+                  className={cn(
+                    "rounded-[24px] border border-[#262626]/10 bg-[#f5f0eb] p-5",
+                  )}
+                >
+                  <p className={cn("text-lg font-medium text-[#262626]")}>
+                    {wish.name}
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-2 text-base leading-relaxed text-[#262626]/65",
+                    )}
+                  >
+                    {wish.message}
+                  </p>
+                </article>
+              ))
+            )}
+          </div>
+
+          <div className={cn("mt-8 flex justify-center")}>
+            <button
+              type="button"
+              onClick={() => {
+                setFormError("");
+                setIsFormOpen(true);
+              }}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border border-[#262626]/10 bg-white/55 px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#262626]/70 backdrop-blur transition hover:border-[#ff4582]/40 hover:text-[#ff4582]",
+              )}
+            >
+              <MessageCircle className={cn("h-4 w-4")} />
+              Enviar recado
+            </button>
+          </div>
         </div>
-      )}
-    </section>
+      </section>
+      {wishDialog}
+    </>
   );
 }

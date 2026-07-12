@@ -49,16 +49,13 @@ textarea {
 }
 
 .super-image {
-  filter: grayscale(100%);
+  filter: none;
   transform: scale(1);
-  transition:
-    filter 1s var(--super-ease),
-    transform 1s var(--super-ease);
+  transition: transform 1s var(--super-ease);
 }
 
 .group:hover .super-image,
 .super-image:hover {
-  filter: grayscale(0%);
   transform: scale(1.08);
 }
 

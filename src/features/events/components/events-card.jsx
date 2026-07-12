@@ -94,7 +94,9 @@ SUMMARY:${eventData.title}
 LOCATION:${eventData.location}
 END:VEVENT
 END:VCALENDAR`;
-    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const blob = new Blob([icsContent], {
+      type: "text/calendar;charset=utf-8",
+    });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `${eventData.title.toLowerCase().replace(/ /g, "-")}.ics`;
@@ -119,7 +121,7 @@ END:VCALENDAR`;
             <p className={cn("super-label text-[#262626]/50")}>Evento</p>
             <h3
               className={cn(
-                "mt-2 text-3xl font-medium uppercase leading-none tracking-tight text-[#262626]",
+                "mt-2 text-3xl font-bold uppercase leading-none tracking-tight text-[#262626]",
               )}
             >
               {eventData.title}
@@ -137,27 +139,50 @@ END:VCALENDAR`;
           </button>
         </div>
 
-        <div className={cn("mt-7 grid gap-3 text-lg font-semibold text-[#262626]/75")}>
+        <div
+          className={cn(
+            "mt-7 grid gap-3 text-lg font-semibold text-[#262626]/75",
+          )}
+        >
           <p className={cn("flex items-center gap-3")}>
-            <Calendar className={cn("h-6 w-6 text-[#ff4582] group-hover:text-[#262626]")} />
+            <Calendar
+              className={cn(
+                "h-6 w-6 text-[#ff4582] group-hover:text-[#262626]",
+              )}
+            />
             {formatEventDate(eventData.date)}
           </p>
           <p className={cn("flex items-center gap-3")}>
-            <Clock className={cn("h-6 w-6 text-[#ff4582] group-hover:text-[#262626]")} />
+            <Clock
+              className={cn(
+                "h-6 w-6 text-[#ff4582] group-hover:text-[#262626]",
+              )}
+            />
             {eventData.startTime?.substring(0, 5)} -{" "}
             {eventData.endTime?.substring(0, 5)}
           </p>
           <p className={cn("flex items-center gap-3")}>
-            <MapPin className={cn("h-6 w-6 text-[#ff4582] group-hover:text-[#262626]")} />
+            <MapPin
+              className={cn(
+                "h-6 w-6 text-[#ff4582] group-hover:text-[#262626]",
+              )}
+            />
             {eventData.location}
           </p>
         </div>
       </motion.article>
 
-      <Modal isOpen={showCalendarModal} onClose={() => setShowCalendarModal(false)}>
+      <Modal
+        isOpen={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+      >
         <div className={cn("space-y-6")}>
           <div className={cn("flex items-center justify-between gap-4")}>
-            <h3 className={cn("text-2xl font-medium uppercase tracking-tight text-[#262626]")}>
+            <h3
+              className={cn(
+                "text-2xl font-medium uppercase tracking-tight text-[#262626]",
+              )}
+            >
               Adicionar ao calendario
             </h3>
             <button
@@ -170,9 +195,21 @@ END:VCALENDAR`;
             </button>
           </div>
           <div className={cn("space-y-3")}>
-            <CalendarButton icon={Chrome} label="Google Calendar" onClick={() => window.open(googleCalendarLink(), "_blank")} />
-            <CalendarButton icon={Apple} label="Apple Calendar" onClick={downloadICSFile} />
-            <CalendarButton icon={CalendarIcon} label="Outlook Calendar" onClick={downloadICSFile} />
+            <CalendarButton
+              icon={Chrome}
+              label="Google Calendar"
+              onClick={() => window.open(googleCalendarLink(), "_blank")}
+            />
+            <CalendarButton
+              icon={Apple}
+              label="Apple Calendar"
+              onClick={downloadICSFile}
+            />
+            <CalendarButton
+              icon={CalendarIcon}
+              label="Outlook Calendar"
+              onClick={downloadICSFile}
+            />
           </div>
         </div>
       </Modal>
@@ -182,7 +219,11 @@ END:VCALENDAR`;
 
 export default function EventCards({ events }) {
   return (
-    <div className={cn("overflow-hidden rounded-[24px] border border-[#262626]/10")}>
+    <div
+      className={cn(
+        "overflow-hidden rounded-[24px] border border-[#262626]/10",
+      )}
+    >
       {events.map((event, index) => (
         <SingleEventCard key={index} eventData={event} />
       ))}

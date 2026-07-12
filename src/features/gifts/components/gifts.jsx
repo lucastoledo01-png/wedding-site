@@ -18,7 +18,9 @@ export default function Gifts() {
       <img
         src="/images/flowers.png"
         alt=""
-        className={cn("pointer-events-none absolute -right-24 top-20 w-56 rotate-12 opacity-30")}
+        className={cn(
+          "pointer-events-none absolute -right-24 top-20 w-56 rotate-12 opacity-30",
+        )}
       />
       <div className={cn("mx-auto px-5 py-20")}>
         <div className={cn("mb-12 space-y-5")}>
@@ -26,7 +28,7 @@ export default function Gifts() {
           <h2 className={cn("super-heading text-6xl")}>
             Um carinho para a nossa casa
           </h2>
-          <p className={cn("super-copy max-w-sm text-xl font-medium")}>
+          <p className={cn("super-copy max-w-sm text-[1.125rem] font-medium")}>
             Se quiser nos presentear, reunimos algumas ideias que vao fazer
             parte da nossa nova fase e da casa que estamos construindo juntos.
           </p>
@@ -74,7 +76,9 @@ export default function Gifts() {
                       loading="lazy"
                     />
                   ) : (
-                    <div className={cn("flex h-full items-center justify-center")}>
+                    <div
+                      className={cn("flex h-full items-center justify-center")}
+                    >
                       <Gift className={cn("h-16 w-16 text-[#ff4582]")} />
                     </div>
                   )}
@@ -108,10 +112,18 @@ export default function Gifts() {
 
               <div className={cn("mt-5")}>
                 <p className={cn("super-label")}>Presente</p>
-                <h3 className={cn("mt-2 text-3xl font-semibold leading-none tracking-tight text-[#262626]")}>
+                <h3
+                  className={cn(
+                    "mt-2 text-3xl font-semibold leading-none tracking-tight text-[#262626]",
+                  )}
+                >
                   {gift.name}
                 </h3>
-                <p className={cn("mt-3 flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#262626]/45")}>
+                <p
+                  className={cn(
+                    "mt-3 flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#262626]/45",
+                  )}
+                >
                   {gift.price || "Valor a consultar"}
                   {gift.url && (
                     <>
