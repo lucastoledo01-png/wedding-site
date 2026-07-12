@@ -47,8 +47,7 @@ const config = {
         // Event venue
         location: "Santuario Nossa Senhora da Medalha Milagrosa",
         // Full address
-        address:
-          "Rua Padre Cornelio, 27 - Centro, Monte Siao - MG, 37580-000",
+        address: "Rua Padre Cornelio, 27 - Centro, Monte Siao - MG, 37580-000",
       },
       {
         // Second event name
@@ -68,9 +67,9 @@ const config = {
       // Music file (choose one or replace with your own file)
       src: "",
       soundcloudUrl:
-        "https://soundcloud.com/monique-de-melo-599696373/jorge-e-mateus-pra-sempre-com",
+        "https://soundcloud.com/creitu-silva-7/jorge-e-mateus-os-anjos-cantam-nosso-amor",
       // Music title to display
-      title: "Pra Sempre Com Voce",
+      title: "Os Anjos Cantam Nosso Amor",
       // Whether music plays automatically when website opens
       autoplay: true,
       // Whether music repeats continuously

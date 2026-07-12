@@ -4,6 +4,13 @@ import { cn } from "@/lib/utils";
 
 const WIDGET_API = "https://w.soundcloud.com/player/api.js";
 
+function isIOSDevice() {
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
 function loadSoundCloudApi() {
   if (window.SC?.Widget) {
     return Promise.resolve(window.SC);
@@ -15,7 +22,9 @@ function loadSoundCloudApi() {
     window.onSoundCloudWidgetReady = () => resolve(window.SC);
 
     if (existing) {
-      existing.addEventListener("load", () => resolve(window.SC), { once: true });
+      existing.addEventListener("load", () => resolve(window.SC), {
+        once: true,
+      });
       return;
     }
 
@@ -27,15 +36,20 @@ function loadSoundCloudApi() {
   });
 }
 
-export default function SoundCloudPlayer({ url, autoPlay = true, volume = 28 }) {
+export default function SoundCloudPlayer({
+  url,
+  autoPlay = true,
+  volume = 28,
+}) {
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const shouldAutoPlay = autoPlay && !isIOSDevice();
 
   const params = new URLSearchParams({
     url,
-    auto_play: autoPlay ? "true" : "false",
+    auto_play: shouldAutoPlay ? "true" : "false",
     buying: "false",
     liking: "false",
     download: "false",
@@ -61,7 +75,7 @@ export default function SoundCloudPlayer({ url, autoPlay = true, volume = 28 }) 
         if (cancelled) return;
         setIsReady(true);
         widget.setVolume(volume);
-        if (autoPlay) {
+        if (shouldAutoPlay) {
           widget.play();
         }
       });
@@ -74,7 +88,7 @@ export default function SoundCloudPlayer({ url, autoPlay = true, volume = 28 }) 
     return () => {
       cancelled = true;
     };
-  }, [autoPlay, url, volume]);
+  }, [shouldAutoPlay, url, volume]);
 
   const toggle = () => {
     if (!widgetRef.current || !isReady) return;
@@ -111,6 +125,7 @@ export default function SoundCloudPlayer({ url, autoPlay = true, volume = 28 }) 
         onClick={toggle}
         className={cn(
           "super-glass fixed right-4 top-4 z-50 rounded-full p-3 shadow-lg transition hover:scale-105 disabled:opacity-60",
+          !isPlaying && isReady && "animate-pulse",
         )}
         disabled={!isReady}
         aria-label={isPlaying ? "Pausar musica" : "Tocar musica"}

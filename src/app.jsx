@@ -15,7 +15,14 @@
  */
 
 // src/App.jsx
-import { useCallback, useEffect, useRef, useState, lazy, Suspense } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  lazy,
+  Suspense,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { useInvitation } from "@/features/invitation";
@@ -177,7 +184,7 @@ function WeddingApp() {
                   "font-serif text-xs text-gray-400 tracking-[6px] uppercase",
                 )}
               >
-                Preparing
+                Preparando ❤
               </motion.p>
               <motion.div
                 initial={{ width: 0 }}
@@ -205,7 +212,7 @@ function WeddingApp() {
                   "font-serif text-xs text-gray-400 tracking-[6px] uppercase",
                 )}
               >
-                Preparing
+                Preparando ❤
               </p>
               <div className={cn("h-px w-[44px] bg-rose-600 mx-auto mt-4")} />
             </div>
@@ -243,7 +250,10 @@ function WeddingApp() {
 }
 
 function App() {
-  if (window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/")) {
+  if (
+    window.location.pathname === "/admin" ||
+    window.location.pathname.startsWith("/admin/")
+  ) {
     return <AdminPanel />;
   }
 
