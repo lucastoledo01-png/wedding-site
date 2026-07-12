@@ -4,7 +4,7 @@ const config = {
     title: "Casamento Lucas & Andressa",
     // Opening message/description of the invitation
     description:
-      "Com alegria, convidamos voce para celebrar o nosso casamento.",
+      "Com alegria, convidamos você para celebrar o nosso casamento.",
     // Groom's name
     groomName: "Lucas",
     // Bride's name
@@ -37,7 +37,7 @@ const config = {
     agenda: [
       {
         // First event name
-        title: "Cerimonia",
+        title: "Cerimônia",
         // Event date (format: YYYY-MM-DD)
         date: "2026-11-14",
         // Start time (format: HH:MM)
@@ -45,13 +45,13 @@ const config = {
         // End time (format: HH:MM)
         endTime: "21:00",
         // Event venue
-        location: "Santuario Nossa Senhora da Medalha Milagrosa",
+        location: "Santuário Nossa Senhora da Medalha Milagrosa",
         // Full address
         address: "Rua Padre Cornelio, 27 - Centro, Monte Siao - MG, 37580-000",
       },
       {
         // Second event name
-        title: "Recepcao",
+        title: "Recepção",
         date: "2026-11-14",
         startTime: "21:30",
         endTime: "23:59",

@@ -28,5 +28,6 @@ export const formatEventDate = (isoString, format = "full") => {
     return date.toLocaleTimeString("pt-BR", options.time);
   }
 
-  return date.toLocaleDateString("pt-BR", options[format] || options.full);
+  const formatted = date.toLocaleDateString("pt-BR", options[format] || options.full);
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };

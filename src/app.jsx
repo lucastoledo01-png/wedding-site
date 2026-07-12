@@ -110,7 +110,7 @@ function WeddingApp() {
         <div className={cn("text-center max-w-md mx-auto p-6")}>
           <div className={cn("text-rose-500 text-6xl mb-4")}>!</div>
           <h1 className={cn("text-2xl font-serif text-gray-800 mb-2")}>
-            Convite nao encontrado
+            Convite não encontrado
           </h1>
           <p className={cn("text-gray-600 mb-4")}>{error}</p>
           <p className={cn("text-sm text-gray-500")}>

@@ -55,7 +55,7 @@ export default function Events() {
               className={cn("super-copy max-w-sm text-[1.125rem] font-medium")}
             >
               Queremos celebrar esse dia especial ao lado das pessoas que fazem
-              parte da nossa historia.
+              parte da nossa história.
             </motion.p>
           </motion.div>
 

@@ -99,7 +99,7 @@ export default function Wishes() {
       if (shouldUseEnterprise) {
         token = await new Promise((resolve, reject) => {
           if (!window.grecaptcha?.enterprise) {
-            reject(new Error("reCAPTCHA ainda nao carregou. Tente novamente."));
+            reject(new Error("reCAPTCHA ainda não carregou. Tente novamente."));
             return;
           }
 
@@ -139,7 +139,7 @@ export default function Wishes() {
       }
     },
     onError: (error) => {
-      setFormError(error.message || "Nao foi possivel enviar o recado agora.");
+      setFormError(error.message || "Não foi possível enviar o recado agora.");
       setRecaptchaToken("");
       if (window.grecaptcha && recaptchaWidgetRef.current !== null) {
         window.grecaptcha.reset(recaptchaWidgetRef.current);

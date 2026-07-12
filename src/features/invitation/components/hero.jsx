@@ -7,9 +7,10 @@ const heroSlides = [
   "/images/hero-slide-1.jpg",
   "/images/hero-slide-2.jpg",
   "/images/hero-slide-3.jpg",
-  "/images/hero-slide-4.jpg",
-  "/images/hero-slide-5.jpg",
   "/images/hero-slide-6.jpg",
+  "/images/hero-slide-7.jpg",
+  "/images/hero-slide-8.jpg",
+  "/images/hero-slide-9.jpg",
 ];
 
 export default function Hero() {
@@ -70,8 +71,8 @@ export default function Hero() {
               "super-copy mx-auto max-w-[330px] text-center text-[1.18rem] font-medium leading-[1.5]",
             )}
           >
-            Nossa historia foi construida entre encontros, escolhas e muitos
-            momentos que nos trouxeram ate aqui. Agora chegou a hora de celebrar
+            Nossa história foi construída entre encontros, escolhas e muitos
+            momentos que nos trouxeram até aqui. Agora chegou a hora de celebrar
             este ciclo ao lado de quem faz parte dele.
           </p>
         </motion.div>
@@ -148,6 +149,9 @@ export default function Hero() {
                 )}
               >
                 Save the Date
+              </span>
+              <span className={cn("mt-1 text-[10px] font-semibold tracking-[0.08em]")}>
+                14/11/26
               </span>
             </div>
           </div>

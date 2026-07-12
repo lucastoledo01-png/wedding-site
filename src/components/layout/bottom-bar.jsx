@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 import { DURATION, useReducedMotionFlag } from "@/lib/motion";
 
 const baseMenuItems = [
-  { icon: Home, label: "Inicio", href: "#home", id: "home" },
-  { icon: UserCheck, label: "Presenca", href: "#rsvp", id: "rsvp" },
+  { icon: Home, label: "Início", href: "#home", id: "home" },
+  { icon: UserCheck, label: "Presença", href: "#rsvp", id: "rsvp" },
   { icon: MapPin, label: "Local", href: "#location", id: "location" },
   {
     icon: Gift,

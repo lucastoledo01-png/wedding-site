@@ -33,6 +33,14 @@ textarea {
   line-height: 0.9;
 }
 
+.super-heading.text-5xl {
+  font-size: 2.4rem;
+}
+
+.super-heading.text-6xl {
+  font-size: 3rem;
+}
+
 .wedding-script-title {
   font-family: "Allura", cursive;
   font-weight: 400;

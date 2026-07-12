@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 const DEFAULT_UID = import.meta.env.VITE_INVITATION_UID || "lucas-andressa";
 
 const ADMIN_PAGES = [
-  { id: "presencas", label: "Presencas", icon: Users },
+  { id: "presencas", label: "Presenças", icon: Users },
   { id: "presentes", label: "Presentes", icon: Gift },
-  { id: "comentarios", label: "Comentarios", icon: MessageCircleHeart },
+  { id: "comentarios", label: "Comentários", icon: MessageCircleHeart },
 ];
 const SESSION_STORAGE_KEY = "wedding_admin_session";
 
@@ -66,6 +66,7 @@ export default function AdminPanel() {
     password: "",
     code: "",
   });
+  const [loginStep, setLoginStep] = useState("credentials");
   const [setup, setSetup] = useState(null);
   const [setupCode, setSetupCode] = useState("");
   const uid = DEFAULT_UID;
@@ -113,9 +114,16 @@ export default function AdminPanel() {
         return;
       }
 
+      if (nextSession.requires2fa) {
+        setLoginStep("twoFactor");
+        setLoginForm((current) => ({ ...current, code: "" }));
+        return;
+      }
+
       setSession(nextSession);
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextSession));
       setLoginForm({ username: "", password: "", code: "" });
+      setLoginStep("credentials");
     },
   });
 
@@ -130,6 +138,7 @@ export default function AdminPanel() {
       setSession(nextSession);
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextSession));
       setLoginForm({ username: "", password: "", code: "" });
+      setLoginStep("credentials");
       setSetup(null);
       setSetupCode("");
     },
@@ -253,77 +262,129 @@ export default function AdminPanel() {
 
           {!setup ? (
             <>
-              <p className={cn("mt-2 text-sm leading-relaxed text-black/50")}>
-                Use seu usuario e senha. Se for seu primeiro acesso, vamos ativar
-                o app autenticador antes de abrir o painel.
-              </p>
-
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  loginMutation.mutate();
-                }}
-                className={cn("mt-5 grid gap-3")}
-              >
-                <input
-                  value={loginForm.username}
-                  onChange={(event) =>
-                    setLoginForm((current) => ({ ...current, username: event.target.value }))
-                  }
-                  className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
-                  placeholder="Usuario"
-                  autoComplete="username"
-                />
-                <input
-                  value={loginForm.password}
-                  onChange={(event) =>
-                    setLoginForm((current) => ({ ...current, password: event.target.value }))
-                  }
-                  className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
-                  placeholder="Senha"
-                  type="password"
-                  autoComplete="current-password"
-                />
-                <input
-                  value={loginForm.code}
-                  onChange={(event) =>
-                    setLoginForm((current) => ({
-                      ...current,
-                      code: event.target.value.replace(/\D/g, "").slice(0, 6),
-                    }))
-                  }
-                  className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
-                  placeholder="Codigo 2FA, se ja ativou"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                />
-                {loginMutation.isError ? (
-                  <p className={cn("rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
-                    {loginMutation.error.message}
+              {loginStep === "credentials" ? (
+                <>
+                  <p className={cn("mt-2 text-sm leading-relaxed text-black/50")}>
+                    Use seu usuário e senha. Se for seu primeiro acesso, vamos
+                    ativar o app autenticador antes de abrir o painel.
                   </p>
-                ) : null}
-                <button
-                  type="submit"
-                  disabled={
-                    loginMutation.isPending ||
-                    !loginForm.username.trim() ||
-                    !loginForm.password
-                  }
-                  className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50")}
-                >
-                  {loginMutation.isPending ? (
-                    <Loader2 className={cn("h-4 w-4 animate-spin")} />
-                  ) : null}
-                  Continuar
-                </button>
-              </form>
+
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      loginMutation.mutate();
+                    }}
+                    className={cn("mt-5 grid gap-3")}
+                  >
+                    <input
+                      value={loginForm.username}
+                      onChange={(event) =>
+                        setLoginForm((current) => ({
+                          ...current,
+                          username: event.target.value,
+                        }))
+                      }
+                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                      placeholder="Usuário"
+                      autoComplete="username"
+                    />
+                    <input
+                      value={loginForm.password}
+                      onChange={(event) =>
+                        setLoginForm((current) => ({
+                          ...current,
+                          password: event.target.value,
+                        }))
+                      }
+                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                      placeholder="Senha"
+                      type="password"
+                      autoComplete="current-password"
+                    />
+                    {loginMutation.isError ? (
+                      <p className={cn("rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                        {loginMutation.error.message}
+                      </p>
+                    ) : null}
+                    <button
+                      type="submit"
+                      disabled={
+                        loginMutation.isPending ||
+                        !loginForm.username.trim() ||
+                        !loginForm.password
+                      }
+                      className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50")}
+                    >
+                      {loginMutation.isPending ? (
+                        <Loader2 className={cn("h-4 w-4 animate-spin")} />
+                      ) : null}
+                      Continuar
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <p className={cn("mt-2 text-sm leading-relaxed text-black/50")}>
+                    Agora informe o código de 6 dígitos do seu app autenticador.
+                  </p>
+
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      loginMutation.mutate();
+                    }}
+                    className={cn("mt-5 grid gap-3")}
+                  >
+                    <input
+                      value={loginForm.code}
+                      onChange={(event) =>
+                        setLoginForm((current) => ({
+                          ...current,
+                          code: event.target.value.replace(/\D/g, "").slice(0, 6),
+                        }))
+                      }
+                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                      placeholder="Código 2FA"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      autoFocus
+                    />
+                    {loginMutation.isError ? (
+                      <p className={cn("rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                        {loginMutation.error.message}
+                      </p>
+                    ) : null}
+                    <button
+                      type="submit"
+                      disabled={loginMutation.isPending || loginForm.code.length !== 6}
+                      className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50")}
+                    >
+                      {loginMutation.isPending ? (
+                        <Loader2 className={cn("h-4 w-4 animate-spin")} />
+                      ) : null}
+                      Entrar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginStep("credentials");
+                        setLoginForm((current) => ({ ...current, code: "" }));
+                        loginMutation.reset();
+                      }}
+                      className={cn("rounded-full px-5 py-3 text-sm font-semibold text-black/45 transition hover:text-[#ff4582]")}
+                    >
+                      Voltar
+                    </button>
+                  </form>
+                </>
+              )}
             </>
           ) : (
             <>
               <p className={cn("mt-2 text-sm leading-relaxed text-black/50")}>
-                Primeiro acesso detectado. Adicione este codigo no Google
+                Primeiro acesso detectado. Adicione este código no Google
                 Authenticator, 1Password, Authy ou iCloud Passwords e informe o
-                codigo de 6 digitos gerado.
+                código de 6 dígitos gerado.
               </p>
               <div className={cn("mt-5 rounded-3xl border border-dashed border-[#ff4582]/35 bg-[#ff4582]/5 p-4")}>
                 <p className={cn("text-[10px] font-black uppercase tracking-[0.28em] text-[#ff4582]")}>
@@ -353,7 +414,7 @@ export default function AdminPanel() {
                     setSetupCode(event.target.value.replace(/\D/g, "").slice(0, 6))
                   }
                   className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
-                  placeholder="Codigo 2FA"
+                  placeholder="Código 2FA"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                 />
@@ -446,7 +507,7 @@ export default function AdminPanel() {
                   ["Convidados", stats.total],
                   ["Confirmados", stats.attending],
                   ["Pessoas", stats.people],
-                  ["Nao vao", stats.notAttending],
+                  ["Não vão", stats.notAttending],
                   ["Pendentes", stats.pending],
                 ].map(([label, value]) => (
                   <div key={label} className={cn("rounded-2xl border border-black/5 bg-white p-5 shadow-sm")}>
@@ -574,7 +635,7 @@ export default function AdminPanel() {
                   ) : null}
                 </div>
                 <input value={giftForm.imageUrl} onChange={(event) => setGiftForm({ ...giftForm, imageUrl: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="URL da foto, opcional" />
-                <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preco, opcional" />
+                <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preço, opcional" />
                 <button
                   type="button"
                   onClick={() => saveGift.mutate()}
@@ -629,10 +690,10 @@ export default function AdminPanel() {
           <section className={cn("mt-8 rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
             <div className={cn("flex items-center gap-2")}>
               <MessageCircleHeart className={cn("h-5 w-5 text-[#ff4582]")} />
-              <h2 className={cn("text-xl font-semibold")}>Comentarios publicados</h2>
+              <h2 className={cn("text-xl font-semibold")}>Comentários publicados</h2>
             </div>
             <p className={cn("mt-2 max-w-2xl text-sm text-black/55")}>
-              As mensagens entram automaticamente no site. Use esta pagina quando precisar remover algo do mural.
+              As mensagens entram automaticamente no site. Use esta página quando precisar remover algo do mural.
             </p>
 
             <div className={cn("mt-5 grid gap-3")}>

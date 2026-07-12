@@ -60,7 +60,7 @@ rsvpRoutes.post("/confirm", async (c) => {
     return c.json(
       {
         success: false,
-        error: "Nao encontramos esse nome na lista de convidados.",
+        error: "Não encontramos esse nome na lista de convidados.",
         suggestions: suggestions.map((guest) => guest.full_name),
       },
       404,

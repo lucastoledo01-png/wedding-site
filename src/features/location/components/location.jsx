@@ -11,6 +11,7 @@ const venues = [
     name: "Santuário Nossa Senhora da Medalha Milagrosa",
     address: "Rua Padre Cornélio, 27 - Centro, Monte Sião - MG, 37580-000",
     time: "20h",
+    showTime: true,
     image: "/images/igreja-medalha-milagrosa.webp",
     query:
       "Santuário Nossa Senhora da Medalha Milagrosa HC9H+3X Monte Sião Minas Gerais",
@@ -21,6 +22,7 @@ const venues = [
     address:
       "Bairro Por do Sol - R. Maria R. C. Silva, 3850 - Por do Sol, Monte Sião - MG, 37580-000",
     time: "21:30h",
+    showTime: false,
     image: "/images/restaurante-farol.jpg",
     query: "Restaurante Farol HCCW+76 Monte Sião Minas Gerais",
   },
@@ -85,10 +87,12 @@ function VenueCard({ venue, date }) {
             <CalendarCheck className={cn("h-5 w-5 text-[#ff4582]")} />
             <span>{formatEventDate(date)}</span>
           </p>
-          <p className={cn("flex items-center gap-3")}>
-            <Clock className={cn("h-5 w-5 text-[#ff4582]")} />
-            <span>{venue.time}</span>
-          </p>
+          {venue.showTime ? (
+            <p className={cn("flex items-center gap-3")}>
+              <Clock className={cn("h-5 w-5 text-[#ff4582]")} />
+              <span>{venue.time}</span>
+            </p>
+          ) : null}
         </div>
 
         <div

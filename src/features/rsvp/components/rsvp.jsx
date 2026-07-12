@@ -141,7 +141,7 @@ export default function Rsvp() {
       />
       <div className={cn("relative z-10 mx-auto px-5 py-20")}>
         <div className={cn("space-y-5")}>
-          <p className={cn("super-label")}>RSVP</p>
+          <p className={cn("super-label")}>Confirmação</p>
           <h2 className={cn("super-heading text-5xl")}>
             Confirmação de Presença
           </h2>
@@ -161,7 +161,12 @@ export default function Rsvp() {
               "grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]",
             )}
           >
-            Nome Completo (Presente no Convite)
+            <span>
+              Digite abaixo o nome completo{" "}
+              <em className={cn("font-light normal-case tracking-normal text-[#262626]/55")}>
+                (conforme está no convite)
+              </em>
+            </span>
             <div className={cn("relative")}>
               <Search
                 className={cn(

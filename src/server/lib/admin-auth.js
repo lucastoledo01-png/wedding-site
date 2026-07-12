@@ -172,7 +172,7 @@ export async function authenticateAdmin(c, credentials) {
     return {
       success: false,
       status: 401,
-      error: "Usuario ou senha invalidos.",
+      error: "Usuário ou senha inválidos.",
     };
   }
 
@@ -194,11 +194,19 @@ export async function authenticateAdmin(c, credentials) {
     };
   }
 
+  if (!credentials.code) {
+    return {
+      success: true,
+      requires2fa: true,
+      username: user.username,
+    };
+  }
+
   if (!verifyTotp(user.totpSecret, credentials.code)) {
     return {
       success: false,
       status: 401,
-      error: "Codigo 2FA invalido.",
+      error: "Código 2FA inválido.",
     };
   }
 
@@ -220,7 +228,7 @@ export async function activateAdminTwoFactor(c, payload) {
     return {
       success: false,
       status: 401,
-      error: "Codigo 2FA invalido.",
+      error: "Código 2FA inválido.",
     };
   }
 
@@ -231,7 +239,7 @@ export async function activateAdminTwoFactor(c, payload) {
     return {
       success: false,
       status: 404,
-      error: "Usuario nao encontrado.",
+      error: "Usuário não encontrado.",
     };
   }
 
