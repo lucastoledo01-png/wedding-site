@@ -7,15 +7,43 @@ import { formatEventDate } from "@/lib/format-event-date";
 import { getGuestName } from "@/lib/invitation-storage";
 import { useMotionPreset, staggerContainer } from "@/lib/motion";
 
+const heroSlides = [
+  "/images/hero-slide-1.jpg",
+  "/images/hero-slide-2.jpg",
+  "/images/hero-slide-3.jpg",
+  "/images/hero-slide-4.jpg",
+  "/images/hero-slide-5.jpg",
+  "/images/hero-slide-6.jpg",
+];
+
 export default function Hero() {
   const config = useConfig();
   const [guestName, setGuestName] = useState("");
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
   const fadeUp = useMotionPreset("fadeUp");
 
   useEffect(() => {
     const storedGuestName = getGuestName();
     if (storedGuestName) setGuestName(storedGuestName);
   }, []);
+
+  const showNextSlide = () => {
+    setActiveSlide((current) => (current + 1) % heroSlides.length);
+  };
+
+  const showPreviousSlide = () => {
+    setActiveSlide(
+      (current) => (current - 1 + heroSlides.length) % heroSlides.length,
+    );
+  };
+
+  const getSlideOffset = (index) => {
+    const rawOffset = index - activeSlide;
+    if (rawOffset > heroSlides.length / 2) return rawOffset - heroSlides.length;
+    if (rawOffset < -heroSlides.length / 2) return rawOffset + heroSlides.length;
+    return rawOffset;
+  };
 
   return (
     <section
@@ -24,13 +52,6 @@ export default function Hero() {
         "relative min-h-screen w-full overflow-hidden bg-[#fdf8f3] px-5 py-14",
       )}
     >
-      <img
-        src="/images/flowers.png"
-        alt=""
-        className={cn(
-          "pointer-events-none absolute -right-20 top-0 w-44 rotate-12 opacity-28",
-        )}
-      />
       <motion.div
         variants={staggerContainer(0.16)}
         initial="hidden"
@@ -39,21 +60,21 @@ export default function Hero() {
           "relative z-10 mx-auto grid min-h-[calc(100vh-7rem)] w-full max-w-sm content-center gap-8 overflow-hidden",
         )}
       >
-        <motion.div variants={fadeUp} className={cn("w-full space-y-5")}>
-          <p className={cn("super-label")}>Convite oficial</p>
-          <h1
+        <motion.div
+          variants={fadeUp}
+          className={cn("w-full space-y-5 text-center")}
+        >
+          <p className={cn("super-label text-center")}>Convite oficial</p>
+          <img
+            src="/images/hero-logo.png"
+            alt="Lucas & Andressa"
             className={cn(
-              "wedding-script-title max-w-full text-[4.35rem] text-[#262626]",
+              "mx-auto block w-full max-w-[310px] object-contain",
             )}
-          >
-            <span className={cn("block whitespace-nowrap")}>
-              Lucas <span className={cn("text-[#ff4582]")}>&</span>
-            </span>
-            <span className={cn("block")}>Andressa</span>
-          </h1>
+          />
           <p
             className={cn(
-              "super-copy max-w-full text-[1.18rem] font-medium leading-[1.5]",
+              "super-copy mx-auto max-w-[330px] text-center text-[1.18rem] font-medium leading-[1.5]",
             )}
           >
             Nossa historia foi construida entre encontros, escolhas e muitos
@@ -62,22 +83,72 @@ export default function Hero() {
           </p>
         </motion.div>
 
-        <motion.div variants={fadeUp} className={cn("group relative w-full")}>
+        <motion.div variants={fadeUp} className={cn("relative w-full")}>
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Avancar foto"
+            onClick={showNextSlide}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                showNextSlide();
+              }
+              if (event.key === "ArrowLeft") showPreviousSlide();
+              if (event.key === "ArrowRight") showNextSlide();
+            }}
+            onTouchStart={(event) => {
+              setTouchStart(event.touches[0]?.clientX ?? null);
+            }}
+            onTouchEnd={(event) => {
+              if (touchStart === null) return;
+              const endX = event.changedTouches[0]?.clientX ?? touchStart;
+              const delta = endX - touchStart;
+              if (Math.abs(delta) > 36) {
+                if (delta < 0) showNextSlide();
+                else showPreviousSlide();
+              } else {
+                showNextSlide();
+              }
+              setTouchStart(null);
+            }}
             className={cn(
-              "relative w-full overflow-hidden rounded-[24px] bg-[#f5f0eb] shadow-[0_24px_70px_rgba(38,38,38,0.16)]",
+              "relative left-1/2 aspect-[3/4] w-[112%] -translate-x-1/2 cursor-pointer overflow-hidden outline-none",
             )}
           >
-            <img
-              src="/images/lucas-andressa-background.png"
-              alt="Lucas e Andressa"
-              className={cn(
-                "super-image block aspect-[3/4] w-full max-w-full object-cover object-center",
-              )}
-            />
+            {heroSlides.map((slide, index) => {
+              const offset = getSlideOffset(index);
+              const isVisible = Math.abs(offset) <= 1;
+
+              return (
+                <div
+                  key={slide}
+                  className={cn(
+                    "absolute left-1/2 top-0 h-full w-[82%] rounded-[24px] bg-[#f5f0eb] shadow-[0_24px_70px_rgba(38,38,38,0.16)] transition-all duration-700",
+                    isVisible ? "opacity-100" : "pointer-events-none opacity-0",
+                    offset === 0 && "z-20 scale-100",
+                    offset !== 0 && "z-10 scale-[0.92]",
+                  )}
+                  style={{
+                    transform: `translateX(calc(-50% + ${offset * 88}%)) scale(${offset === 0 ? 1 : 0.92})`,
+                    transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+                  }}
+                  aria-hidden={offset !== 0}
+                >
+                  <img
+                    src={slide}
+                    alt={`Lucas e Andressa ${index + 1}`}
+                    className={cn(
+                      "block h-full w-full rounded-[24px] object-cover object-center",
+                    )}
+                    loading={index === 0 ? "eager" : "lazy"}
+                  />
+                </div>
+              );
+            })}
             <div
               className={cn(
-                "super-badge absolute right-3 top-3 flex h-24 w-24 flex-col items-center justify-center rounded-full bg-[#ff4582] text-[#262626] shadow-[0_18px_48px_rgba(255,69,130,0.45)]",
+                "super-badge absolute right-8 top-3 z-30 flex h-24 w-24 flex-col items-center justify-center rounded-full bg-[#ff4582] text-[#262626] shadow-[0_18px_48px_rgba(255,69,130,0.45)]",
               )}
             >
               <span className={cn("text-[0.92rem] font-semibold italic")}>
@@ -91,9 +162,27 @@ export default function Hero() {
                   "mt-1 text-[7px] font-medium uppercase tracking-[0.22em]",
                 )}
               >
-                Save date
+                Save the date
               </span>
             </div>
+          </div>
+          <div
+            className={cn(
+              "mt-4 flex items-center justify-center gap-1.5",
+            )}
+            aria-hidden="true"
+          >
+            {heroSlides.map((slide, index) => (
+              <span
+                key={`${slide}-dot`}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-500",
+                  index === activeSlide
+                    ? "w-6 bg-[#ff4582]"
+                    : "w-1.5 bg-[#262626]/18",
+                )}
+              />
+            ))}
           </div>
         </motion.div>
 
