@@ -40,9 +40,9 @@ export function InvitationProvider({ children }) {
     // Extract UID from URL first (to check if it's different)
     let uidFromUrl = null;
 
-    // 1. Try to get UID from URL path (e.g., /rifqi-dina-2025)
+    // 1. Try to get UID from URL path (e.g., /lucas-andressa)
     const pathSegments = location.pathname.split("/").filter(Boolean);
-    if (pathSegments.length > 0) {
+    if (pathSegments.length > 0 && pathSegments[0] !== "admin") {
       uidFromUrl = pathSegments[0];
     }
 
@@ -74,18 +74,14 @@ export function InvitationProvider({ children }) {
     }
 
     // 3. Fallback to environment variable
-    const uidFromEnv = import.meta.env.VITE_INVITATION_UID;
+    const uidFromEnv = import.meta.env.VITE_INVITATION_UID || "lucas-andressa";
 
     if (uidFromEnv) {
       storeWeddingUid(uidFromEnv);
       return uidFromEnv;
     }
 
-    // If no UID is provided, log a warning
-    console.warn(
-      "No invitation UID found. Please provide /your-uid in the URL or set VITE_INVITATION_UID in .env",
-    );
-    return null;
+    return uidFromEnv;
   }, [location.pathname, location.search]);
 
   // Extract and store guest name from URL, then clean URL
@@ -112,7 +108,10 @@ export function InvitationProvider({ children }) {
     }
 
     // Clean URL if we have UID in path or guest in query params
-    const hasUidInPath = location.pathname !== "/" && location.pathname !== "";
+    const hasUidInPath =
+      location.pathname !== "/" &&
+      location.pathname !== "" &&
+      !location.pathname.startsWith("/admin");
     const hasGuestParam = urlParams.has("guest");
     const hasUidParam = urlParams.has("uid");
 

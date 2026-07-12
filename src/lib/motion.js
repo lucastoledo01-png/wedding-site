@@ -20,8 +20,8 @@ import { useReducedMotion } from "framer-motion";
 /** Named duration tiers (seconds). */
 export const DURATION = {
   fast: 0.2,
-  base: 0.5,
-  slow: 0.8,
+  base: 1,
+  slow: 1,
 };
 
 /** Decorative loop speeds (seconds) for ambient, infinite animations. */
@@ -33,8 +33,8 @@ export const LOOP = {
 
 /** Standardized easing curves. */
 export const EASE = {
-  out: "easeOut",
-  inOut: "easeInOut",
+  out: [0.16, 1, 0.3, 1],
+  inOut: [0.16, 1, 0.3, 1],
 };
 
 /** Default translation distance (px) for "fade up into place" reveals. */

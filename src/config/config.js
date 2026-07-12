@@ -1,32 +1,34 @@
 const config = {
   data: {
     // Main invitation title that appears on the page
-    title: "Pernikahan Fulan & Fulana",
+    title: "Casamento Lucas & Andressa",
     // Opening message/description of the invitation
     description:
-      "Kami akan menikah dan mengundang Anda untuk turut merayakan momen istimewa ini.", // Nanti ini dibikin random
+      "Com alegria, convidamos voce para celebrar o nosso casamento.",
     // Groom's name
-    groomName: "Fulan",
+    groomName: "Lucas",
     // Bride's name
-    brideName: "Fulana",
+    brideName: "Andressa",
     // Groom's parents names
-    parentGroom: "Bapak Groom & Ibu Groom",
+    parentGroom: "Familia do Lucas",
     // Bride's parents names
-    parentBride: "Bapak Bride & Ibu Bride",
+    parentBride: "Familia da Andressa",
     // Wedding date (format: YYYY-MM-DD)
-    date: "2024-12-24",
+    date: "2026-11-14",
     // Google Maps link for location (short clickable link)
-    maps_url: "https://goo.gl/maps/abcdef",
+    maps_url:
+      "https://www.google.com/maps/search/?api=1&query=Restaurante%20Farol%20HCCW%2B76%20Monte%20Si%C3%A3o%20Minas%20Gerais",
     // Google Maps embed code to display map on website
     // How to get: open Google Maps → select location → Share → Embed → copy link
     maps_embed:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.0000000000005!2d106.8270733147699!3d-6.175392995514422!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f4f1b6d7b1e7%3A0x2e69f4f1b6d7b1e7!2sMonumen%20Nasional!5e0!3m2!1sid!2sid!4v1633666820004!5m2!1sid!2sid",
+      "https://www.google.com/maps?q=Restaurante%20Farol%20HCCW%2B76%20Monte%20Si%C3%A3o%20Minas%20Gerais&output=embed",
     // Event time (free format, example: "10:00 - 12:00 WIB")
-    time: "16:16 - 17:30 WIB",
+    time: "14 de novembro de 2026",
     // Venue/building name
-    location: "Grand Ballroom, Hotel Majesty",
+    location: "Restaurante Farol",
     // Full address of the wedding venue
-    address: "Jl. Jend. Sudirman No.1, Jakarta",
+    address:
+      "Bairro Por do Sol - R. Maria R. C. Silva, 3850 - Por do Sol, Monte Siao - MG, 37580-000",
     // Image that appears when link is shared on social media
     ogImage: "/images/og-image.jpg",
     // Icon that appears in browser tab
@@ -35,26 +37,28 @@ const config = {
     agenda: [
       {
         // First event name
-        title: "Akad Nikah",
+        title: "Cerimonia",
         // Event date (format: YYYY-MM-DD)
-        date: "2024-12-24",
+        date: "2026-11-14",
         // Start time (format: HH:MM)
-        startTime: "16:16",
+        startTime: "16:00",
         // End time (format: HH:MM)
-        endTime: "17:30",
+        endTime: "17:00",
         // Event venue
-        location: "Grand Ballroom, Hotel Majesty",
+        location: "Santuario Nossa Senhora da Medalha Milagrosa",
         // Full address
-        address: "Jl. Jend. Sudirman No.1, Jakarta",
+        address:
+          "Rua Padre Cornelio, 27 - Centro, Monte Siao - MG, 37580-000",
       },
       {
         // Second event name
-        title: "Resepsi Nikah",
-        date: "2024-12-24",
-        startTime: "16:16",
-        endTime: "17:30",
-        location: "Grand Ballroom, Hotel Majesty",
-        address: "Jl. Jend. Sudirman No.1, Jakarta",
+        title: "Recepcao",
+        date: "2026-11-14",
+        startTime: "17:00",
+        endTime: "22:00",
+        location: "Restaurante Farol",
+        address:
+          "Bairro Por do Sol - R. Maria R. C. Silva, 3850 - Por do Sol, Monte Siao - MG, 37580-000",
       },
       // You can add more agenda items with the same format
     ],
@@ -62,9 +66,11 @@ const config = {
     // Background music settings
     audio: {
       // Music file (choose one or replace with your own file)
-      src: "/audio/fulfilling-humming.mp3", // or /audio/nature-sound.mp3
+      src: "",
+      soundcloudUrl:
+        "https://soundcloud.com/monique-de-melo-599696373/jorge-e-mateus-pra-sempre-com",
       // Music title to display
-      title: "Fulfilling Humming", // or Nature Sound
+      title: "Pra Sempre Com Voce",
       // Whether music plays automatically when website opens
       autoplay: true,
       // Whether music repeats continuously
@@ -72,22 +78,7 @@ const config = {
     },
 
     // List of bank accounts for digital envelope/gifts
-    banks: [
-      {
-        // Bank name
-        bank: "Bank Central Asia",
-        // Account number
-        accountNumber: "1234567890",
-        // Account holder name (all uppercase)
-        accountName: "FULAN",
-      },
-      {
-        bank: "Bank Mandiri",
-        accountNumber: "0987654321",
-        accountName: "FULANA",
-      },
-      // You can add more banks with the same format
-    ],
+    banks: [],
   },
 };
 

@@ -15,7 +15,7 @@
  */
 
 // src/App.jsx
-import { useState, lazy, Suspense } from "react";
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { useInvitation } from "@/features/invitation";
@@ -23,6 +23,7 @@ import { useAudio } from "@/hooks/use-audio";
 import staticConfig from "@/config/config";
 import { useMotionPreset } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import AdminPanel from "@/features/admin/admin-panel";
 
 // Lazy load components for better performance
 const Layout = lazy(() => import("@/components/layout/layout"));
@@ -51,8 +52,9 @@ const LandingPage = lazy(
  * // Renders the App component
  * <App />
  */
-function App() {
+function WeddingApp() {
   const [isInvitationOpen, setIsInvitationOpen] = useState(false);
+  const isOpeningRef = useRef(false);
   const { config, isLoading, error } = useInvitation();
   const pageEnter = useMotionPreset("pageEnter");
   const pageExit = useMotionPreset("pageExit");
@@ -62,20 +64,36 @@ function App() {
 
   // Initialize audio with config settings
   const audioControls = useAudio({
-    src: activeConfig?.audio?.src || "/audio/fulfilling-humming.mp3",
+    src: activeConfig?.audio?.soundcloudUrl
+      ? ""
+      : activeConfig?.audio?.src || "/audio/fulfilling-humming.mp3",
     loop: activeConfig?.audio?.loop !== false,
   });
 
   // Handle opening the invitation - this is called from a user click,
   // which is the perfect opportunity to start audio (browser policy compliant)
-  const handleOpenInvitation = async () => {
-    // Start audio playback during user interaction
-    await audioControls.play();
+  const handleOpenInvitation = useCallback(async () => {
+    if (isOpeningRef.current) return;
+    isOpeningRef.current = true;
     setIsInvitationOpen(true);
-  };
+    // Audio is optional; browser playback policies should not block the invite.
+    audioControls.play().catch(() => {});
+  }, [audioControls]);
 
-  // Show error state
-  if (error) {
+  useEffect(() => {
+    const openFromHash = () => {
+      if (window.location.hash === "#convite") {
+        handleOpenInvitation();
+      }
+    };
+
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, [handleOpenInvitation]);
+
+  // Show error state only if we do not have a static fallback available.
+  if (error && !activeConfig) {
     return (
       <div
         className={cn(
@@ -85,11 +103,11 @@ function App() {
         <div className={cn("text-center max-w-md mx-auto p-6")}>
           <div className={cn("text-rose-500 text-6xl mb-4")}>!</div>
           <h1 className={cn("text-2xl font-serif text-gray-800 mb-2")}>
-            Undangan Tidak Ditemukan
+            Convite nao encontrado
           </h1>
           <p className={cn("text-gray-600 mb-4")}>{error}</p>
           <p className={cn("text-sm text-gray-500")}>
-            Silakan periksa URL Anda atau hubungi penyelenggara.
+            Confira o link ou fale com os noivos.
           </p>
         </div>
       </div>
@@ -222,6 +240,14 @@ function App() {
       </Suspense>
     </HelmetProvider>
   );
+}
+
+function App() {
+  if (window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/")) {
+    return <AdminPanel />;
+  }
+
+  return <WeddingApp />;
 }
 
 export default App;

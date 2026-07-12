@@ -21,18 +21,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"bun run dev:client\" \"bun run dev:server\"",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "vite",
-    "dev:server": "bun src/server/server.js",
+    "dev:server": "node --env-file=.env src/server/server.js",
     "build": "vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
-    "server": "bun src/server/server.js",
-    "generate-links": "bun generate-links-example.js",
-    "deploy": "bun run build && wrangler deploy",
+    "server": "node --env-file=.env src/server/server.js",
+    "generate-links": "node generate-links-example.js",
+    "deploy": "npm run build && wrangler deploy",
     "cf:dev": "wrangler dev",
     "cf:deploy": "wrangler deploy",
     "cf:tail": "wrangler tail",
@@ -45,7 +45,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-push": "bun run lint && bun run format:check && bun run test:coverage && bun run build"
+      "pre-push": "npm run lint && npm run format:check && npm run test:coverage && npm run build"
     }
   },
   "dependencies": {

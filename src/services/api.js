@@ -108,3 +108,78 @@ export async function fetchInvitation(uid) {
   }
   return response.json();
 }
+
+export async function searchGuest(uid, name) {
+  const url = new URL(`${API_URL}/api/${uid}/rsvp/search`);
+  url.searchParams.set("name", name);
+  const response = await fetch(url);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Nao foi possivel buscar o convidado");
+  return data;
+}
+
+export async function confirmPresence(uid, payload) {
+  const response = await fetch(`${API_URL}/api/${uid}/rsvp/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    const error = new Error(data.error || "Nao foi possivel confirmar presenca");
+    error.suggestions = data.suggestions || [];
+    throw error;
+  }
+  return data;
+}
+
+export async function fetchGiftProducts(uid) {
+  const response = await fetch(`${API_URL}/api/${uid}/gifts`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Nao foi possivel carregar presentes");
+  return data;
+}
+
+function adminHeaders(token, hasFormData = false) {
+  return {
+    ...(hasFormData ? {} : { "Content-Type": "application/json" }),
+    "x-admin-session": token,
+  };
+}
+
+export async function adminLogin(payload) {
+  const response = await fetch(`${API_URL}/api/admin/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Nao foi possivel entrar no painel");
+  return data;
+}
+
+export async function adminActivateTwoFactor(payload) {
+  const response = await fetch(`${API_URL}/api/admin/auth/activate-2fa`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Nao foi possivel ativar o 2FA");
+  return data;
+}
+
+export async function adminRequest(path, token, options = {}) {
+  const hasFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      ...adminHeaders(token, hasFormData),
+      ...(options.headers || {}),
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Erro administrativo");
+  return data;
+}

@@ -24,7 +24,7 @@ import {
 
 describe("motion tokens", () => {
   it("exposes the three named duration tiers", () => {
-    expect(DURATION).toEqual({ fast: 0.2, base: 0.5, slow: 0.8 });
+    expect(DURATION).toEqual({ fast: 0.2, base: 1, slow: 1 });
   });
 
   it("exposes named decorative loop speeds", () => {
@@ -34,8 +34,8 @@ describe("motion tokens", () => {
   });
 
   it("exposes standardized easing values", () => {
-    expect(EASE.out).toBe("easeOut");
-    expect(EASE.inOut).toBe("easeInOut");
+    expect(EASE.out).toEqual([0.16, 1, 0.3, 1]);
+    expect(EASE.inOut).toEqual([0.16, 1, 0.3, 1]);
   });
 
   it("exposes a lift distance", () => {

@@ -2,6 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --super-bg: #fdf8f3;
+  --super-bg-soft: #f5f0eb;
+  --super-accent: #ff4582;
+  --super-text: #262626;
+  --super-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html,
+body,
+button,
+input,
+textarea {
+  font-family: "League Spartan", system-ui, sans-serif;
+}
+
+.super-label {
+  color: var(--super-accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.super-heading {
+  color: var(--super-text);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 0.9;
+}
+
+.super-copy {
+  color: rgb(38 38 38 / 0.7);
+  line-height: 1.6;
+}
+
+.super-glass {
+  background: rgb(253 248 243 / 0.8);
+  border: 1px solid rgb(38 38 38 / 0.05);
+  backdrop-filter: blur(12px);
+}
+
+.super-transition {
+  transition: all 1s var(--super-ease);
+}
+
+.super-image {
+  filter: grayscale(100%);
+  transform: scale(1);
+  transition:
+    filter 1s var(--super-ease),
+    transform 1s var(--super-ease);
+}
+
+.group:hover .super-image,
+.super-image:hover {
+  filter: grayscale(0%);
+  transform: scale(1.08);
+}
+
+@keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(-5%);
+  }
+  50% {
+    transform: translateY(5%);
+  }
+}
+
+.super-badge {
+  animation: bounce-slow 4s ease-in-out infinite;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -70,5 +144,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    background: var(--super-bg);
+    color: var(--super-text);
   }
 }

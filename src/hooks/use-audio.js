@@ -20,6 +20,13 @@ export function useAudio(options = {}) {
 
   // Initialize audio element
   useEffect(() => {
+    if (!src) {
+      audioRef.current = null;
+      setIsReady(false);
+      setIsPlaying(false);
+      return;
+    }
+
     audioRef.current = new Audio(src);
     audioRef.current.loop = loop;
     audioRef.current.preload = "auto";
@@ -105,8 +112,7 @@ export function useAudio(options = {}) {
     try {
       await audioRef.current.play();
       return true;
-    } catch (error) {
-      console.error("Audio playback failed:", error);
+    } catch {
       return false;
     }
   }, []);

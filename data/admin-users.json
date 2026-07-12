@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "username": "lucastoledo",
+      "passwordHash": "aa6fb2e45c8643ef818b968218b59fb4:4a571d2a19d0613e7b8075e62d22aa303f2c8dce5a6329cb05d370a7d127c83b44fb421da715ac4701c5bc00048a62b9ce47dced1edda7c078894395db1be5d7",
+      "totpSecret": null
+    },
+    {
+      "username": "andressa",
+      "passwordHash": "51277517601a058c9dc207ab2de4c078:afd797f3df51904e04ed377c2fb7f0d3f90a24768484bdec5a57478e21aa5148a06ee9b5014fd8f807318453a2031f463265b07b2deb195d286d714fc7135a01",
+      "totpSecret": null
+    }
+  ]
+}

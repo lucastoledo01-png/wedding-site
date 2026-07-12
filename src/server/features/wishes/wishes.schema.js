@@ -28,6 +28,9 @@ export const createWishSchema = z.object({
       }),
     })
     .default("MAYBE"),
+
+  recaptchaToken: z.string().optional(),
+  recaptchaAction: z.string().optional(),
 });
 
 /**

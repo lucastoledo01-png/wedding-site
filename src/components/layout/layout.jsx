@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Music, PauseCircle, PlayCircle } from "lucide-react";
 import { useConfig } from "@/features/invitation/hooks/use-config";
 import BottomBar from "@/components/layout/bottom-bar";
+import SoundCloudPlayer from "@/components/layout/soundcloud-player";
 import { useMotionPreset } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ const Layout = ({ children, audioControls }) => {
   const scaleIn = useMotionPreset("scaleIn");
 
   const { isPlaying, toggle } = audioControls || {};
+  const soundCloudUrl = config.audio?.soundcloudUrl;
 
   // Show toast when audio starts playing
   useEffect(() => {
@@ -42,19 +44,28 @@ const Layout = ({ children, audioControls }) => {
   return (
     <div
       className={cn(
-        "relative min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center",
+        "relative flex min-h-screen w-full items-center justify-center bg-[#f5f0eb]",
       )}
     >
       <motion.div
         className={cn(
-          "mx-auto w-full max-w-[430px] min-h-screen bg-white relative overflow-hidden border border-gray-200 shadow-lg",
+          "relative mx-auto min-h-screen w-full max-w-[430px] overflow-hidden border-x border-[#262626]/5 shadow-[0_24px_80px_rgba(38,38,38,0.14)]",
         )}
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(253,248,243,0.94), rgba(253,248,243,0.98)), url('/images/lucas-andressa-background.png')",
+          backgroundPosition: "center top",
+          backgroundSize: "cover",
+          backgroundAttachment: "fixed",
+        }}
         variants={fade}
         initial="hidden"
         animate="visible"
       >
         {/* Music Control Button with Status Indicator */}
-        {toggle && (
+        {soundCloudUrl && <SoundCloudPlayer url={soundCloudUrl} />}
+
+        {!soundCloudUrl && toggle && (
           <motion.button
             variants={scaleIn}
             initial="hidden"
@@ -63,12 +74,12 @@ const Layout = ({ children, audioControls }) => {
             whileTap={{ scale: 0.9 }}
             onClick={toggle}
             className={cn(
-              "fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-sm p-3 rounded-full shadow-lg border border-rose-100/50",
+              "super-glass fixed right-4 top-4 z-50 rounded-full p-3 shadow-lg",
             )}
           >
             {isPlaying ? (
               <div className={cn("relative")}>
-                <PauseCircle className={cn("w-6 h-6 text-rose-500")} />
+                <PauseCircle className={cn("h-6 w-6 text-[#262626]")} />
                 <span
                   className={cn(
                     "absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse",
@@ -76,7 +87,7 @@ const Layout = ({ children, audioControls }) => {
                 />
               </div>
             ) : (
-              <PlayCircle className={cn("w-6 h-6 text-rose-500")} />
+              <PlayCircle className={cn("h-6 w-6 text-[#262626]")} />
             )}
           </motion.button>
         )}

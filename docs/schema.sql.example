@@ -46,6 +46,36 @@ CREATE TABLE wishes (
     CONSTRAINT unique_wish_per_guest UNIQUE (invitation_uid, name)
 );
 
+-- Official guest list for RSVP confirmation
+CREATE TABLE guests (
+    id SERIAL PRIMARY KEY,
+    invitation_uid VARCHAR(50) NOT NULL REFERENCES invitations(uid) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    normalized_name VARCHAR(255) NOT NULL,
+    party_size INTEGER DEFAULT 1 CHECK (party_size > 0),
+    attendance VARCHAR(20) DEFAULT 'PENDING' CHECK (attendance IN ('PENDING', 'ATTENDING', 'NOT_ATTENDING')),
+    message TEXT,
+    confirmed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_guest_per_invitation UNIQUE (invitation_uid, normalized_name)
+);
+
+-- Gift registry products managed from the admin panel
+CREATE TABLE gift_products (
+    id SERIAL PRIMARY KEY,
+    invitation_uid VARCHAR(50) NOT NULL REFERENCES invitations(uid) ON DELETE CASCADE,
+    url TEXT,
+    name VARCHAR(500) NOT NULL,
+    image_url TEXT,
+    price VARCHAR(100),
+    is_active BOOLEAN DEFAULT true,
+    is_received BOOLEAN DEFAULT false,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Agenda table (multiple events per wedding: Akad, Resepsi, etc.)
 CREATE TABLE agenda (
     id SERIAL PRIMARY KEY,
@@ -78,6 +108,9 @@ CREATE INDEX idx_agenda_invitation_uid ON agenda(invitation_uid);
 CREATE INDEX idx_agenda_order ON agenda(invitation_uid, order_index);
 CREATE INDEX idx_banks_invitation_uid ON banks(invitation_uid);
 CREATE INDEX idx_banks_order ON banks(invitation_uid, order_index);
+CREATE INDEX idx_guests_invitation_uid ON guests(invitation_uid);
+CREATE INDEX idx_guests_normalized_name ON guests(invitation_uid, normalized_name);
+CREATE INDEX idx_gift_products_invitation_uid ON gift_products(invitation_uid);
 
 -- Trigger to auto-update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

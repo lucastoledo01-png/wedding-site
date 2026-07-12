@@ -14,6 +14,9 @@ import { zValidator } from "@hono/zod-validator";
 
 // Feature routes and schemas
 import { invitationRoutes, wishesRoutes } from "./features/index.js";
+import rsvpRoutes from "./features/rsvp/routes.js";
+import giftRoutes from "./features/gift-products/routes.js";
+import adminRoutes from "./features/admin/routes.js";
 import { uidParamSchema } from "./features/invitation/invitation.schema.js";
 import { getDbClient } from "./lib/db-client.js";
 import { AppError } from "./lib/errors.js";
@@ -77,6 +80,9 @@ api.route("/invitation", invitationRoutes);
 
 // Wishes routes: /api/:uid/wishes/*
 api.route("/:uid/wishes", wishesRoutes);
+api.route("/:uid/rsvp", rsvpRoutes);
+api.route("/:uid/gifts", giftRoutes);
+api.route("/admin", adminRoutes);
 
 // Stats route (related to wishes but at /:uid level)
 api.get("/:uid/stats", zValidator("param", uidParamSchema), async (c) => {

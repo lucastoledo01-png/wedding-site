@@ -11,6 +11,88 @@ import { NotFoundError, ConflictError } from "../../lib/errors.js";
 
 const wishesRoutes = new Hono();
 
+async function verifyEnterpriseRecaptcha(c, token, action) {
+  const apiKey =
+    c.env?.RECAPTCHA_ENTERPRISE_API_KEY || process.env.RECAPTCHA_ENTERPRISE_API_KEY;
+  const projectId =
+    c.env?.RECAPTCHA_ENTERPRISE_PROJECT_ID || process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID;
+  const siteKey =
+    c.env?.RECAPTCHA_ENTERPRISE_SITE_KEY || process.env.RECAPTCHA_ENTERPRISE_SITE_KEY;
+  const expectedAction =
+    c.env?.RECAPTCHA_ENTERPRISE_ACTION ||
+    process.env.RECAPTCHA_ENTERPRISE_ACTION ||
+    "wedding_wish";
+  const minScore = Number(
+    c.env?.RECAPTCHA_ENTERPRISE_MIN_SCORE ||
+      process.env.RECAPTCHA_ENTERPRISE_MIN_SCORE ||
+      0.5,
+  );
+
+  if (!apiKey || !projectId || !siteKey) {
+    return null;
+  }
+
+  if (!token) {
+    return false;
+  }
+
+  const response = await fetch(
+    `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: {
+          token,
+          siteKey,
+          expectedAction,
+        },
+      }),
+    },
+  );
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error("reCAPTCHA Enterprise verification failed", data);
+    return false;
+  }
+
+  const tokenValid = Boolean(data.tokenProperties?.valid);
+  const actionMatches = !action || data.tokenProperties?.action === action;
+  const score = Number(data.riskAnalysis?.score ?? 0);
+
+  return tokenValid && actionMatches && score >= minScore;
+}
+
+async function verifyRecaptcha(c, token, action) {
+  const enterpriseResult = await verifyEnterpriseRecaptcha(c, token, action);
+  if (enterpriseResult !== null) {
+    return enterpriseResult;
+  }
+
+  const secret = c.env?.RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY;
+
+  if (!secret) {
+    return true;
+  }
+
+  if (!token) {
+    return false;
+  }
+
+  const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      secret,
+      response: token,
+    }),
+  });
+  const data = await response.json();
+
+  return Boolean(data.success);
+}
+
 /**
  * GET /:uid/wishes
  * Get all wishes for an invitation with pagination
@@ -64,9 +146,22 @@ wishesRoutes.get("/", zValidator("query", wishesQuerySchema), async (c) => {
  */
 wishesRoutes.post("/", zValidator("json", createWishSchema), async (c) => {
   const uid = c.req.param("uid");
-  const { name, message, attendance } = c.req.valid("json");
+  const { name, message, attendance, recaptchaToken, recaptchaAction } =
+    c.req.valid("json");
 
   const pool = await getDbClient(c);
+
+  const recaptchaOk = await verifyRecaptcha(c, recaptchaToken, recaptchaAction);
+  if (!recaptchaOk) {
+    return c.json(
+      {
+        success: false,
+        error: "Confirme o reCAPTCHA antes de enviar sua mensagem.",
+        code: "RECAPTCHA_FAILED",
+      },
+      400,
+    );
+  }
 
   // Verify invitation exists
   const invitation = await pool.query(

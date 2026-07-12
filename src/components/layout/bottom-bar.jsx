@@ -1,29 +1,27 @@
 // src/components/bottom-bar/BottomBar.jsx
-import React, { useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Home,
-  CalendarHeart,
   MapPin,
   Gift,
   MessageCircleHeart,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useConfig } from "@/features/invitation/hooks/use-config";
 import { DURATION, useReducedMotionFlag } from "@/lib/motion";
 
 const baseMenuItems = [
-  { icon: Home, label: "Beranda", href: "#home", id: "home" },
-  { icon: CalendarHeart, label: "Event", href: "#event", id: "event" },
-  { icon: MapPin, label: "Lokasi", href: "#location", id: "location" },
+  { icon: Home, label: "Inicio", href: "#home", id: "home" },
+  { icon: UserCheck, label: "Presenca", href: "#rsvp", id: "rsvp" },
+  { icon: MapPin, label: "Local", href: "#location", id: "location" },
   {
     icon: Gift,
-    label: "Hadiah",
+    label: "Presentes",
     href: "#gifts",
     id: "gifts",
-    requiresBanks: true,
   },
-  { icon: MessageCircleHeart, label: "Harapan", href: "#wishes", id: "wishes" },
+  { icon: MessageCircleHeart, label: "Mensagens", href: "#wishes", id: "wishes" },
 ];
 
 /**
@@ -43,20 +41,9 @@ const baseMenuItems = [
  * @returns {JSX.Element} A JSX element containing the animated bottom navigation bar with auto-detection.
  */
 const BottomBar = () => {
-  const config = useConfig();
   const [active, setActive] = React.useState("home");
   const reduceMotion = useReducedMotionFlag();
-
-  // Filter menu items based on config - hide gifts when no banks configured
-  const menuItems = useMemo(() => {
-    const hasBanks = config?.banks && config.banks.length > 0;
-    return baseMenuItems.filter((item) => {
-      if (item.requiresBanks && !hasBanks) {
-        return false;
-      }
-      return true;
-    });
-  }, [config?.banks]);
+  const menuItems = baseMenuItems;
 
   // Function to handle smooth scrolling when clicking menu items
   const handleMenuClick = useCallback((e, href, id) => {
@@ -133,7 +120,7 @@ const BottomBar = () => {
       >
         <div
           className={cn(
-            "backdrop-blur-md bg-white/90 border border-gray-200/80 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.07)] px-3 py-2",
+            "super-glass rounded-full px-3 py-2 shadow-[0_18px_50px_rgba(38,38,38,0.12)]",
           )}
         >
           <nav className={cn("flex items-center gap-1")}>
@@ -143,10 +130,10 @@ const BottomBar = () => {
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center justify-center py-2 px-2 rounded-xl transition-all duration-300 ease-in-out",
-                  "hover:bg-gray-50/80 cursor-pointer min-w-[60px]",
+                  "min-w-[60px] cursor-pointer hover:bg-[#ff4582]/20",
                   active === item.id
-                    ? "text-primary bg-primary/5"
-                    : "text-gray-600",
+                    ? "bg-[#ff4582]/25 text-[#262626]"
+                    : "text-[#262626]/60",
                 )}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.95 }}
@@ -162,8 +149,8 @@ const BottomBar = () => {
                     className={cn(
                       "h-[18px] w-[18px] sm:h-5 sm:w-5 mb-0.5 sm:mb-1 transition-all duration-300",
                       active === item.id
-                        ? "stroke-rose-500 stroke-[2.5px]"
-                        : "stroke-gray-600 stroke-2",
+                        ? "stroke-[#262626] stroke-[2.5px]"
+                        : "stroke-[#262626]/60 stroke-2",
                     )}
                   />
                 </motion.div>
@@ -171,8 +158,8 @@ const BottomBar = () => {
                   className={cn(
                     "text-[10px] sm:text-xs font-medium transition-all duration-300 line-clamp-1",
                     active === item.id
-                      ? "text-rose-500 font-semibold"
-                      : "text-gray-600",
+                      ? "text-[#262626] font-medium"
+                      : "text-[#262626]/60",
                   )}
                   animate={{
                     scale: active === item.id ? 1.05 : 1,
