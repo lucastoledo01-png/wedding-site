@@ -220,7 +220,7 @@ function createFileDbClient() {
         }
 
         if (compactSql.startsWith("UPDATE guests")) {
-          const isAdminPatch = params.length >= 7;
+          const isAdminPatch = compactSql.includes("COALESCE(NULLIF");
           const guestId = Number(isAdminPatch ? params[5] : params[3]);
           const invitationUid = isAdminPatch ? params[6] : params[4];
           const guest = store.guests.find(
@@ -239,13 +239,15 @@ function createFileDbClient() {
             if (attendance) guest.attendance = attendance;
             if (message !== null && message !== undefined) guest.message = message;
           } else {
-            const [attendance, partySize, message] = params;
+            const [attendance, partySize, message, confirmedIp, confirmedDevice] = params;
             guest.attendance = attendance;
             if (partySize !== null && partySize !== undefined) {
               guest.party_size = Number(partySize);
             }
             guest.message = message;
             guest.confirmed_at = nowIso();
+            guest.confirmed_ip = confirmedIp || "";
+            guest.confirmed_device = confirmedDevice || "";
           }
 
           guest.updated_at = nowIso();

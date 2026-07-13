@@ -29,6 +29,13 @@ const api = new Hono();
 // ============ Middleware ============
 
 app.use("*", logger());
+app.use("*", async (c, next) => {
+  c.header(
+    "X-Robots-Tag",
+    "noindex, nofollow, noarchive, nosnippet, noimageindex",
+  );
+  await next();
+});
 app.use(
   "*",
   cors({

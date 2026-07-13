@@ -129,7 +129,10 @@ export default function Rsvp() {
   });
 
   return (
-    <section id="rsvp" className={cn("relative overflow-hidden bg-[#f5f0eb]")}>
+    <section
+      id="rsvp"
+      className={cn("relative min-h-[125svh] overflow-hidden bg-[#f5f0eb]")}
+    >
       {showConfetti && <Confetti recycle={false} numberOfPieces={220} />}
       <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
       <img
@@ -139,7 +142,11 @@ export default function Rsvp() {
           "pointer-events-none absolute -left-24 top-14 w-52 -rotate-12 opacity-25",
         )}
       />
-      <div className={cn("relative z-10 mx-auto px-5 py-20")}>
+      <div
+        className={cn(
+          "relative z-10 mx-auto flex min-h-[125svh] flex-col justify-center px-5 py-24",
+        )}
+      >
         <div className={cn("space-y-5 text-center")}>
           <p className={cn("super-label")}>Confirmação</p>
           <h2 className={cn("super-heading text-5xl")}>

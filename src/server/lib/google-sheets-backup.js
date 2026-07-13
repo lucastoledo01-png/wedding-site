@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { getClientIp, getDevice } from "./request-metadata.js";
 
 const TOKEN_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const TOKEN_AUDIENCE = "https://oauth2.googleapis.com/token";
@@ -76,27 +77,11 @@ async function getAccessToken(serviceAccount) {
   return data.access_token;
 }
 
-function getClientIp(c) {
-  const forwardedFor = c.req.header("x-forwarded-for");
-  if (forwardedFor) return forwardedFor.split(",")[0].trim();
-
-  return (
-    c.req.header("cf-connecting-ip") ||
-    c.req.header("x-real-ip") ||
-    c.req.header("x-client-ip") ||
-    ""
-  );
-}
-
-function getDevice(c) {
-  return c.req.header("user-agent") || "";
-}
-
 function attendanceLabel(attendance) {
   return attendance === "NOT_ATTENDING" ? "Ausência confirmada" : "Presença confirmada";
 }
 
-export async function appendRsvpBackup(c, { name, attendance }) {
+export async function appendRsvpBackup(c, { name, attendance, device, ipAddress }) {
   const spreadsheetId = getEnv(c, "GOOGLE_SHEETS_SPREADSHEET_ID");
   if (!spreadsheetId) return { skipped: true, reason: "missing_spreadsheet_id" };
 
@@ -125,8 +110,8 @@ export async function appendRsvpBackup(c, { name, attendance }) {
             }),
             name,
             attendanceLabel(attendance),
-            getDevice(c),
-            getClientIp(c),
+            device || getDevice(c),
+            ipAddress || getClientIp(c),
           ],
         ],
       }),

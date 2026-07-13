@@ -3,12 +3,14 @@ import { getDbClient } from "../../lib/db-client.js";
 import { findBestGuestMatch, normalizeName } from "../../lib/text-match.js";
 import { NotFoundError } from "../../lib/errors.js";
 import { appendRsvpBackup } from "../../lib/google-sheets-backup.js";
+import { getClientIp, getDevice } from "../../lib/request-metadata.js";
 
 const rsvpRoutes = new Hono();
 
 async function loadGuests(pool, uid) {
   const result = await pool.query(
-    `SELECT id, full_name, party_size, attendance, confirmed_at, message
+    `SELECT id, full_name, party_size, attendance, confirmed_at, message,
+            confirmed_ip, confirmed_device
        FROM guests
       WHERE invitation_uid = $1
       ORDER BY full_name ASC`,
@@ -21,6 +23,8 @@ rsvpRoutes.get("/search", async (c) => {
   const uid = c.req.param("uid");
   const name = c.req.query("name") || "";
   const pool = await getDbClient(c);
+  const ipAddress = getClientIp(c);
+
   const guests = await loadGuests(pool, uid);
   const { best, suggestions } = findBestGuestMatch(name, guests);
 
@@ -73,10 +77,13 @@ rsvpRoutes.post("/confirm", async (c) => {
             party_size = COALESCE($2, party_size),
             message = $3,
             confirmed_at = CURRENT_TIMESTAMP,
+            confirmed_ip = $4,
+            confirmed_device = $5,
             updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4 AND invitation_uid = $5
-      RETURNING id, full_name, party_size, attendance, confirmed_at, message`,
-    [attendance, partySize, message, best.id, uid],
+      WHERE id = $6 AND invitation_uid = $7
+      RETURNING id, full_name, party_size, attendance, confirmed_at, message,
+                confirmed_ip, confirmed_device`,
+    [attendance, partySize, message, ipAddress, getDevice(c), best.id, uid],
   );
 
   const confirmedGuest = result.rows[0];
@@ -85,6 +92,8 @@ rsvpRoutes.post("/confirm", async (c) => {
     await appendRsvpBackup(c, {
       name: confirmedGuest.full_name,
       attendance: confirmedGuest.attendance,
+      device: confirmedGuest.confirmed_device,
+      ipAddress: confirmedGuest.confirmed_ip,
     });
   } catch (error) {
     console.error("Google Sheets RSVP backup failed:", error.message);
@@ -120,7 +129,8 @@ export async function createGuest(pool, uid, guest) {
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (invitation_uid, normalized_name)
      DO UPDATE SET full_name = EXCLUDED.full_name, party_size = EXCLUDED.party_size, updated_at = CURRENT_TIMESTAMP
-     RETURNING id, full_name, party_size, attendance, confirmed_at, message`,
+     RETURNING id, full_name, party_size, attendance, confirmed_at, message,
+               confirmed_ip, confirmed_device`,
     [uid, fullName, normalizeName(fullName), Number(guest.partySize || guest.party_size || 1)],
   );
 

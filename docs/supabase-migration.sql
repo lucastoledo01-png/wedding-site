@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS wishes (
   name VARCHAR(100) NOT NULL,
   message TEXT NOT NULL,
   attendance VARCHAR(20) DEFAULT 'MAYBE' CHECK (attendance IN ('ATTENDING', 'NOT_ATTENDING', 'MAYBE')),
+  ip_address TEXT,
+  device TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT unique_wish_per_guest UNIQUE (invitation_uid, name)
 );
@@ -42,9 +44,20 @@ CREATE TABLE IF NOT EXISTS guests (
   attendance VARCHAR(20) DEFAULT 'PENDING' CHECK (attendance IN ('PENDING', 'ATTENDING', 'NOT_ATTENDING')),
   message TEXT DEFAULT '',
   confirmed_at TIMESTAMP,
+  confirmed_ip TEXT,
+  confirmed_device TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT unique_guest_per_invitation UNIQUE (invitation_uid, normalized_name)
+);
+
+CREATE TABLE IF NOT EXISTS blocked_ips (
+  id SERIAL PRIMARY KEY,
+  invitation_uid VARCHAR(50) NOT NULL REFERENCES invitations(uid) ON DELETE CASCADE,
+  ip_address TEXT NOT NULL,
+  reason TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT unique_blocked_ip_per_invitation UNIQUE (invitation_uid, ip_address)
 );
 
 CREATE TABLE IF NOT EXISTS gift_products (
@@ -90,6 +103,8 @@ CREATE INDEX IF NOT EXISTS idx_guests_invitation_uid ON guests(invitation_uid);
 CREATE INDEX IF NOT EXISTS idx_guests_normalized_name ON guests(invitation_uid, normalized_name);
 CREATE INDEX IF NOT EXISTS idx_gift_products_invitation_uid ON gift_products(invitation_uid);
 CREATE INDEX IF NOT EXISTS idx_gift_products_order ON gift_products(invitation_uid, sort_order, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_blocked_ips_invitation_uid ON blocked_ips(invitation_uid);
+CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(invitation_uid, ip_address);
 CREATE INDEX IF NOT EXISTS idx_agenda_invitation_uid ON agenda(invitation_uid);
 CREATE INDEX IF NOT EXISTS idx_agenda_order ON agenda(invitation_uid, order_index);
 CREATE INDEX IF NOT EXISTS idx_banks_invitation_uid ON banks(invitation_uid);

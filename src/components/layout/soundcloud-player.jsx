@@ -38,13 +38,15 @@ function loadSoundCloudApi() {
 
 export default function SoundCloudPlayer({
   url,
-  autoPlay = true,
+  autoPlay = false,
   volume = 28,
 }) {
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [promptChoiceMade, setPromptChoiceMade] = useState(false);
+  const [shouldPlayWhenReady, setShouldPlayWhenReady] = useState(false);
   const shouldAutoPlay = autoPlay && !isIOSDevice();
 
   const params = new URLSearchParams({
@@ -75,8 +77,9 @@ export default function SoundCloudPlayer({
         if (cancelled) return;
         setIsReady(true);
         widget.setVolume(volume);
-        if (shouldAutoPlay) {
+        if (shouldAutoPlay || shouldPlayWhenReady) {
           widget.play();
+          setShouldPlayWhenReady(false);
         }
       });
 
@@ -88,18 +91,47 @@ export default function SoundCloudPlayer({
     return () => {
       cancelled = true;
     };
-  }, [shouldAutoPlay, url, volume]);
+  }, [shouldAutoPlay, shouldPlayWhenReady, url, volume]);
+
+  useEffect(() => {
+    if (isReady && shouldPlayWhenReady) {
+      play();
+      setShouldPlayWhenReady(false);
+    }
+  }, [isReady, shouldPlayWhenReady]);
+
+  const play = () => {
+    if (!widgetRef.current || !isReady) return;
+
+    widgetRef.current.setVolume(volume);
+    widgetRef.current.play();
+  };
 
   const toggle = () => {
     if (!widgetRef.current || !isReady) return;
+    setPromptChoiceMade(true);
 
     if (isPlaying) {
       widgetRef.current.pause();
     } else {
-      widgetRef.current.setVolume(volume);
-      widgetRef.current.play();
+      play();
     }
   };
+
+  const acceptMusic = () => {
+    setPromptChoiceMade(true);
+    if (isReady) {
+      play();
+      return;
+    }
+    setShouldPlayWhenReady(true);
+  };
+
+  const dismissPrompt = () => {
+    setPromptChoiceMade(true);
+  };
+
+  const showPrompt = !isPlaying && !promptChoiceMade;
 
   return (
     <>
@@ -119,6 +151,43 @@ export default function SoundCloudPlayer({
           border: 0,
         }}
       />
+
+      {showPrompt && (
+        <div
+          className={cn(
+            "fixed right-[4.25rem] top-4 z-50 w-[190px] rounded-2xl border border-white/55 bg-[#fdf8f3]/90 px-3 py-3 text-[#262626] shadow-[0_18px_50px_rgba(38,38,38,0.16)] backdrop-blur-xl",
+          )}
+        >
+          <div
+            className={cn(
+              "absolute -right-1.5 top-5 h-3 w-3 rotate-45 border-r border-t border-white/55 bg-[#fdf8f3]/90",
+            )}
+          />
+          <p className={cn("text-sm font-medium leading-tight")}>
+            Deseja ouvir nossa música?
+          </p>
+          <div className={cn("mt-2 flex items-center gap-2")}>
+            <button
+              type="button"
+              onClick={acceptMusic}
+              className={cn(
+                "rounded-full bg-[#ff4582] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-[#f73576]",
+              )}
+            >
+              Sim
+            </button>
+            <button
+              type="button"
+              onClick={dismissPrompt}
+              className={cn(
+                "rounded-full border border-[#262626]/10 bg-white/70 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[#262626]/60 transition hover:text-[#262626]",
+              )}
+            >
+              Não
+            </button>
+          </div>
+        </div>
+      )}
 
       <button
         type="button"

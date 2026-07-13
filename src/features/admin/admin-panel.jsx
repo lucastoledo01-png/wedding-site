@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Ban,
   Gift,
   Loader2,
   MessageCircleHeart,
   Plus,
   Save,
+  ShieldOff,
   Trash2,
   Upload,
   Users,
@@ -168,6 +170,12 @@ export default function AdminPanel() {
     enabled: enabled && activePage === "comentarios",
   });
 
+  const blockedIpsQuery = useQuery({
+    queryKey: ["admin-blocked-ips", uid, token],
+    queryFn: async () => (await adminRequest(`/api/admin/${uid}/blocked-ips`, token)).data,
+    enabled: enabled && activePage === "comentarios",
+  });
+
   const stats = useMemo(() => {
     const guests = guestsQuery.data || [];
     return {
@@ -247,6 +255,27 @@ export default function AdminPanel() {
     mutationFn: (id) =>
       adminRequest(`/api/admin/${uid}/comments/${id}`, token, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-comments"] }),
+  });
+
+  const blockIp = useMutation({
+    mutationFn: ({ ipAddress, reason }) =>
+      adminRequest(`/api/admin/${uid}/blocked-ips`, token, {
+        method: "POST",
+        body: JSON.stringify({ ipAddress, reason }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-blocked-ips"] });
+    },
+  });
+
+  const unblockIp = useMutation({
+    mutationFn: (id) =>
+      adminRequest(`/api/admin/${uid}/blocked-ips/${id}`, token, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-blocked-ips"] });
+    },
   });
 
   if (!enabled) {
@@ -562,7 +591,15 @@ export default function AdminPanel() {
                       <p className={cn("font-semibold")}>{guest.full_name}</p>
                       <p className={cn("mt-1 text-sm text-black/50")}>
                         {guest.attendance} · {guest.party_size || 1} pessoa(s)
+                        {guest.confirmed_at ? ` · ${formatDate(guest.confirmed_at)}` : ""}
                       </p>
+                      {guest.confirmed_ip || guest.confirmed_device ? (
+                        <p className={cn("mt-1 break-all text-xs text-black/35")}>
+                          {guest.confirmed_ip ? `IP: ${guest.confirmed_ip}` : ""}
+                          {guest.confirmed_ip && guest.confirmed_device ? " · " : ""}
+                          {guest.confirmed_device ? `Dispositivo: ${guest.confirmed_device}` : ""}
+                        </p>
+                      ) : null}
                       {guest.message && <p className={cn("mt-2 text-sm text-black/65")}>{guest.message}</p>}
                     </div>
                     <button
@@ -687,43 +724,108 @@ export default function AdminPanel() {
         )}
 
         {enabled && activePage === "comentarios" && (
-          <section className={cn("mt-8 rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
-            <div className={cn("flex items-center gap-2")}>
-              <MessageCircleHeart className={cn("h-5 w-5 text-[#ff4582]")} />
-              <h2 className={cn("text-xl font-semibold")}>Comentários publicados</h2>
-            </div>
-            <p className={cn("mt-2 max-w-2xl text-sm text-black/55")}>
-              As mensagens entram automaticamente no site. Use esta página quando precisar remover algo do mural.
-            </p>
+          <section className={cn("mt-8 grid gap-6 lg:grid-cols-[1fr_0.45fr]")}>
+            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+              <div className={cn("flex items-center gap-2")}>
+                <MessageCircleHeart className={cn("h-5 w-5 text-[#ff4582]")} />
+                <h2 className={cn("text-xl font-semibold")}>Comentários publicados</h2>
+              </div>
+              <p className={cn("mt-2 max-w-2xl text-sm text-black/55")}>
+                As mensagens entram automaticamente no site. Use esta página quando precisar remover algo do mural ou bloquear o IP de origem.
+              </p>
 
-            <div className={cn("mt-5 grid gap-3")}>
-              {commentsQuery.isLoading && <EmptyState>Carregando comentarios...</EmptyState>}
-              {!commentsQuery.isLoading && (commentsQuery.data || []).length === 0 && (
-                <EmptyState>Nenhuma mensagem publicada ainda.</EmptyState>
-              )}
-              {(commentsQuery.data || []).map((comment) => (
-                <article key={comment.id} className={cn("rounded-2xl border border-black/5 bg-[#fdf8f3] p-4")}>
-                  <div className={cn("flex items-start justify-between gap-4")}>
-                    <div>
-                      <p className={cn("font-semibold")}>{comment.name}</p>
-                      <p className={cn("mt-1 text-xs font-bold uppercase tracking-[0.22em] text-[#ff4582]")}>
-                        {comment.attendance || "Mensagem"} {comment.created_at ? `· ${formatDate(comment.created_at)}` : ""}
-                      </p>
+              <div className={cn("mt-5 grid gap-3")}>
+                {commentsQuery.isLoading && <EmptyState>Carregando comentarios...</EmptyState>}
+                {!commentsQuery.isLoading && (commentsQuery.data || []).length === 0 && (
+                  <EmptyState>Nenhuma mensagem publicada ainda.</EmptyState>
+                )}
+                {(commentsQuery.data || []).map((comment) => (
+                  <article key={comment.id} className={cn("rounded-2xl border border-black/5 bg-[#fdf8f3] p-4")}>
+                    <div className={cn("flex items-start justify-between gap-4")}>
+                      <div>
+                        <p className={cn("font-semibold")}>{comment.name}</p>
+                        <p className={cn("mt-1 text-xs font-bold uppercase tracking-[0.22em] text-[#ff4582]")}>
+                          {comment.attendance || "Mensagem"} {comment.created_at ? `· ${formatDate(comment.created_at)}` : ""}
+                        </p>
+                        {comment.ip_address || comment.device ? (
+                          <p className={cn("mt-2 break-all text-xs text-black/35")}>
+                            {comment.ip_address ? `IP: ${comment.ip_address}` : ""}
+                            {comment.ip_address && comment.device ? " · " : ""}
+                            {comment.device ? `Dispositivo: ${comment.device}` : ""}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className={cn("flex shrink-0 gap-1")}>
+                        {comment.ip_address ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              blockIp.mutate({
+                                ipAddress: comment.ip_address,
+                                reason: `Bloqueado a partir do comentário de ${comment.name}`,
+                              })
+                            }
+                            disabled={blockIp.isPending}
+                            className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50")}
+                            aria-label="Bloquear IP"
+                          >
+                            <Ban className={cn("mx-auto h-4 w-4")} />
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => deleteComment.mutate(comment.id)}
+                          disabled={deleteComment.isPending}
+                          className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50")}
+                          aria-label="Apagar comentario"
+                        >
+                          <Trash2 className={cn("mx-auto h-4 w-4")} />
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteComment.mutate(comment.id)}
-                      disabled={deleteComment.isPending}
-                      className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50")}
-                      aria-label="Apagar comentario"
-                    >
-                      <Trash2 className={cn("mx-auto h-4 w-4")} />
-                    </button>
-                  </div>
-                  <p className={cn("mt-3 text-sm leading-relaxed text-black/70")}>{comment.message}</p>
-                </article>
-              ))}
+                    <p className={cn("mt-3 text-sm leading-relaxed text-black/70")}>{comment.message}</p>
+                  </article>
+                ))}
+              </div>
             </div>
+
+            <aside className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+              <div className={cn("flex items-center gap-2")}>
+                <ShieldOff className={cn("h-5 w-5 text-[#ff4582]")} />
+                <h2 className={cn("text-xl font-semibold")}>IPs bloqueados</h2>
+              </div>
+              <p className={cn("mt-2 text-sm text-black/55")}>
+                IPs nesta lista não conseguem enviar novos recados. A confirmação de presença continua liberada.
+              </p>
+              <div className={cn("mt-5 grid gap-3")}>
+                {blockedIpsQuery.isLoading && <EmptyState>Carregando bloqueios...</EmptyState>}
+                {!blockedIpsQuery.isLoading && (blockedIpsQuery.data || []).length === 0 && (
+                  <EmptyState>Nenhum IP bloqueado.</EmptyState>
+                )}
+                {(blockedIpsQuery.data || []).map((blocked) => (
+                  <div key={blocked.id} className={cn("rounded-2xl border border-black/5 bg-[#fdf8f3] p-4")}>
+                    <div className={cn("flex items-start justify-between gap-3")}>
+                      <div className={cn("min-w-0")}>
+                        <p className={cn("break-all font-semibold")}>{blocked.ip_address}</p>
+                        {blocked.reason ? (
+                          <p className={cn("mt-1 text-xs text-black/45")}>{blocked.reason}</p>
+                        ) : null}
+                        <p className={cn("mt-1 text-xs text-black/35")}>{formatDate(blocked.created_at)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => unblockIp.mutate(blocked.id)}
+                        disabled={unblockIp.isPending}
+                        className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50")}
+                        aria-label="Desbloquear IP"
+                      >
+                        <Trash2 className={cn("mx-auto h-4 w-4")} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </aside>
           </section>
         )}
       </div>

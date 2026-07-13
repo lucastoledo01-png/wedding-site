@@ -51,12 +51,9 @@ export default function Gifts() {
           </div>
         )}
 
-        <div className={cn("grid gap-10")}>
-          {gifts.map((gift, index) => (
-            <article
-              key={gift.id}
-              className={cn("group", index % 2 === 1 && "mt-12")}
-            >
+        <div className={cn("grid grid-cols-2 gap-4")}>
+          {gifts.map((gift) => (
+            <article key={gift.id} className={cn("group min-w-0")}>
               <a
                 href={gift.url || "#gifts"}
                 target={gift.url ? "_blank" : undefined}
@@ -85,10 +82,10 @@ export default function Gifts() {
 
                   <div
                     className={cn(
-                      "super-transition absolute left-1/2 top-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[10px] font-medium uppercase tracking-[0.18em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
+                      "super-transition absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[8px] font-medium uppercase tracking-[0.14em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
                     )}
                   >
-                    Ver presente
+                    Ver
                   </div>
 
                   {gift.is_received && (
@@ -99,29 +96,29 @@ export default function Gifts() {
                     >
                       <span
                         className={cn(
-                          "flex items-center gap-2 rounded-full bg-[#262626] px-4 py-2 text-sm font-medium uppercase tracking-[0.16em] text-white",
+                          "flex items-center gap-1 rounded-full bg-[#262626] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white",
                         )}
                       >
-                        <CheckCircle className={cn("h-4 w-4")} />
-                        Ja ganhamos
+                        <CheckCircle className={cn("h-3 w-3")} />
+                        Ganhamos
                       </span>
                     </div>
                   )}
                 </div>
               </a>
 
-              <div className={cn("mt-5")}>
-                <p className={cn("super-label")}>Presente</p>
+              <div className={cn("mt-3")}>
+                <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>Presente</p>
                 <h3
                   className={cn(
-                    "mt-2 text-3xl font-semibold leading-none tracking-tight text-[#262626]",
+                    "mt-1 text-xl font-semibold leading-none tracking-tight text-[#262626]",
                   )}
                 >
                   {gift.name}
                 </h3>
                 <p
                   className={cn(
-                    "mt-3 flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#262626]/45",
+                    "mt-2 flex flex-wrap items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#262626]/45",
                   )}
                 >
                   {gift.price || "Valor a consultar"}

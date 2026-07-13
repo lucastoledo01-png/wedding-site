@@ -8,6 +8,7 @@ import { zValidator } from "@hono/zod-validator";
 import { createWishSchema, wishesQuerySchema } from "./wishes.schema.js";
 import { getDbClient } from "../../lib/db-client.js";
 import { NotFoundError, ConflictError } from "../../lib/errors.js";
+import { ensureIpAllowed, getClientIp, getDevice } from "../../lib/request-metadata.js";
 
 const wishesRoutes = new Hono();
 
@@ -150,6 +151,8 @@ wishesRoutes.post("/", zValidator("json", createWishSchema), async (c) => {
     c.req.valid("json");
 
   const pool = await getDbClient(c);
+  const ipAddress = getClientIp(c);
+  await ensureIpAllowed(pool, uid, ipAddress);
 
   const recaptchaOk = await verifyRecaptcha(c, recaptchaToken, recaptchaAction);
   if (!recaptchaOk) {
@@ -188,11 +191,11 @@ wishesRoutes.post("/", zValidator("json", createWishSchema), async (c) => {
   // Insert wish
   try {
     const result = await pool.query(
-      `INSERT INTO wishes (invitation_uid, name, message, attendance, created_at)
-         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
-         RETURNING id, name, message, attendance,
+      `INSERT INTO wishes (invitation_uid, name, message, attendance, ip_address, device, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+         RETURNING id, name, message, attendance, ip_address, device,
                    created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as created_at`,
-      [uid, name, message, attendance],
+      [uid, name, message, attendance, ipAddress, getDevice(c)],
     );
 
     return c.json({ success: true, data: result.rows[0] }, 201);

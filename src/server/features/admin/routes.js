@@ -74,7 +74,8 @@ adminRoutes.get("/:uid/guests", async (c) => {
   const uid = c.req.param("uid");
   const pool = await getDbClient(c);
   const result = await pool.query(
-    `SELECT id, full_name, party_size, attendance, confirmed_at, message, created_at
+    `SELECT id, full_name, party_size, attendance, confirmed_at, message,
+            confirmed_ip, confirmed_device, created_at
        FROM guests
       WHERE invitation_uid = $1
       ORDER BY full_name ASC`,
@@ -219,7 +220,7 @@ adminRoutes.get("/:uid/comments", async (c) => {
   const uid = c.req.param("uid");
   const pool = await getDbClient(c);
   const result = await pool.query(
-    `SELECT id, name, message, attendance, created_at
+    `SELECT id, name, message, attendance, ip_address, device, created_at
        FROM wishes
       WHERE invitation_uid = $1
       ORDER BY created_at DESC`,
@@ -238,6 +239,56 @@ adminRoutes.delete("/:uid/comments/:id", async (c) => {
   );
 
   if (!result.rows[0]) throw new NotFoundError("Comment not found");
+  return c.json({ success: true });
+});
+
+adminRoutes.get("/:uid/blocked-ips", async (c) => {
+  const uid = c.req.param("uid");
+  const pool = await getDbClient(c);
+  const result = await pool.query(
+    `SELECT id, ip_address, reason, created_at
+       FROM blocked_ips
+      WHERE invitation_uid = $1
+      ORDER BY created_at DESC`,
+    [uid],
+  );
+
+  return c.json({ success: true, data: result.rows });
+});
+
+adminRoutes.post("/:uid/blocked-ips", async (c) => {
+  const uid = c.req.param("uid");
+  const body = await c.req.json();
+  const ipAddress = String(body.ipAddress || body.ip_address || "").trim();
+  const reason = String(body.reason || "Bloqueado pelo painel").trim();
+
+  if (!ipAddress) {
+    return c.json({ success: false, error: "Informe o IP para bloquear." }, 400);
+  }
+
+  const pool = await getDbClient(c);
+  const result = await pool.query(
+    `INSERT INTO blocked_ips (invitation_uid, ip_address, reason)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (invitation_uid, ip_address)
+     DO UPDATE SET reason = EXCLUDED.reason, created_at = CURRENT_TIMESTAMP
+     RETURNING id, ip_address, reason, created_at`,
+    [uid, ipAddress, reason],
+  );
+
+  return c.json({ success: true, data: result.rows[0] }, 201);
+});
+
+adminRoutes.delete("/:uid/blocked-ips/:id", async (c) => {
+  const uid = c.req.param("uid");
+  const id = c.req.param("id");
+  const pool = await getDbClient(c);
+  const result = await pool.query(
+    "DELETE FROM blocked_ips WHERE id = $1 AND invitation_uid = $2 RETURNING id",
+    [id, uid],
+  );
+
+  if (!result.rows[0]) throw new NotFoundError("Blocked IP not found");
   return c.json({ success: true });
 });
 
