@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatEventDate } from "@/lib/format-event-date";
+import { formatEventDate, getEventDateTime } from "@/lib/format-event-date";
 import { useMotionPreset } from "@/lib/motion";
 
 const CalendarButton = ({ icon: Icon, label, onClick }) => (
@@ -81,16 +81,16 @@ const SingleEventCard = ({ eventData }) => {
   const calendarTitle = `${eventData.title} Casamento Lucas e Andressa`;
 
   const googleCalendarLink = () => {
-    const startDate = new Date(`${eventData.date}T${eventData.startTime}:00`);
-    const endDate = new Date(`${eventData.date}T${eventData.endTime}:00`);
+    const startDate = getEventDateTime(eventData.date, eventData.startTime);
+    const endDate = getEventDateTime(eventData.date, eventData.endTime);
     const formatDate = (date) => date.toISOString().replace(/-|:|\.\d+/g, "");
 
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calendarTitle)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(eventData.description || "")}&location=${encodeURIComponent(eventData.location)}&ctz=America/Sao_Paulo`;
   };
 
   const downloadICSFile = () => {
-    const startDate = new Date(`${eventData.date}T${eventData.startTime}:00`);
-    const endDate = new Date(`${eventData.date}T${eventData.endTime}:00`);
+    const startDate = getEventDateTime(eventData.date, eventData.startTime);
+    const endDate = getEventDateTime(eventData.date, eventData.endTime);
     const formatICSDate = (date) =>
       date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
     const icsContent = `BEGIN:VCALENDAR
