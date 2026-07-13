@@ -9,6 +9,8 @@ import {
   authenticateAdmin,
   verifyAdminSession,
 } from "../../lib/admin-auth.js";
+import { appendGuestListBackup } from "../../lib/google-sheets-backup.js";
+import { getClientIp, getDevice } from "../../lib/request-metadata.js";
 
 const adminRoutes = new Hono();
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -85,6 +87,18 @@ adminRoutes.post("/:uid/guests", async (c) => {
   const uid = c.req.param("uid");
   const pool = await getDbClient(c);
   const guest = await createGuest(pool, uid, await c.req.json());
+
+  try {
+    await appendGuestListBackup(c, {
+      name: guest.full_name,
+      attendance: guest.attendance,
+      device: getDevice(c),
+      ipAddress: getClientIp(c),
+    });
+  } catch (error) {
+    console.error("Google Sheets guest list backup failed:", error.message);
+  }
+
   return c.json({ success: true, data: guest }, 201);
 });
 
@@ -101,7 +115,19 @@ adminRoutes.post("/:uid/guests/import", async (c) => {
   const pool = await getDbClient(c);
   const imported = [];
   for (const name of names) {
-    imported.push(await createGuest(pool, uid, { fullName: name, partySize: 1 }));
+    const guest = await createGuest(pool, uid, { fullName: name, partySize: 1 });
+    imported.push(guest);
+
+    try {
+      await appendGuestListBackup(c, {
+        name: guest.full_name,
+        attendance: guest.attendance,
+        device: getDevice(c),
+        ipAddress: getClientIp(c),
+      });
+    } catch (error) {
+      console.error("Google Sheets guest list backup failed:", error.message);
+    }
   }
 
   return c.json({ success: true, data: imported });

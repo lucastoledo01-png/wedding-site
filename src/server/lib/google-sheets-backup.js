@@ -78,10 +78,18 @@ async function getAccessToken(serviceAccount) {
 }
 
 function attendanceLabel(attendance) {
-  return attendance === "NOT_ATTENDING" ? "Ausência confirmada" : "Presença confirmada";
+  if (attendance === "NOT_ATTENDING") return "Ausência confirmada";
+  if (attendance === "ATTENDING") return "Presença confirmada";
+  return "Pendente";
 }
 
-export async function appendRsvpBackup(c, { name, attendance, device, ipAddress }) {
+function nowSaoPaulo() {
+  return new Date().toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+  });
+}
+
+async function appendSheetRow(c, range, row) {
   const spreadsheetId = getEnv(c, "GOOGLE_SHEETS_SPREADSHEET_ID");
   if (!spreadsheetId) return { skipped: true, reason: "missing_spreadsheet_id" };
 
@@ -90,7 +98,6 @@ export async function appendRsvpBackup(c, { name, attendance, device, ipAddress 
     return { skipped: true, reason: "missing_service_account" };
   }
 
-  const range = getEnv(c, "GOOGLE_SHEETS_RANGE") || "A:E";
   const accessToken = await getAccessToken(serviceAccount);
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(
@@ -103,17 +110,7 @@ export async function appendRsvpBackup(c, { name, attendance, device, ipAddress 
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        values: [
-          [
-            new Date().toLocaleString("pt-BR", {
-              timeZone: "America/Sao_Paulo",
-            }),
-            name,
-            attendanceLabel(attendance),
-            device || getDevice(c),
-            ipAddress || getClientIp(c),
-          ],
-        ],
+        values: [row],
       }),
     },
   );
@@ -124,4 +121,29 @@ export async function appendRsvpBackup(c, { name, attendance, device, ipAddress 
   }
 
   return { success: true, data };
+}
+
+export async function appendRsvpBackup(c, { name, attendance, device, ipAddress }) {
+  const range =
+    getEnv(c, "GOOGLE_SHEETS_CONFIRMED_RANGE") || "'Presença Confirmada'!A:E";
+
+  return appendSheetRow(c, range, [
+    nowSaoPaulo(),
+    name,
+    attendanceLabel(attendance),
+    device || getDevice(c),
+    ipAddress || getClientIp(c),
+  ]);
+}
+
+export async function appendGuestListBackup(c, { name, attendance, device, ipAddress }) {
+  const range = getEnv(c, "GOOGLE_SHEETS_TOTAL_RANGE") || "'Lista Total'!A:E";
+
+  return appendSheetRow(c, range, [
+    nowSaoPaulo(),
+    name,
+    attendanceLabel(attendance),
+    device || getDevice(c) || "Painel admin",
+    ipAddress || getClientIp(c),
+  ]);
 }
