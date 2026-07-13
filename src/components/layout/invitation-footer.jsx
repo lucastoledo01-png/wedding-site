@@ -2,30 +2,19 @@ import { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { useConfig } from "@/features/invitation/hooks/use-config";
 import { cn } from "@/lib/utils";
-
-function getTimeLeft(date, time = "20:00") {
-  const target = new Date(`${date}T${time}:00`).getTime();
-  const difference = Math.max(target - Date.now(), 0);
-
-  return {
-    dias: Math.floor(difference / (1000 * 60 * 60 * 24)),
-    horas: Math.floor((difference / (1000 * 60 * 60)) % 24),
-    minutos: Math.floor((difference / (1000 * 60)) % 60),
-    segundos: Math.floor((difference / 1000) % 60),
-  };
-}
+import { getCountdownTimeLeft } from "@/lib/countdown";
 
 export default function InvitationFooter() {
   const config = useConfig();
   const ceremonyTime = config.agenda?.[0]?.startTime || "20:00";
   const [timeLeft, setTimeLeft] = useState(() =>
-    getTimeLeft(config.date, ceremonyTime),
+    getCountdownTimeLeft(config.date, ceremonyTime),
   );
   const isFinished = Object.values(timeLeft).every((value) => value === 0);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setTimeLeft(getTimeLeft(config.date, ceremonyTime));
+      setTimeLeft(getCountdownTimeLeft(config.date, ceremonyTime));
     }, 1000);
 
     return () => window.clearInterval(timer);

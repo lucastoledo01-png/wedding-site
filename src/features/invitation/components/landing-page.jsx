@@ -7,27 +7,15 @@ import {
   staggerContainer,
 } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-
-function getTimeLeft(date, time = "20:00") {
-  const target = new Date(`${date}T${time}:00`).getTime();
-  const now = Date.now();
-  const difference = Math.max(target - now, 0);
-
-  return {
-    dias: Math.floor(difference / (1000 * 60 * 60 * 24)),
-    horas: Math.floor((difference / (1000 * 60 * 60)) % 24),
-    minutos: Math.floor((difference / (1000 * 60)) % 60),
-    segundos: Math.floor((difference / 1000) % 60),
-  };
-}
+import { getCountdownTimeLeft } from "@/lib/countdown";
 
 function Countdown({ date, time }) {
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(date, time));
+  const [timeLeft, setTimeLeft] = useState(() => getCountdownTimeLeft(date, time));
   const isFinished = Object.values(timeLeft).every((value) => value === 0);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setTimeLeft(getTimeLeft(date, time));
+      setTimeLeft(getCountdownTimeLeft(date, time));
     }, 1000);
 
     return () => window.clearInterval(timer);
