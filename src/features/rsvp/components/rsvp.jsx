@@ -131,7 +131,7 @@ export default function Rsvp() {
   return (
     <section
       id="rsvp"
-      className={cn("relative min-h-[106svh] overflow-hidden bg-[#f5f0eb]")}
+      className={cn("relative overflow-hidden bg-[#f5f0eb]")}
     >
       {showConfetti && <Confetti recycle={false} numberOfPieces={220} />}
       <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
@@ -144,7 +144,7 @@ export default function Rsvp() {
       />
       <div
         className={cn(
-          "relative z-10 mx-auto flex min-h-[106svh] flex-col justify-center px-5 py-24",
+          "relative z-10 mx-auto px-5 py-20",
         )}
       >
         <div className={cn("space-y-5 text-center")}>
