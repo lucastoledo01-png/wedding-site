@@ -1,7 +1,7 @@
 import { useConfig } from "@/features/invitation/hooks/use-config";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Heart } from "lucide-react";
 import {
   useMotionPreset,
   staggerContainer,
@@ -34,14 +34,16 @@ function Countdown({ date, time }) {
   }, [date, time]);
 
   return (
-    <div className={cn("w-full max-w-[350px] rounded-[30px] border border-white/45 bg-white/22 px-4 py-3 shadow-[0_18px_60px_rgba(80,45,55,0.12)] backdrop-blur-2xl")}>
-      <p className={cn("mb-2 text-center text-[9px] font-medium uppercase tracking-[0.36em] text-[#262626]/50")}>
-        Faltam
-      </p>
+    <div className={cn("w-full max-w-[350px] rounded-[30px] border border-white/35 bg-white/15 px-4 py-3 shadow-[0_14px_48px_rgba(80,45,55,0.09)] backdrop-blur-[22px]")}>
+      <div className={cn("mx-auto mb-3 flex w-28 items-center justify-center gap-3")}>
+        <span className={cn("h-px flex-1 bg-[#262626]/10")} />
+        <Heart className={cn("h-4 w-4 fill-[#ff4582] text-[#ff4582]")} />
+        <span className={cn("h-px flex-1 bg-[#262626]/10")} />
+      </div>
       {isFinished ? (
         <p
           className={cn(
-            "py-2 text-center text-xl font-medium text-[#ff4582]",
+            "pb-2 text-center text-xl font-medium text-[#ff4582]",
           )}
         >
           Chegou a hora! 🎉

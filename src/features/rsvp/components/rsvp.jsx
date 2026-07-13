@@ -140,7 +140,7 @@ export default function Rsvp() {
         )}
       />
       <div className={cn("relative z-10 mx-auto px-5 py-20")}>
-        <div className={cn("space-y-5")}>
+        <div className={cn("space-y-5 text-center")}>
           <p className={cn("super-label")}>Confirmação</p>
           <h2 className={cn("super-heading text-5xl")}>
             Confirmação de Presença

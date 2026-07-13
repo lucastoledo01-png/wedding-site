@@ -160,7 +160,7 @@ export default function Location() {
             Agenda
           </motion.span>
 
-          <motion.h2 variants={fadeUp} className={cn("super-heading text-6xl")}>
+          <motion.h2 variants={fadeUp} className={cn("super-heading text-5xl")}>
             O nosso dia
           </motion.h2>
           <motion.p

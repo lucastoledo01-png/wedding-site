@@ -68,6 +68,34 @@ VITE_API_URL=https://api.yourdomain.com
 DATABASE_URL=postgresql://user:pass@production-host:5432/sakeenah
 ```
 
+## Hostinger Application + Supabase
+
+This project can run frontend and backend together in one Node application.
+The build generates the Vite frontend and the Hono server entry in `dist/`.
+
+### Build settings
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+Use `dist` as the static output directory only when the platform asks for a
+frontend output folder. The Node start command must still be `npm run start`
+so the `/api` routes stay online.
+
+### Supabase setup
+
+1. Open Supabase SQL Editor.
+2. Run `docs/supabase-migration.sql`.
+3. In Hostinger, set `DATABASE_URL` to the Supabase Postgres connection string
+   with `sslmode=require`.
+
+The Supabase anon key is only needed for future direct client-side Supabase
+features. The current app uses the backend API, so confirmations, comments and
+gifts all go through `/api` and are persisted in Postgres.
+
 ### Build Commands
 
 ```bash

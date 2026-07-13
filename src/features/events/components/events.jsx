@@ -45,7 +45,7 @@ export default function Events() {
 
             <motion.h2
               variants={fadeUp}
-              className={cn("super-heading text-6xl")}
+              className={cn("super-heading text-5xl")}
             >
               O nosso dia
             </motion.h2>

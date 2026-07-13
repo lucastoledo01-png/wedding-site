@@ -24,8 +24,10 @@ const poolCache = new Map();
 const FILE_DB_KEY = "__file_db__";
 
 function shouldUseFileDb(connectionString) {
+  const isProduction = process.env.NODE_ENV === "production";
+
   return (
-    !connectionString ||
+    (!connectionString && !isProduction) ||
     connectionString.includes("username:password@localhost") ||
     process.env.USE_FILE_DB === "true"
   );
@@ -374,7 +376,23 @@ function resolveConnectionString(c) {
     return c.env.DATABASE_URL;
   }
 
+  if (typeof c.env?.SUPABASE_DATABASE_URL === "string") {
+    return c.env.SUPABASE_DATABASE_URL;
+  }
+
+  if (typeof process.env.DATABASE_URL === "string") {
+    return process.env.DATABASE_URL;
+  }
+
+  if (typeof process.env.SUPABASE_DATABASE_URL === "string") {
+    return process.env.SUPABASE_DATABASE_URL;
+  }
+
   return null;
+}
+
+function shouldUseSsl(connectionString) {
+  return /supabase\.co|pooler\.supabase\.com/i.test(connectionString);
 }
 
 /**
@@ -397,6 +415,12 @@ export async function getDbClient(c) {
     return poolCache.get(FILE_DB_KEY);
   }
 
+  if (!connectionString) {
+    throw new Error(
+      "DATABASE_URL is required in production. Configure the Supabase Postgres connection string.",
+    );
+  }
+
   // Reuse an existing pool for this connection string if we have one.
   const cached = poolCache.get(connectionString);
   if (cached) {
@@ -407,7 +431,10 @@ export async function getDbClient(c) {
   const pg = await import("pg");
   const { Pool } = pg.default || pg;
 
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({
+    connectionString,
+    ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : undefined,
+  });
   poolCache.set(connectionString, pool);
 
   return pool;

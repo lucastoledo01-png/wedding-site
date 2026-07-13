@@ -293,7 +293,7 @@ export default function Wishes() {
         <div className={cn("mx-auto px-5 py-20")}>
           <div className={cn("space-y-5")}>
             <p className={cn("super-label")}>Mensagens</p>
-            <h2 className={cn("super-heading text-6xl")}>Deixe sua mensagem</h2>
+            <h2 className={cn("super-heading text-5xl")}>Deixe sua mensagem</h2>
             <p className={cn("super-copy max-w-sm text-[1.125rem]")}>
               Escreva algumas palavras para nos. Vamos guardar cada recado como
               uma lembranca deste dia.
