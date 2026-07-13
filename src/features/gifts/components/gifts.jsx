@@ -1,11 +1,130 @@
-import { CheckCircle, ExternalLink, Gift } from "lucide-react";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { Check, CheckCircle, Copy, ExternalLink, Gift, Heart, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchGiftProducts } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
 
+const PIX_KEY = "08080098697";
+const PIX_INFO = {
+  name: "Lucas Toledo Casaloti",
+  bank: "260 - Nu Pagamentos S.A.",
+  document: "***.800.986-**",
+  qrCode: "/images/pix-qr-code.png",
+};
+
+function PixModal({ open, onClose }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!open || typeof document === "undefined") return null;
+
+  async function copyPixKey() {
+    try {
+      await navigator.clipboard.writeText(PIX_KEY);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return createPortal(
+    <div
+      className={cn(
+        "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/40 px-5 py-6 backdrop-blur-sm",
+      )}
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div
+        className={cn(
+          "max-h-[92svh] w-full max-w-md overflow-y-auto rounded-[30px] border border-white/70 bg-[#fdf8f3] shadow-[0_24px_90px_rgba(38,38,38,0.24)]",
+        )}
+      >
+        <div className={cn("relative bg-[#ff4582] px-6 pb-7 pt-6 text-center text-[#fdf8f3]")}>
+          <button
+            type="button"
+            onClick={onClose}
+            className={cn(
+              "absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-[#262626]/55 transition hover:text-[#ff4582]",
+            )}
+            aria-label="Fechar Pix"
+          >
+            <X className={cn("h-5 w-5")} />
+          </button>
+          <Heart className={cn("mx-auto h-8 w-8 fill-current")} />
+          <h3 className={cn("mt-3 text-3xl font-semibold leading-none")}>
+            Presente em Pix
+          </h3>
+          <p className={cn("mx-auto mt-3 max-w-xs text-sm font-medium leading-relaxed text-white/90")}>
+            Se quiser nos presentear de uma forma prática, qualquer contribuição
+            será recebida com muito carinho para o início da nossa nova fase.
+          </p>
+
+          <div className={cn("mx-auto mt-6 w-44 rounded-2xl bg-white p-3 shadow-lg")}>
+            <img
+              src={PIX_INFO.qrCode}
+              alt="QR Code Pix Lucas e Andressa"
+              className={cn("h-full w-full")}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={copyPixKey}
+            className={cn(
+              "mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-[#ff4582] transition hover:bg-[#fdf8f3]",
+            )}
+          >
+            {copied ? <Check className={cn("h-4 w-4")} /> : <Copy className={cn("h-4 w-4")} />}
+            {copied ? "Chave copiada" : "Copiar chave Pix"}
+          </button>
+        </div>
+
+        <div className={cn("px-6 py-6 text-[#262626]")}>
+          <p className={cn("text-center text-sm text-[#262626]/55")}>
+            Ou use a chave Pix
+          </p>
+          <div className={cn("mt-5 grid gap-4 border-t border-[#262626]/10 pt-5 text-sm")}>
+            <div className={cn("grid grid-cols-[92px_1fr_auto] items-center gap-3")}>
+              <span className={cn("font-semibold")}>Chave Pix</span>
+              <span className={cn("break-all font-semibold text-[#ff4582]")}>{PIX_KEY}</span>
+              <button
+                type="button"
+                onClick={copyPixKey}
+                className={cn("grid h-9 w-9 place-items-center rounded-full border border-[#262626]/10 text-[#ff4582]")}
+                aria-label="Copiar chave Pix"
+              >
+                {copied ? <Check className={cn("h-4 w-4")} /> : <Copy className={cn("h-4 w-4")} />}
+              </button>
+            </div>
+            <div className={cn("grid grid-cols-[92px_1fr] gap-3")}>
+              <span className={cn("font-semibold")}>Nome</span>
+              <span>{PIX_INFO.name}</span>
+            </div>
+            <div className={cn("grid grid-cols-[92px_1fr] gap-3")}>
+              <span className={cn("font-semibold")}>CPF</span>
+              <span>{PIX_INFO.document}</span>
+            </div>
+            <div className={cn("grid grid-cols-[92px_1fr] gap-3")}>
+              <span className={cn("font-semibold")}>Banco</span>
+              <span>{PIX_INFO.bank}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export default function Gifts() {
   const { uid } = useInvitation();
+  const [pixOpen, setPixOpen] = useState(false);
   const { data: gifts = [], isLoading } = useQuery({
     queryKey: ["gift-products", uid],
     queryFn: async () => (await fetchGiftProducts(uid)).data,
@@ -15,6 +134,7 @@ export default function Gifts() {
 
   return (
     <section id="gifts" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
+      <PixModal open={pixOpen} onClose={() => setPixOpen(false)} />
       <img
         src="/images/flowers.png"
         alt=""
@@ -52,6 +172,45 @@ export default function Gifts() {
         )}
 
         <div className={cn("grid grid-cols-2 gap-4")}>
+          <article className={cn("group min-w-0")}>
+            <button type="button" onClick={() => setPixOpen(true)} className={cn("block w-full text-left")}>
+              <div
+                className={cn(
+                  "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#ff4582] p-4 text-[#fdf8f3]",
+                )}
+              >
+                <div className={cn("absolute inset-0 opacity-20")}>
+                  <img src="/images/flowers.png" alt="" className={cn("h-full w-full object-cover")} />
+                </div>
+                <div className={cn("relative flex h-full flex-col items-center justify-center text-center")}>
+                  <Heart className={cn("h-12 w-12 fill-current")} />
+                  <p className={cn("mt-4 text-[9px] font-black uppercase tracking-[0.28em]")}>
+                    Presente especial
+                  </p>
+                  <h3 className={cn("mt-2 text-2xl font-semibold leading-none")}>
+                    Pix dos noivos
+                  </h3>
+                  <span
+                    className={cn(
+                      "mt-5 rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582]",
+                    )}
+                  >
+                    Ver QR Code
+                  </span>
+                </div>
+              </div>
+            </button>
+            <div className={cn("mt-3")}>
+              <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>Pix</p>
+              <h3 className={cn("mt-1 text-xl font-semibold leading-none tracking-tight text-[#262626]")}>
+                Um carinho para nós
+              </h3>
+              <p className={cn("mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-[#262626]/45")}>
+                Chave Pix
+              </p>
+            </div>
+          </article>
+
           {gifts.map((gift) => (
             <article key={gift.id} className={cn("group min-w-0")}>
               <a
