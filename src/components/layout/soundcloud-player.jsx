@@ -45,11 +45,8 @@ export default function SoundCloudPlayer({
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
   const lastManualPlayRef = useRef(0);
-  const didRetryIOSPlayRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [playerKey, setPlayerKey] = useState(0);
-  const [manualAutoPlay, setManualAutoPlay] = useState(false);
   const [promptChoiceMade, setPromptChoiceMade] = useState(false);
   const [shouldPlayWhenReady, setShouldPlayWhenReady] = useState(false);
   const isIOS = isIOSDevice();
@@ -57,7 +54,7 @@ export default function SoundCloudPlayer({
 
   const params = new URLSearchParams({
     url,
-    auto_play: shouldAutoPlay || manualAutoPlay ? "true" : "false",
+    auto_play: shouldAutoPlay ? "true" : "false",
     buying: "false",
     liking: "false",
     download: "false",
@@ -84,7 +81,7 @@ export default function SoundCloudPlayer({
         if (cancelled) return;
         setIsReady(true);
         widget.setVolume(volume);
-        if (shouldAutoPlay || shouldPlayWhenReady || manualAutoPlay) {
+        if (shouldAutoPlay || shouldPlayWhenReady) {
           lastManualPlayRef.current = Date.now();
           widget.play();
           setShouldPlayWhenReady(false);
@@ -94,14 +91,6 @@ export default function SoundCloudPlayer({
       widget.bind(SC.Widget.Events.PLAY, () => setIsPlaying(true));
       widget.bind(SC.Widget.Events.PAUSE, () => {
         setIsPlaying(false);
-        const justAskedToPlay = Date.now() - lastManualPlayRef.current < 2500;
-        if (isIOS && justAskedToPlay && !didRetryIOSPlayRef.current) {
-          didRetryIOSPlayRef.current = true;
-          window.setTimeout(() => {
-            widget.setVolume(volume);
-            widget.play();
-          }, 250);
-        }
       });
       widget.bind(SC.Widget.Events.FINISH, () => setIsPlaying(false));
     });
@@ -109,7 +98,7 @@ export default function SoundCloudPlayer({
     return () => {
       cancelled = true;
     };
-  }, [isIOS, manualAutoPlay, playerKey, shouldAutoPlay, shouldPlayWhenReady, url, volume]);
+  }, [shouldAutoPlay, shouldPlayWhenReady, url, volume]);
 
   useEffect(() => {
     if (isReady && shouldPlayWhenReady) {
@@ -122,7 +111,6 @@ export default function SoundCloudPlayer({
     if (!widgetRef.current || !isReady) return;
 
     lastManualPlayRef.current = Date.now();
-    didRetryIOSPlayRef.current = false;
     widgetRef.current.setVolume(volume);
     widgetRef.current.play();
   };
@@ -140,14 +128,6 @@ export default function SoundCloudPlayer({
 
   const acceptMusic = () => {
     setPromptChoiceMade(true);
-    didRetryIOSPlayRef.current = false;
-    if (isIOS) {
-      lastManualPlayRef.current = Date.now();
-      setManualAutoPlay(true);
-      setShouldPlayWhenReady(true);
-      setPlayerKey((current) => current + 1);
-      return;
-    }
     if (isReady) {
       play();
       return;
@@ -164,7 +144,6 @@ export default function SoundCloudPlayer({
   return (
     <>
       <iframe
-        key={playerKey}
         ref={iframeRef}
         title="Musica do casamento"
         src={`https://w.soundcloud.com/player/?${params.toString()}`}
