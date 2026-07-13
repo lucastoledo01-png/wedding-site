@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Confetti from "react-confetti";
 import { CheckCircle, Loader2, Search, UserCheck, XCircle } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -67,6 +67,85 @@ function FeedbackModal({ feedback, onClose }) {
   );
 }
 
+function ConfirmDecisionModal({
+  attendance,
+  guestName,
+  isPending,
+  onCancel,
+  onConfirm,
+}) {
+  if (!guestName || typeof document === "undefined") return null;
+
+  const isAbsence = attendance === "NOT_ATTENDING";
+
+  return createPortal(
+    <div
+      className={cn(
+        "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/35 px-5 backdrop-blur-sm",
+      )}
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isPending) onCancel();
+      }}
+    >
+      <div
+        className={cn(
+          "w-full max-w-sm rounded-[28px] border border-white/70 bg-[#fdf8f3] p-6 text-center shadow-[0_24px_80px_rgba(38,38,38,0.22)]",
+        )}
+      >
+        <div
+          className={cn(
+            "mx-auto grid h-14 w-14 place-items-center rounded-full text-white",
+            isAbsence ? "bg-[#ff4582]" : "bg-emerald-500",
+          )}
+        >
+          {isAbsence ? (
+            <XCircle className={cn("h-7 w-7")} />
+          ) : (
+            <CheckCircle className={cn("h-7 w-7")} />
+          )}
+        </div>
+        <h3 className={cn("mt-5 text-2xl font-medium text-[#262626]")}>
+          {guestName}
+        </h3>
+        <p className={cn("mt-3 text-base leading-relaxed text-[#262626]/65")}>
+          {isAbsence
+            ? "Você confirma que não irá comparecer?"
+            : "Você deseja confirmar sua presença?"}
+        </p>
+        <div className={cn("mt-6 grid gap-3")}>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isPending}
+            className={cn(
+              "inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-4 text-sm font-medium uppercase tracking-[0.16em] text-white transition disabled:opacity-60",
+              isAbsence
+                ? "bg-[#ff4582] hover:bg-[#f73576]"
+                : "bg-emerald-500 hover:bg-emerald-600",
+            )}
+          >
+            {isPending ? <Loader2 className={cn("h-4 w-4 animate-spin")} /> : null}
+            {isAbsence ? "Confirmar ausência" : "Sim, confirmar presença"}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isPending}
+            className={cn(
+              "w-full rounded-full border border-[#262626]/10 bg-white px-5 py-4 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]/60 transition hover:text-[#262626] disabled:opacity-60",
+            )}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export default function Rsvp() {
   const { uid } = useInvitation();
   const [name, setName] = useState("");
@@ -74,6 +153,7 @@ export default function Rsvp() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
 
   const canSearch = name.trim().length >= 3 && !!uid;
   const { data, isFetching, error: searchError } = useQuery({
@@ -90,14 +170,11 @@ export default function Rsvp() {
   const hasAlreadyAnswered =
     attendanceStatus === "ATTENDING" || attendanceStatus === "NOT_ATTENDING";
   const canConfirm = Boolean(match) && !hasAlreadyAnswered;
-  const confidence = useMemo(() => {
-    if (!match?.matchScore) return "";
-    return `${Math.round(match.matchScore * 100)}%`;
-  }, [match]);
 
   const mutation = useMutation({
     mutationFn: () =>
       confirmPresence(uid, {
+        guestId: match?.id,
         name: match?.full_name || name,
         attendance,
         message: "",
@@ -105,6 +182,7 @@ export default function Rsvp() {
       }),
     onSuccess: (response) => {
       setSuggestions([]);
+      setConfirmDecisionOpen(false);
       setShowConfetti(true);
       setFeedback({
         type: "success",
@@ -118,6 +196,7 @@ export default function Rsvp() {
     },
     onError: (error) => {
       setSuggestions(error.suggestions || []);
+      setConfirmDecisionOpen(false);
       setFeedback({
         type: "error",
         title: "Não foi possível confirmar",
@@ -135,6 +214,13 @@ export default function Rsvp() {
     >
       {showConfetti && <Confetti recycle={false} numberOfPieces={220} />}
       <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
+      <ConfirmDecisionModal
+        attendance={attendance}
+        guestName={confirmDecisionOpen ? match?.full_name : ""}
+        isPending={mutation.isPending}
+        onCancel={() => setConfirmDecisionOpen(false)}
+        onConfirm={() => mutation.mutate()}
+      />
       <img
         src="/images/flowers.png"
         alt=""
@@ -157,7 +243,7 @@ export default function Rsvp() {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            mutation.mutate();
+            if (canConfirm) setConfirmDecisionOpen(true);
           }}
           className={cn(
             "mt-12 grid gap-5 rounded-[24px] border border-[#262626]/10 bg-[#fdf8f3] p-5 shadow-[0_24px_70px_rgba(38,38,38,0.10)]",
@@ -185,6 +271,7 @@ export default function Rsvp() {
                 onChange={(event) => {
                   setName(event.target.value);
                   setSuggestions([]);
+                  setConfirmDecisionOpen(false);
                   mutation.reset();
                 }}
                 className={cn(
@@ -225,14 +312,6 @@ export default function Rsvp() {
               )}
             >
               Nome não existe na lista.
-              {data?.suggestions?.length > 0 && (
-                <p className={cn("mt-2 text-[#262626]/55")}>
-                  Talvez seja:{" "}
-                  {data.suggestions
-                    .map((suggestion) => suggestion.fullName)
-                    .join(", ")}
-                </p>
-              )}
             </div>
           )}
 
@@ -253,13 +332,6 @@ export default function Rsvp() {
                     {match.full_name}
                   </p>
                 </div>
-                <span
-                  className={cn(
-                    "rounded-full bg-[#ff4582] px-3 py-1 text-sm font-semibold text-white",
-                  )}
-                >
-                  {confidence}
-                </span>
               </div>
               <p
                 className={cn(
@@ -326,6 +398,10 @@ export default function Rsvp() {
           <button
             type="submit"
             disabled={mutation.isPending || !canConfirm}
+            onClick={(event) => {
+              event.preventDefault();
+              if (canConfirm) setConfirmDecisionOpen(true);
+            }}
             className={cn(
               "super-transition flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 font-medium uppercase tracking-[0.18em] text-white shadow-lg hover:bg-[#ff4582] hover:text-[#262626] disabled:cursor-not-allowed disabled:opacity-60",
             )}

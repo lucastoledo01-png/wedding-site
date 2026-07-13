@@ -1,11 +1,18 @@
 import { Hono } from "hono";
 import { getDbClient } from "../../lib/db-client.js";
-import { findBestGuestMatch, normalizeName } from "../../lib/text-match.js";
+import { normalizeName } from "../../lib/text-match.js";
 import { NotFoundError } from "../../lib/errors.js";
 import { appendRsvpBackup } from "../../lib/google-sheets-backup.js";
 import { getClientIp, getDevice } from "../../lib/request-metadata.js";
 
 const rsvpRoutes = new Hono();
+
+function findExactGuest(name, guests) {
+  const normalized = normalizeName(name);
+  if (!normalized) return null;
+
+  return guests.find((guest) => normalizeName(guest.full_name) === normalized) || null;
+}
 
 async function loadGuests(pool, uid) {
   const result = await pool.query(
@@ -23,21 +30,15 @@ rsvpRoutes.get("/search", async (c) => {
   const uid = c.req.param("uid");
   const name = c.req.query("name") || "";
   const pool = await getDbClient(c);
-  const ipAddress = getClientIp(c);
 
   const guests = await loadGuests(pool, uid);
-  const { best, suggestions } = findBestGuestMatch(name, guests);
+  const match = findExactGuest(name, guests);
 
   return c.json({
     success: true,
     data: {
-      match: best,
-      suggestions: suggestions.map((guest) => ({
-        id: guest.id,
-        fullName: guest.full_name,
-        attendance: guest.attendance,
-        matchScore: Number(guest.matchScore.toFixed(2)),
-      })),
+      match,
+      suggestions: [],
     },
   });
 });
@@ -46,6 +47,7 @@ rsvpRoutes.post("/confirm", async (c) => {
   const uid = c.req.param("uid");
   const body = await c.req.json();
   const name = String(body.name || "").trim();
+  const guestId = Number(body.guestId || body.guest_id || 0);
   const attendance = body.attendance === "NOT_ATTENDING" ? "NOT_ATTENDING" : "ATTENDING";
   const message = String(body.message || "").trim();
   const partySize = Number.isFinite(Number(body.partySize))
@@ -58,14 +60,15 @@ rsvpRoutes.post("/confirm", async (c) => {
 
   const pool = await getDbClient(c);
   const guests = await loadGuests(pool, uid);
-  const { best, suggestions } = findBestGuestMatch(name, guests);
+  const exactGuest = findExactGuest(name, guests);
+  const best = guestId ? (exactGuest?.id === guestId ? exactGuest : null) : exactGuest;
 
   if (!best) {
     return c.json(
       {
         success: false,
         error: "Não encontramos esse nome na lista de convidados.",
-        suggestions: suggestions.map((guest) => guest.full_name),
+        suggestions: [],
       },
       404,
     );
