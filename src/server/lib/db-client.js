@@ -21,6 +21,7 @@ import staticConfig from "../../config/config.js";
 // Module-scoped cache: connectionString -> pg.Pool
 // Reused across requests within the same runtime instance.
 const poolCache = new Map();
+const schemaReady = new Set();
 const FILE_DB_KEY = "__file_db__";
 
 function shouldUseFileDb(connectionString) {
@@ -397,6 +398,50 @@ function shouldUseSsl(connectionString) {
   return /supabase\.co|pooler\.supabase\.com/i.test(connectionString);
 }
 
+async function ensureRuntimeSchema(pool, connectionString) {
+  if (schemaReady.has(connectionString)) return;
+
+  await pool.query(`
+    ALTER TABLE guests
+      ADD COLUMN IF NOT EXISTS confirmed_ip TEXT,
+      ADD COLUMN IF NOT EXISTS confirmed_device TEXT
+  `);
+  await pool.query(`
+    ALTER TABLE wishes
+      ADD COLUMN IF NOT EXISTS ip_address TEXT,
+      ADD COLUMN IF NOT EXISTS device TEXT
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS blocked_ips (
+      id SERIAL PRIMARY KEY,
+      invitation_uid VARCHAR(50) NOT NULL REFERENCES invitations(uid) ON DELETE CASCADE,
+      ip_address TEXT NOT NULL,
+      reason TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT unique_blocked_ip_per_invitation UNIQUE (invitation_uid, ip_address)
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id SERIAL PRIMARY KEY,
+      username VARCHAR(80) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      totp_secret TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(
+    "CREATE INDEX IF NOT EXISTS idx_blocked_ips_invitation_uid ON blocked_ips(invitation_uid)",
+  );
+  await pool.query(
+    "CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(invitation_uid, ip_address)",
+  );
+  await pool.query("CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username)");
+
+  schemaReady.add(connectionString);
+}
+
 /**
  * Get a database client based on the environment.
  *
@@ -426,6 +471,7 @@ export async function getDbClient(c) {
   // Reuse an existing pool for this connection string if we have one.
   const cached = poolCache.get(connectionString);
   if (cached) {
+    await ensureRuntimeSchema(cached, connectionString);
     return cached;
   }
 
@@ -438,6 +484,7 @@ export async function getDbClient(c) {
     ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : undefined,
   });
   poolCache.set(connectionString, pool);
+  await ensureRuntimeSchema(pool, connectionString);
 
   return pool;
 }

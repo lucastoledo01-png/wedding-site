@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowDown,
+  ArrowUp,
   Ban,
   Gift,
   Loader2,
   MessageCircleHeart,
+  Pencil,
   Plus,
   Save,
   ShieldOff,
   Trash2,
   Upload,
   Users,
+  X,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminActivateTwoFactor, adminLogin, adminRequest } from "@/services/api";
@@ -78,7 +82,9 @@ export default function AdminPanel() {
     name: "",
     imageUrl: "",
     price: "",
+    sortOrder: "",
   });
+  const [editingGiftId, setEditingGiftId] = useState(null);
 
   useEffect(() => {
     document.title = "Painel Lucas & Andressa";
@@ -152,6 +158,37 @@ export default function AdminPanel() {
     queryClient.clear();
   }
 
+  function resetGiftForm() {
+    setEditingGiftId(null);
+    setGiftForm({ url: "", name: "", imageUrl: "", price: "", sortOrder: "" });
+  }
+
+  function editGift(gift) {
+    setEditingGiftId(gift.id);
+    setGiftForm({
+      url: gift.url || "",
+      name: gift.name || "",
+      imageUrl: gift.image_url || "",
+      price: gift.price || "",
+      sortOrder: String(gift.sort_order ?? ""),
+    });
+  }
+
+  function moveGift(giftId, direction) {
+    const gifts = giftsQuery.data || [];
+    const currentIndex = gifts.findIndex((gift) => gift.id === giftId);
+    const nextIndex = currentIndex + direction;
+
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= gifts.length) return;
+
+    const reordered = [...gifts];
+    [reordered[currentIndex], reordered[nextIndex]] = [
+      reordered[nextIndex],
+      reordered[currentIndex],
+    ];
+    reorderGiftsMutation.mutate(reordered.map((gift) => gift.id));
+  }
+
   const guestsQuery = useQuery({
     queryKey: ["admin-guests", uid, token],
     queryFn: async () => (await adminRequest(`/api/admin/${uid}/guests`, token)).data,
@@ -202,13 +239,28 @@ export default function AdminPanel() {
   });
 
   const saveGift = useMutation({
-    mutationFn: () =>
-      adminRequest(`/api/admin/${uid}/gifts`, token, {
-        method: "POST",
-        body: JSON.stringify(giftForm),
-      }),
+    mutationFn: () => {
+      const payload = {
+        ...giftForm,
+        sortOrder:
+          giftForm.sortOrder === "" || giftForm.sortOrder === null
+            ? undefined
+            : Number(giftForm.sortOrder),
+      };
+
+      return adminRequest(
+        editingGiftId
+          ? `/api/admin/${uid}/gifts/${editingGiftId}`
+          : `/api/admin/${uid}/gifts`,
+        token,
+        {
+          method: editingGiftId ? "PATCH" : "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+    },
     onSuccess: () => {
-      setGiftForm({ url: "", name: "", imageUrl: "", price: "" });
+      resetGiftForm();
       queryClient.invalidateQueries({ queryKey: ["admin-gifts"] });
     },
   });
@@ -235,6 +287,15 @@ export default function AdminPanel() {
       adminRequest(`/api/admin/${uid}/gifts/${id}`, token, {
         method: "PATCH",
         body: JSON.stringify(payload),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
+  });
+
+  const reorderGiftsMutation = useMutation({
+    mutationFn: (giftIds) =>
+      adminRequest(`/api/admin/${uid}/gifts/reorder`, token, {
+        method: "POST",
+        body: JSON.stringify({ giftIds }),
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
   });
@@ -481,15 +542,15 @@ export default function AdminPanel() {
   }
 
   return (
-    <main className={cn("min-h-screen bg-[#fdf8f3] text-[#262626]")}>
-      <div className={cn("mx-auto max-w-7xl px-4 py-8")}>
-        <header className={cn("rounded-[28px] border border-black/5 bg-white/80 p-5 shadow-sm backdrop-blur md:p-6")}>
-          <div className={cn("flex flex-col gap-4 md:flex-row md:items-end md:justify-between")}>
+    <main className={cn("min-h-screen bg-[#fdf8f3] pb-28 text-[#262626] md:pb-0")}>
+      <div className={cn("mx-auto max-w-7xl px-4 pb-4 pt-4 md:py-8")}>
+        <header className={cn("rounded-[24px] border border-black/5 bg-white/85 p-4 shadow-sm backdrop-blur md:rounded-[28px] md:p-6")}>
+          <div className={cn("flex items-end justify-between gap-4")}>
             <div>
               <p className={cn("text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4582]")}>
                 Lucas & Andressa
               </p>
-              <h1 className={cn("mt-2 text-3xl font-semibold tracking-tight md:text-4xl")}>
+              <h1 className={cn("mt-2 text-2xl font-semibold tracking-tight md:text-4xl")}>
                 Painel do casamento
               </h1>
             </div>
@@ -497,14 +558,14 @@ export default function AdminPanel() {
               <button
                 type="button"
                 onClick={logout}
-                className={cn("rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-black/55 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                className={cn("rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-black/55 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] md:px-5 md:py-3")}
               >
                 Sair
               </button>
             ) : null}
           </div>
 
-          <nav className={cn("mt-5 grid gap-2 rounded-full border border-black/5 bg-[#f5f0eb] p-1 sm:grid-cols-3")}>
+          <nav className={cn("mt-5 hidden gap-2 rounded-full border border-black/5 bg-[#f5f0eb] p-1 md:grid md:grid-cols-3")}>
             {ADMIN_PAGES.map((page) => {
               const Icon = page.icon;
               const active = activePage === page.id;
@@ -529,9 +590,9 @@ export default function AdminPanel() {
         </header>
 
         {enabled && activePage === "presencas" && (
-          <section className={cn("mt-8 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]")}>
+          <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.95fr_1.05fr]")}>
             <div className={cn("space-y-4")}>
-              <div className={cn("grid gap-3 sm:grid-cols-2")}>
+              <div className={cn("grid grid-cols-2 gap-3")}>
                 {[
                   ["Convidados", stats.total],
                   ["Confirmados", stats.attending],
@@ -539,9 +600,9 @@ export default function AdminPanel() {
                   ["Não vão", stats.notAttending],
                   ["Pendentes", stats.pending],
                 ].map(([label, value]) => (
-                  <div key={label} className={cn("rounded-2xl border border-black/5 bg-white p-5 shadow-sm")}>
-                    <p className={cn("text-xs font-bold uppercase tracking-[0.24em] text-black/35")}>{label}</p>
-                    <p className={cn("mt-2 text-3xl font-semibold text-[#ff4582]")}>{value}</p>
+                  <div key={label} className={cn("rounded-2xl border border-black/5 bg-white p-4 shadow-sm md:p-5")}>
+                    <p className={cn("text-[10px] font-bold uppercase tracking-[0.2em] text-black/35 md:text-xs md:tracking-[0.24em]")}>{label}</p>
+                    <p className={cn("mt-2 text-2xl font-semibold text-[#ff4582] md:text-3xl")}>{value}</p>
                   </div>
                 ))}
               </div>
@@ -580,7 +641,7 @@ export default function AdminPanel() {
                 <h2 className={cn("text-xl font-semibold")}>Lista de presencas</h2>
               </div>
 
-              <div className={cn("mt-5 max-h-[680px] overflow-auto rounded-2xl border border-black/5")}>
+              <div className={cn("mt-5 rounded-2xl border border-black/5 md:max-h-[680px] md:overflow-auto")}>
                 {guestsQuery.isLoading && <EmptyState>Carregando convidados...</EmptyState>}
                 {!guestsQuery.isLoading && (guestsQuery.data || []).length === 0 && (
                   <EmptyState>Nenhum convidado cadastrado ainda.</EmptyState>
@@ -618,20 +679,42 @@ export default function AdminPanel() {
         )}
 
         {enabled && activePage === "presentes" && (
-          <section className={cn("mt-8 grid gap-8 lg:grid-cols-[0.85fr_1.15fr]")}>
+          <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.85fr_1.15fr]")}>
             <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
-              <div className={cn("flex items-center gap-2")}>
-                <Gift className={cn("h-5 w-5 text-[#ff4582]")} />
-                <h2 className={cn("text-xl font-semibold")}>Cadastrar presente</h2>
+              <div className={cn("flex items-center justify-between gap-3")}>
+                <div className={cn("flex items-center gap-2")}>
+                  <Gift className={cn("h-5 w-5 text-[#ff4582]")} />
+                  <h2 className={cn("text-xl font-semibold")}>
+                    {editingGiftId ? "Editar presente" : "Cadastrar presente"}
+                  </h2>
+                </div>
+                {editingGiftId ? (
+                  <button
+                    type="button"
+                    onClick={resetGiftForm}
+                    className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                    aria-label="Cancelar edição"
+                  >
+                    <X className={cn("h-4 w-4")} />
+                  </button>
+                ) : null}
               </div>
               <div className={cn("mt-4 grid gap-3")}>
                 <input value={giftForm.url} onChange={(event) => setGiftForm({ ...giftForm, url: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Link do produto" />
-                <input value={giftForm.name} onChange={(event) => setGiftForm({ ...giftForm, name: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Nome, se quiser preencher manualmente" />
+                <input value={giftForm.name} onChange={(event) => setGiftForm({ ...giftForm, name: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Nome do presente" />
                 <div className={cn("rounded-2xl border border-dashed border-black/10 bg-[#fdf8f3] p-3")}>
                   {giftForm.imageUrl ? (
                     <div className={cn("mb-3 grid grid-cols-[72px_1fr] gap-3")}>
-                      <div className={cn("aspect-square overflow-hidden rounded-2xl bg-white")}>
-                        <img src={giftForm.imageUrl} alt="" className={cn("h-full w-full object-cover")} />
+                      <div className={cn("relative aspect-square overflow-hidden rounded-2xl bg-white")}>
+                        <Gift className={cn("absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-[#ff4582]/50")} />
+                        <img
+                          src={giftForm.imageUrl}
+                          alt=""
+                          className={cn("relative h-full w-full object-cover")}
+                          onError={(event) => {
+                            event.currentTarget.remove();
+                          }}
+                        />
                       </div>
                       <div className={cn("min-w-0 self-center")}>
                         <p className={cn("text-xs font-bold uppercase tracking-[0.18em] text-[#ff4582]")}>
@@ -673,6 +756,13 @@ export default function AdminPanel() {
                 </div>
                 <input value={giftForm.imageUrl} onChange={(event) => setGiftForm({ ...giftForm, imageUrl: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="URL da foto, opcional" />
                 <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preço, opcional" />
+                <input
+                  value={giftForm.sortOrder}
+                  onChange={(event) => setGiftForm({ ...giftForm, sortOrder: event.target.value })}
+                  className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                  placeholder="Ordem na lista, opcional"
+                  inputMode="numeric"
+                />
                 <button
                   type="button"
                   onClick={() => saveGift.mutate()}
@@ -684,8 +774,17 @@ export default function AdminPanel() {
                   ) : (
                     <Save className={cn("h-4 w-4")} />
                   )}
-                  Salvar presente
+                  {editingGiftId ? "Salvar alterações" : "Salvar presente"}
                 </button>
+                {editingGiftId ? (
+                  <button
+                    type="button"
+                    onClick={resetGiftForm}
+                    className={cn("inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-black/55 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                  >
+                    Cancelar edição
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -696,22 +795,68 @@ export default function AdminPanel() {
                 {!giftsQuery.isLoading && (giftsQuery.data || []).length === 0 && (
                   <EmptyState>Nenhum presente cadastrado ainda.</EmptyState>
                 )}
-                {(giftsQuery.data || []).map((gift) => (
-                  <div key={gift.id} className={cn("grid gap-3 rounded-2xl border border-black/5 p-3 sm:grid-cols-[92px_1fr]")}>
-                    <div className={cn("aspect-square overflow-hidden rounded-2xl bg-[#f5f0eb]")}>
-                      {gift.image_url && <img src={gift.image_url} alt="" className={cn("h-full w-full object-cover")} />}
+                {(giftsQuery.data || []).map((gift, index) => (
+                  <div key={gift.id} className={cn("grid grid-cols-[84px_1fr] gap-3 rounded-2xl border border-black/5 p-3 sm:grid-cols-[92px_1fr]")}>
+                    <div className={cn("relative aspect-square overflow-hidden rounded-2xl bg-[#f5f0eb]")}>
+                      <Gift className={cn("absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-[#ff4582]/50")} />
+                      {gift.image_url && (
+                        <img
+                          src={gift.image_url}
+                          alt=""
+                          className={cn("relative h-full w-full object-cover")}
+                          onError={(event) => {
+                            event.currentTarget.remove();
+                          }}
+                        />
+                      )}
                     </div>
-                    <div>
-                      <p className={cn("font-semibold")}>{gift.name}</p>
-                      <p className={cn("mt-1 text-sm text-black/50")}>{gift.price || "Sem preco"}</p>
-                      <div className={cn("mt-3 flex flex-wrap gap-2")}>
-                        <button type="button" onClick={() => patchGift.mutate({ id: gift.id, payload: { ...gift, isReceived: !gift.is_received } })} className={cn("rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
+                    <div className={cn("min-w-0")}>
+                      <div className={cn("grid gap-3")}>
+                        <div className={cn("min-w-0")}>
+                          <p className={cn("text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff4582]")}>
+                            Ordem {index + 1}
+                          </p>
+                          <p className={cn("mt-1 font-semibold")}>{gift.name}</p>
+                        </div>
+                        <div className={cn("grid grid-cols-2 gap-2")}>
+                          <button
+                            type="button"
+                            onClick={() => moveGift(gift.id, -1)}
+                            disabled={index === 0 || reorderGiftsMutation.isPending}
+                            className={cn("inline-flex h-10 items-center justify-center gap-1 rounded-full border border-black/10 text-xs font-semibold text-black/50 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-30")}
+                            aria-label="Mover presente para cima"
+                          >
+                            <ArrowUp className={cn("h-4 w-4")} />
+                            <span className={cn("hidden min-[380px]:inline")}>Subir</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveGift(gift.id, 1)}
+                            disabled={index === (giftsQuery.data || []).length - 1 || reorderGiftsMutation.isPending}
+                            className={cn("inline-flex h-10 items-center justify-center gap-1 rounded-full border border-black/10 text-xs font-semibold text-black/50 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-30")}
+                            aria-label="Mover presente para baixo"
+                          >
+                            <ArrowDown className={cn("h-4 w-4")} />
+                            <span className={cn("hidden min-[380px]:inline")}>Descer</span>
+                          </button>
+                        </div>
+                      </div>
+                      <p className={cn("mt-1 text-sm text-black/50")}>{gift.price || "Sem preço"}</p>
+                      {gift.url ? (
+                        <p className={cn("mt-1 truncate text-xs text-black/35")}>{gift.url}</p>
+                      ) : null}
+                      <div className={cn("mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap")}>
+                        <button type="button" onClick={() => editGift(gift)} className={cn("inline-flex min-h-10 items-center justify-center gap-1 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
+                          <Pencil className={cn("h-3.5 w-3.5")} />
+                          Editar
+                        </button>
+                        <button type="button" onClick={() => patchGift.mutate({ id: gift.id, payload: { ...gift, isReceived: !gift.is_received } })} className={cn("min-h-10 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
                           {gift.is_received ? "Desmarcar ganho" : "Marcar ganho"}
                         </button>
-                        <button type="button" onClick={() => patchGift.mutate({ id: gift.id, payload: { ...gift, isActive: !gift.is_active } })} className={cn("rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
+                        <button type="button" onClick={() => patchGift.mutate({ id: gift.id, payload: { ...gift, isActive: !gift.is_active } })} className={cn("min-h-10 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
                           {gift.is_active ? "Ocultar" : "Mostrar"}
                         </button>
-                        <button type="button" onClick={() => deleteGift.mutate(gift.id)} className={cn("rounded-full border border-rose-100 px-3 py-2 text-xs font-semibold text-[#ff4582]")}>
+                        <button type="button" onClick={() => deleteGift.mutate(gift.id)} className={cn("min-h-10 rounded-full border border-rose-100 px-3 py-2 text-xs font-semibold text-[#ff4582]")}>
                           Remover
                         </button>
                       </div>
@@ -724,7 +869,7 @@ export default function AdminPanel() {
         )}
 
         {enabled && activePage === "comentarios" && (
-          <section className={cn("mt-8 grid gap-6 lg:grid-cols-[1fr_0.45fr]")}>
+          <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-6 lg:grid-cols-[1fr_0.45fr]")}>
             <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
               <div className={cn("flex items-center gap-2")}>
                 <MessageCircleHeart className={cn("h-5 w-5 text-[#ff4582]")} />
@@ -829,6 +974,35 @@ export default function AdminPanel() {
           </section>
         )}
       </div>
+      {enabled ? (
+        <nav
+          className={cn(
+            "fixed inset-x-4 bottom-4 z-50 grid grid-cols-3 gap-1 rounded-[28px] border border-black/10 bg-white/90 p-1.5 shadow-[0_18px_60px_rgba(38,38,38,0.20)] backdrop-blur-xl md:hidden",
+          )}
+        >
+          {ADMIN_PAGES.map((page) => {
+            const Icon = page.icon;
+            const active = activePage === page.id;
+
+            return (
+              <button
+                key={page.id}
+                type="button"
+                onClick={() => changePage(page.id)}
+                className={cn(
+                  "grid min-h-[64px] place-items-center rounded-[22px] px-2 py-2 text-[11px] font-semibold transition",
+                  active
+                    ? "bg-[#ff4582]/20 text-[#262626]"
+                    : "text-black/50 hover:bg-[#f5f0eb] hover:text-[#262626]",
+                )}
+              >
+                <Icon className={cn("h-5 w-5")} />
+                <span>{page.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      ) : null}
     </main>
   );
 }

@@ -1,10 +1,7 @@
 import { Hono } from "hono";
-import crypto from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { getDbClient } from "../../lib/db-client.js";
 import { createGuest } from "../rsvp/routes.js";
-import { listAdminGifts, upsertGift } from "../gift-products/routes.js";
+import { listAdminGifts, reorderGifts, upsertGift } from "../gift-products/routes.js";
 import { normalizeName } from "../../lib/text-match.js";
 import { NotFoundError } from "../../lib/errors.js";
 import {
@@ -161,6 +158,16 @@ adminRoutes.post("/:uid/gifts", async (c) => {
   return c.json({ success: true, data: await upsertGift(pool, uid, await c.req.json()) }, 201);
 });
 
+adminRoutes.post("/:uid/gifts/reorder", async (c) => {
+  const uid = c.req.param("uid");
+  const body = await c.req.json();
+  const pool = await getDbClient(c);
+  return c.json({
+    success: true,
+    data: await reorderGifts(pool, uid, body.giftIds || body.ids),
+  });
+});
+
 adminRoutes.patch("/:uid/gifts/:id", async (c) => {
   const uid = c.req.param("uid");
   const pool = await getDbClient(c);
@@ -200,18 +207,12 @@ adminRoutes.post("/:uid/gifts/upload", async (c) => {
     );
   }
 
-  const extension = file.type.split("/")[1].replace("jpeg", "jpg");
-  const filename = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "gifts");
-  const uploadPath = path.join(uploadDir, filename);
-
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(uploadPath, Buffer.from(await file.arrayBuffer()));
+  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
 
   return c.json({
     success: true,
     data: {
-      imageUrl: `/uploads/gifts/${filename}`,
+      imageUrl: `data:${file.type};base64,${base64}`,
     },
   });
 });

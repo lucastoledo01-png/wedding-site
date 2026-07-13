@@ -73,6 +73,7 @@ export async function listAdminGifts(pool, uid) {
 export async function upsertGift(pool, uid, body) {
   const url = cleanText(body.url);
   let extracted = {};
+  const hasSortOrder = body.sortOrder !== undefined || body.sort_order !== undefined;
 
   if (url && body.extract !== false) {
     try {
@@ -115,6 +116,16 @@ export async function upsertGift(pool, uid, body) {
     return result.rows[0];
   }
 
+  if (!hasSortOrder) {
+    const orderResult = await pool.query(
+      `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order
+         FROM gift_products
+        WHERE invitation_uid = $1`,
+      [uid],
+    );
+    payload.sortOrder = Number(orderResult.rows[0]?.next_sort_order || 0);
+  }
+
   const result = await pool.query(
     `INSERT INTO gift_products
       (invitation_uid, url, name, image_url, price, is_active, is_received, sort_order)
@@ -133,6 +144,25 @@ export async function upsertGift(pool, uid, body) {
   );
 
   return result.rows[0];
+}
+
+export async function reorderGifts(pool, uid, giftIds) {
+  const ids = [...new Set((Array.isArray(giftIds) ? giftIds : []).map(Number))]
+    .filter(Number.isInteger)
+    .filter((id) => id > 0);
+
+  if (!ids.length) return listAdminGifts(pool, uid);
+
+  const caseLines = ids.map((_, index) => `WHEN $${index + 2} THEN ${index}`);
+  await pool.query(
+    `UPDATE gift_products
+        SET sort_order = CASE id ${caseLines.join(" ")} ELSE sort_order END,
+            updated_at = CURRENT_TIMESTAMP
+      WHERE invitation_uid = $1 AND id IN (${ids.map((_, index) => `$${index + 2}`).join(", ")})`,
+    [uid, ...ids],
+  );
+
+  return listAdminGifts(pool, uid);
 }
 
 export default giftRoutes;

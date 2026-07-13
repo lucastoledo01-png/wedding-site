@@ -65,20 +65,20 @@ export default function Gifts() {
                     "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#f5f0eb]",
                   )}
                 >
+                  <div className={cn("absolute inset-0 flex items-center justify-center")}>
+                    <Gift className={cn("h-16 w-16 text-[#ff4582]")} />
+                  </div>
                   {gift.image_url ? (
                     <img
                       src={gift.image_url}
                       alt={gift.name}
-                      className={cn("super-image h-full w-full object-cover")}
+                      className={cn("super-image relative h-full w-full object-cover")}
                       loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.remove();
+                      }}
                     />
-                  ) : (
-                    <div
-                      className={cn("flex h-full items-center justify-center")}
-                    >
-                      <Gift className={cn("h-16 w-16 text-[#ff4582]")} />
-                    </div>
-                  )}
+                  ) : null}
 
                   <div
                     className={cn(
