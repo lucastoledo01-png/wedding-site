@@ -86,6 +86,7 @@ export default function AdminPanel() {
     name: "",
     imageUrl: "",
     price: "",
+    category: "",
     sortOrder: "",
   });
   const [editingGiftId, setEditingGiftId] = useState(null);
@@ -164,7 +165,14 @@ export default function AdminPanel() {
 
   function resetGiftForm() {
     setEditingGiftId(null);
-    setGiftForm({ url: "", name: "", imageUrl: "", price: "", sortOrder: "" });
+    setGiftForm({
+      url: "",
+      name: "",
+      imageUrl: "",
+      price: "",
+      category: "",
+      sortOrder: "",
+    });
   }
 
   function editGift(gift) {
@@ -174,6 +182,7 @@ export default function AdminPanel() {
       name: gift.name || "",
       imageUrl: gift.image_url || "",
       price: gift.price || "",
+      category: gift.category || "",
       sortOrder: String(gift.sort_order ?? ""),
     });
   }
@@ -761,6 +770,13 @@ export default function AdminPanel() {
                 <input value={giftForm.imageUrl} onChange={(event) => setGiftForm({ ...giftForm, imageUrl: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="URL da foto, opcional" />
                 <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preço, opcional" />
                 <input
+                  value={giftForm.category}
+                  onChange={(event) => setGiftForm({ ...giftForm, category: event.target.value })}
+                  className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                  placeholder="Categoria, ex.: Cozinha, Quarto, Sala"
+                  disabled={editingGiftId && giftForm.url === "pix://lucas-andressa"}
+                />
+                <input
                   value={giftForm.sortOrder}
                   onChange={(event) => setGiftForm({ ...giftForm, sortOrder: event.target.value })}
                   className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
@@ -846,6 +862,9 @@ export default function AdminPanel() {
                         </div>
                       </div>
                       <p className={cn("mt-1 text-sm text-black/50")}>{gift.price || "Sem preço"}</p>
+                      <p className={cn("mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#ff4582]/80")}>
+                        {gift.category || (isPixGift(gift) ? "Pix" : "Presentes")}
+                      </p>
                       {gift.url ? (
                         <p className={cn("mt-1 truncate text-xs text-black/35")}>{gift.url}</p>
                       ) : null}

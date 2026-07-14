@@ -33,22 +33,23 @@ async function ensurePixGift(pool, uid) {
 
   await pool.query(
     `INSERT INTO gift_products
-      (invitation_uid, url, name, image_url, price, is_active, is_received, sort_order)
-     VALUES ($1, $2, $3, $4, $5, true, false, $6)`,
+      (invitation_uid, url, name, image_url, price, category, is_active, is_received, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6, true, false, $7)`,
     [
       uid,
       PIX_GIFT_URL,
       "Um carinho para nós",
       "/images/pix-icon.jpg",
       "Chave Pix",
+      "Pix",
       Number(orderResult.rows[0]?.next_sort_order || 0),
     ],
   );
 }
 
 function mapGiftRow(row) {
-  if (!isPixGift(row)) return row;
-  return { ...row, gift_type: "pix" };
+  if (!isPixGift(row)) return { ...row, category: row.category || "Presentes" };
+  return { ...row, category: "Pix", gift_type: "pix" };
 }
 
 function findMeta(html, property) {
@@ -93,7 +94,7 @@ giftRoutes.get("/", async (c) => {
   const pool = await getDbClient(c);
   await ensurePixGift(pool, uid);
   const result = await pool.query(
-    `SELECT id, url, name, image_url, price, is_received, sort_order
+    `SELECT id, url, name, image_url, price, category, is_received, sort_order
        FROM gift_products
       WHERE invitation_uid = $1 AND is_active = true
       ORDER BY is_received ASC, sort_order ASC, created_at DESC`,
@@ -106,7 +107,7 @@ giftRoutes.get("/", async (c) => {
 export async function listAdminGifts(pool, uid) {
   await ensurePixGift(pool, uid);
   const result = await pool.query(
-    `SELECT id, url, name, image_url, price, is_active, is_received, sort_order, created_at
+    `SELECT id, url, name, image_url, price, category, is_active, is_received, sort_order, created_at
        FROM gift_products
       WHERE invitation_uid = $1
       ORDER BY sort_order ASC, created_at DESC`,
@@ -142,6 +143,9 @@ export async function upsertGift(pool, uid, body) {
     name: cleanText(body.name) || extracted.name || "Presente",
     imageUrl: cleanText(body.imageUrl || body.image_url) || extracted.imageUrl || "",
     price: cleanText(body.price) || extracted.price || "",
+    category: url === PIX_GIFT_URL
+      ? "Pix"
+      : cleanText(body.category) || "Presentes",
     isActive: body.isActive ?? body.is_active ?? true,
     isReceived: body.isReceived ?? body.is_received ?? false,
     sortOrder: Number(body.sortOrder ?? body.sort_order ?? 0),
@@ -151,15 +155,16 @@ export async function upsertGift(pool, uid, body) {
     const result = await pool.query(
       `UPDATE gift_products
           SET url = $1, name = $2, image_url = $3, price = $4,
-              is_active = $5, is_received = $6, sort_order = $7,
+              category = $5, is_active = $6, is_received = $7, sort_order = $8,
               updated_at = CURRENT_TIMESTAMP
-        WHERE id = $8 AND invitation_uid = $9
-        RETURNING id, url, name, image_url, price, is_active, is_received, sort_order`,
+        WHERE id = $9 AND invitation_uid = $10
+        RETURNING id, url, name, image_url, price, category, is_active, is_received, sort_order`,
       [
         url,
         payload.name,
         payload.imageUrl,
         payload.price,
+        payload.category,
         payload.isActive,
         payload.isReceived,
         payload.sortOrder,
@@ -183,15 +188,16 @@ export async function upsertGift(pool, uid, body) {
 
   const result = await pool.query(
     `INSERT INTO gift_products
-      (invitation_uid, url, name, image_url, price, is_active, is_received, sort_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id, url, name, image_url, price, is_active, is_received, sort_order`,
+      (invitation_uid, url, name, image_url, price, category, is_active, is_received, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING id, url, name, image_url, price, category, is_active, is_received, sort_order`,
     [
       uid,
       url,
       payload.name,
       payload.imageUrl,
       payload.price,
+      payload.category,
       payload.isActive,
       payload.isReceived,
       payload.sortOrder,

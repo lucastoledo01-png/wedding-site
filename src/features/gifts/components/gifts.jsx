@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, CheckCircle, Copy, ExternalLink, Gift, Heart, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +16,21 @@ const PIX_INFO = {
 
 function isPixGift(gift) {
   return gift?.gift_type === "pix" || gift?.url === "pix://lucas-andressa";
+}
+
+function getGiftCategory(gift) {
+  if (isPixGift(gift)) return "Pix";
+  return String(gift?.category || "Presentes").trim() || "Presentes";
+}
+
+function parseGiftPrice(price) {
+  const raw = String(price || "");
+  const match = raw.match(/(\d[\d.,]*)/);
+  if (!match) return null;
+
+  const normalized = match[1].replace(/\./g, "").replace(",", ".");
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
 }
 
 function PixModal({ open, onClose }) {
@@ -126,12 +141,52 @@ function PixModal({ open, onClose }) {
 export default function Gifts() {
   const { uid } = useInvitation();
   const [pixOpen, setPixOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("Todos");
+  const [sortMode, setSortMode] = useState("manual");
+  const [visibleCount, setVisibleCount] = useState(8);
   const { data: gifts = [], isLoading } = useQuery({
     queryKey: ["gift-products", uid],
     queryFn: async () => (await fetchGiftProducts(uid)).data,
     enabled: !!uid,
     staleTime: 60 * 1000,
   });
+  const categories = useMemo(() => {
+    const unique = [...new Set(gifts.map(getGiftCategory))].filter(Boolean);
+    return unique.sort((a, b) => {
+      if (a === "Pix") return -1;
+      if (b === "Pix") return 1;
+      return a.localeCompare(b, "pt-BR");
+    });
+  }, [gifts]);
+  const filteredGifts = useMemo(() => {
+    const byCategory =
+      activeCategory === "Todos"
+        ? gifts
+        : gifts.filter((gift) => getGiftCategory(gift) === activeCategory);
+    const ordered = [...byCategory];
+
+    if (sortMode === "price-desc" || sortMode === "price-asc") {
+      ordered.sort((a, b) => {
+        const aPrice = parseGiftPrice(a.price);
+        const bPrice = parseGiftPrice(b.price);
+
+        if (aPrice === null && bPrice === null) {
+          return Number(a.sort_order || 0) - Number(b.sort_order || 0);
+        }
+        if (aPrice === null) return 1;
+        if (bPrice === null) return -1;
+        return sortMode === "price-desc" ? bPrice - aPrice : aPrice - bPrice;
+      });
+    }
+
+    return ordered;
+  }, [activeCategory, gifts, sortMode]);
+  const visibleGifts = filteredGifts.slice(0, visibleCount);
+  const canLoadMore = visibleCount < filteredGifts.length;
+
+  useEffect(() => {
+    setVisibleCount(8);
+  }, [activeCategory, sortMode]);
 
   return (
     <section id="gifts" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
@@ -155,11 +210,65 @@ export default function Gifts() {
           </p>
         </div>
 
+        {!isLoading && gifts.length > 0 && (
+          <div className={cn("mb-8 space-y-5")}>
+            <div className={cn("grid grid-cols-2 gap-2")}>
+              {[
+                ["price-desc", "Maior preço"],
+                ["price-asc", "Menor preço"],
+              ].map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() =>
+                    setSortMode((current) => (current === mode ? "manual" : mode))
+                  }
+                  className={cn(
+                    "rounded-full border px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] transition",
+                    sortMode === mode
+                      ? "border-[#ff4582] bg-[#ff4582] text-white"
+                      : "border-[#262626]/10 bg-white/60 text-[#262626]/60 hover:border-[#ff4582]/40 hover:text-[#ff4582]",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div>
+              <div className={cn("mb-3 flex items-center gap-3")}>
+                <span className={cn("h-px flex-1 bg-[#262626]/10")} />
+                <span className={cn("text-[9px] font-black uppercase tracking-[0.32em] text-[#ff4582]")}>
+                  Categorias
+                </span>
+                <span className={cn("h-px flex-1 bg-[#262626]/10")} />
+              </div>
+              <div className={cn("-mx-5 flex gap-2 overflow-x-auto px-5 pb-1")}>
+                {["Todos", ...categories].map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setActiveCategory(category)}
+                    className={cn(
+                      "shrink-0 rounded-full border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition",
+                      activeCategory === category
+                        ? "border-[#262626] bg-[#262626] text-[#fdf8f3]"
+                        : "border-[#262626]/10 bg-white/55 text-[#262626]/55 hover:border-[#ff4582]/40 hover:text-[#ff4582]",
+                    )}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {isLoading && (
           <div className={cn("h-px w-20 animate-pulse bg-[#ff4582]")} />
         )}
 
-        {!isLoading && gifts.length === 0 && (
+        {!isLoading && filteredGifts.length === 0 && (
           <div
             className={cn(
               "rounded-[24px] border border-[#262626]/10 bg-[#f5f0eb] p-8 text-center",
@@ -173,7 +282,7 @@ export default function Gifts() {
         )}
 
         <div className={cn("grid grid-cols-2 gap-4")}>
-          {gifts.map((gift) => (
+          {visibleGifts.map((gift) => (
             <article key={gift.id} className={cn("group min-w-0")}>
               {isPixGift(gift) ? (
                 <button
@@ -259,7 +368,7 @@ export default function Gifts() {
 
               <div className={cn("mt-3")}>
                 <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>
-                  {isPixGift(gift) ? "Presenteie com Pix" : "Presente"}
+                  {isPixGift(gift) ? "Presenteie com Pix" : getGiftCategory(gift)}
                 </p>
                 <h3
                   className={cn(
@@ -285,6 +394,21 @@ export default function Gifts() {
             </article>
           ))}
         </div>
+
+        {canLoadMore && (
+          <div className={cn("mt-8 flex justify-center")}>
+            <button
+              type="button"
+              onClick={() => setVisibleCount((current) => current + 8)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border border-[#262626]/10 bg-white/55 px-5 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#262626]/70 backdrop-blur transition hover:border-[#ff4582]/40 hover:text-[#ff4582]",
+              )}
+            >
+              <Gift className={cn("h-4 w-4")} />
+              Ver mais Produtos
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

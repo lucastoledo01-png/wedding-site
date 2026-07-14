@@ -389,6 +389,7 @@ function createFileDbClient() {
                   item.invitation_uid === uid &&
                   (includeInactive || item.is_active !== false),
               )
+              .map((item) => ({ ...item, category: item.category || "Presentes" }))
               .sort(
                 (a, b) =>
                   Number(a.is_received || false) - Number(b.is_received || false) ||
@@ -405,11 +406,12 @@ function createFileDbClient() {
             name,
             imageUrl,
             price,
+            categoryOrIsActive,
             isActiveOrSortOrder,
             isReceived,
             sortOrder,
           ] = params;
-          const isEnsurePixInsert = params.length === 6;
+          const isEnsurePixInsert = params.length === 7;
           const gift = {
             id: store.counters.gift_products++,
             invitation_uid: invitationUid,
@@ -417,6 +419,7 @@ function createFileDbClient() {
             name,
             image_url: imageUrl,
             price,
+            category: isEnsurePixInsert ? categoryOrIsActive : categoryOrIsActive || "Presentes",
             is_active: isEnsurePixInsert ? true : isActiveOrSortOrder,
             is_received: isEnsurePixInsert ? false : isReceived,
             sort_order: isEnsurePixInsert ? isActiveOrSortOrder : sortOrder,
@@ -439,7 +442,7 @@ function createFileDbClient() {
         }
 
         if (compactSql.startsWith("UPDATE gift_products")) {
-          const [url, name, imageUrl, price, isActive, isReceived, sortOrder, id, invitationUid] = params;
+          const [url, name, imageUrl, price, category, isActive, isReceived, sortOrder, id, invitationUid] = params;
           const gift = store.gift_products.find(
             (item) => item.id === Number(id) && item.invitation_uid === invitationUid,
           );
@@ -448,6 +451,7 @@ function createFileDbClient() {
           gift.name = name;
           gift.image_url = imageUrl;
           gift.price = price;
+          gift.category = category || "Presentes";
           gift.is_active = isActive;
           gift.is_received = isReceived;
           gift.sort_order = sortOrder;
@@ -523,6 +527,10 @@ async function ensureRuntimeSchema(pool, connectionString) {
     ALTER TABLE wishes
       ADD COLUMN IF NOT EXISTS ip_address TEXT,
       ADD COLUMN IF NOT EXISTS device TEXT
+  `);
+  await pool.query(`
+    ALTER TABLE gift_products
+      ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Presentes'
   `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS blocked_ips (
