@@ -53,6 +53,7 @@ rsvpRoutes.post("/confirm", async (c) => {
   const partySize = Number.isFinite(Number(body.partySize))
     ? Math.max(1, Number(body.partySize))
     : null;
+  const ipAddress = getClientIp(c);
 
   if (!name) {
     return c.json({ success: false, error: "Informe seu nome." }, 400);
