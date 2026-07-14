@@ -2,18 +2,25 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useMotionPreset, staggerContainer } from "@/lib/motion";
+import { useInvitation } from "@/features/invitation/hooks/use-invitation";
 
-const heroSlides = [
-  "/images/hero-slide-1.jpg",
-  "/images/hero-slide-2.jpg",
-  "/images/hero-slide-3.jpg",
-  "/images/hero-slide-6.jpg",
-  "/images/hero-slide-7.jpg",
-  "/images/hero-slide-8.jpg",
-  "/images/hero-slide-9.jpg",
+const fallbackHeroSlides = [
+  { imageUrl: "/images/hero-slide-1.jpg", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-2.jpg", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-3.jpg", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-6.jpg", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-7.jpg", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-8.jpg", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-9.jpg", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-10.webp", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-11.webp", altText: "Lucas e Andressa" },
+  { imageUrl: "/images/hero-slide-12.webp", altText: "Lucas e Andressa" },
 ];
 
 export default function Hero() {
+  const { config } = useInvitation();
+  const heroSlides =
+    config?.heroSlides?.length > 0 ? config.heroSlides : fallbackHeroSlides;
   const [activeSlide, setActiveSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
@@ -30,6 +37,11 @@ export default function Hero() {
   };
 
   useEffect(() => {
+    if (activeSlide >= heroSlides.length) setActiveSlide(0);
+  }, [activeSlide, heroSlides.length]);
+
+  useEffect(() => {
+    if (heroSlides.length <= 1) return undefined;
     if (isCarouselPaused) return undefined;
 
     const timer = window.setInterval(() => {
@@ -37,7 +49,7 @@ export default function Hero() {
     }, 4200);
 
     return () => window.clearInterval(timer);
-  }, [isCarouselPaused]);
+  }, [heroSlides.length, isCarouselPaused]);
 
   return (
     <section
@@ -122,9 +134,9 @@ export default function Hero() {
           >
             {heroSlides.map((slide, index) => (
               <img
-                key={slide}
-                src={slide}
-                alt={`Lucas e Andressa ${index + 1}`}
+                key={slide.imageUrl}
+                src={slide.imageUrl}
+                alt={slide.altText || `Lucas e Andressa ${index + 1}`}
                 className={cn(
                   "absolute inset-0 block h-full w-full object-cover object-center transition-opacity duration-1000",
                   index === activeSlide
@@ -163,7 +175,7 @@ export default function Hero() {
           >
             {heroSlides.map((slide, index) => (
               <span
-                key={`${slide}-dot`}
+                key={`${slide.imageUrl}-dot`}
                 className={cn(
                   "h-1.5 rounded-full transition-all duration-500",
                   index === activeSlide

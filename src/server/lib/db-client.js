@@ -91,6 +91,14 @@ function defaultStore() {
       account_number: item.accountNumber,
       account_name: item.accountName,
     })),
+    hero_slides: (config.heroSlides || []).map((item, index) => ({
+      id: index + 1,
+      invitation_uid: "lucas-andressa",
+      sort_order: index,
+      image_url: item.imageUrl,
+      alt_text: item.altText || "",
+      is_active: true,
+    })),
     guests: [],
     wishes: [],
     gift_products: [],
@@ -98,6 +106,7 @@ function defaultStore() {
       guests: 1,
       wishes: 1,
       gift_products: 1,
+      hero_slides: (config.heroSlides || []).length + 1,
     },
   };
 }
@@ -106,7 +115,24 @@ async function readStore() {
   const filePath = path.join(process.cwd(), "data", "local-db.json");
 
   try {
-    return JSON.parse(await readFile(filePath, "utf8"));
+    const store = JSON.parse(await readFile(filePath, "utf8"));
+    if (!Array.isArray(store.hero_slides)) {
+      const heroSlides = staticConfig.data.heroSlides || [];
+      store.hero_slides = heroSlides.map((item, index) => ({
+        id: index + 1,
+        invitation_uid: "lucas-andressa",
+        sort_order: index,
+        image_url: item.imageUrl,
+        alt_text: item.altText || "",
+        is_active: true,
+      }));
+      store.counters = {
+        ...store.counters,
+        hero_slides: heroSlides.length + 1,
+      };
+      await writeStore(store);
+    }
+    return store;
   } catch {
     const store = defaultStore();
     await writeStore(store);
@@ -176,6 +202,20 @@ function createFileDbClient() {
                 bank,
                 account_number,
                 account_name,
+              })),
+          };
+        }
+
+        if (compactSql.includes("FROM hero_slides WHERE invitation_uid = $1")) {
+          return {
+            rows: (store.hero_slides || [])
+              .filter((item) => item.invitation_uid === uid && item.is_active !== false)
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map(({ id, image_url, alt_text, sort_order }) => ({
+                id,
+                image_url,
+                alt_text,
+                sort_order,
               })),
           };
         }
@@ -535,6 +575,28 @@ async function ensureRuntimeSchema(pool, connectionString) {
     ALTER TABLE gift_products
       ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Presentes'
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS hero_slides (
+      id SERIAL PRIMARY KEY,
+      invitation_uid VARCHAR(50) NOT NULL REFERENCES invitations(uid) ON DELETE CASCADE,
+      image_url TEXT NOT NULL,
+      alt_text TEXT,
+      sort_order INTEGER DEFAULT 0,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT unique_hero_slide_image_per_invitation UNIQUE (invitation_uid, image_url)
+    )
+  `);
+  const heroSlides = staticConfig.data.heroSlides || [];
+  for (const [index, slide] of heroSlides.entries()) {
+    await pool.query(
+      `INSERT INTO hero_slides (invitation_uid, image_url, alt_text, sort_order, is_active)
+       VALUES ($1, $2, $3, $4, TRUE)
+       ON CONFLICT (invitation_uid, image_url) DO NOTHING`,
+      ["lucas-andressa", slide.imageUrl, slide.altText || "", index],
+    );
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS blocked_ips (
       id SERIAL PRIMARY KEY,

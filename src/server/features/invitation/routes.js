@@ -47,6 +47,15 @@ invitationRoutes.get(
       [uid],
     );
 
+    // Get hero carousel slides
+    const heroSlidesResult = await pool.query(
+      `SELECT id, image_url, alt_text, sort_order
+         FROM hero_slides
+        WHERE invitation_uid = $1 AND is_active = TRUE
+        ORDER BY sort_order ASC, id ASC`,
+      [uid],
+    );
+
     // Format the response to match frontend config structure
     const data = {
       title: invitation.title,
@@ -64,6 +73,12 @@ invitationRoutes.get(
       ogImage: invitation.og_image,
       favicon: invitation.favicon,
       audio: invitation.audio,
+      heroSlides: heroSlidesResult.rows.map((slide) => ({
+        id: slide.id,
+        imageUrl: slide.image_url,
+        altText: slide.alt_text,
+        sortOrder: slide.sort_order,
+      })),
       agenda: agendaResult.rows.map((a) => ({
         title: a.title,
         date: a.date,

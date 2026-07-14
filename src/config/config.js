@@ -76,6 +76,49 @@ const config = {
       loop: true,
     },
 
+    heroSlides: [
+      {
+        imageUrl: "/images/hero-slide-1.jpg",
+        altText: "Lucas e Andressa no Jardim Botânico",
+      },
+      {
+        imageUrl: "/images/hero-slide-2.jpg",
+        altText: "Lucas e Andressa caminhando juntos",
+      },
+      {
+        imageUrl: "/images/hero-slide-3.jpg",
+        altText: "Lucas e Andressa em frente ao Jardim Botânico",
+      },
+      {
+        imageUrl: "/images/hero-slide-6.jpg",
+        altText: "Lucas e Andressa no jardim",
+      },
+      {
+        imageUrl: "/images/hero-slide-7.jpg",
+        altText: "Lucas e Andressa entre flores",
+      },
+      {
+        imageUrl: "/images/hero-slide-8.jpg",
+        altText: "Lucas e Andressa no Jardim Botânico",
+      },
+      {
+        imageUrl: "/images/hero-slide-9.jpg",
+        altText: "Lucas e Andressa abraçados",
+      },
+      {
+        imageUrl: "/images/hero-slide-10.webp",
+        altText: "Lucas e Andressa observando o jardim",
+      },
+      {
+        imageUrl: "/images/hero-slide-11.webp",
+        altText: "Lucas e Andressa sentados no Jardim Botânico",
+      },
+      {
+        imageUrl: "/images/hero-slide-12.webp",
+        altText: "Lucas e Andressa na escadaria do Jardim Botânico",
+      },
+    ],
+
     // List of bank accounts for digital envelope/gifts
     banks: [],
   },
