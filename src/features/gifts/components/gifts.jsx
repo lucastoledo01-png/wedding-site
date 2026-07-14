@@ -23,16 +23,6 @@ function getGiftCategory(gift) {
   return String(gift?.category || "Presentes").trim() || "Presentes";
 }
 
-function parseGiftPrice(price) {
-  const raw = String(price || "");
-  const match = raw.match(/(\d[\d.,]*)/);
-  if (!match) return null;
-
-  const normalized = match[1].replace(/\./g, "").replace(",", ".");
-  const value = Number(normalized);
-  return Number.isFinite(value) ? value : null;
-}
-
 function PixModal({ open, onClose }) {
   const [copied, setCopied] = useState(false);
 
@@ -142,7 +132,6 @@ export default function Gifts() {
   const { uid } = useInvitation();
   const [pixOpen, setPixOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState("Todos");
-  const [sortMode, setSortMode] = useState("manual");
   const [visibleCount, setVisibleCount] = useState(8);
   const { data: gifts = [], isLoading } = useQuery({
     queryKey: ["gift-products", uid],
@@ -159,34 +148,15 @@ export default function Gifts() {
     });
   }, [gifts]);
   const filteredGifts = useMemo(() => {
-    const byCategory =
-      activeCategory === "Todos"
-        ? gifts
-        : gifts.filter((gift) => getGiftCategory(gift) === activeCategory);
-    const ordered = [...byCategory];
-
-    if (sortMode === "price-desc" || sortMode === "price-asc") {
-      ordered.sort((a, b) => {
-        const aPrice = parseGiftPrice(a.price);
-        const bPrice = parseGiftPrice(b.price);
-
-        if (aPrice === null && bPrice === null) {
-          return Number(a.sort_order || 0) - Number(b.sort_order || 0);
-        }
-        if (aPrice === null) return 1;
-        if (bPrice === null) return -1;
-        return sortMode === "price-desc" ? bPrice - aPrice : aPrice - bPrice;
-      });
-    }
-
-    return ordered;
-  }, [activeCategory, gifts, sortMode]);
+    if (activeCategory === "Todos") return gifts;
+    return gifts.filter((gift) => getGiftCategory(gift) === activeCategory);
+  }, [activeCategory, gifts]);
   const visibleGifts = filteredGifts.slice(0, visibleCount);
   const canLoadMore = visibleCount < filteredGifts.length;
 
   useEffect(() => {
     setVisibleCount(8);
-  }, [activeCategory, sortMode]);
+  }, [activeCategory]);
 
   return (
     <section id="gifts" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
@@ -212,29 +182,6 @@ export default function Gifts() {
 
         {!isLoading && gifts.length > 0 && (
           <div className={cn("mb-8 space-y-5")}>
-            <div className={cn("grid grid-cols-2 gap-2")}>
-              {[
-                ["price-desc", "Maior preço"],
-                ["price-asc", "Menor preço"],
-              ].map(([mode, label]) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() =>
-                    setSortMode((current) => (current === mode ? "manual" : mode))
-                  }
-                  className={cn(
-                    "rounded-full border px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] transition",
-                    sortMode === mode
-                      ? "border-[#ff4582] bg-[#ff4582] text-white"
-                      : "border-[#262626]/10 bg-white/60 text-[#262626]/60 hover:border-[#ff4582]/40 hover:text-[#ff4582]",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
             <div>
               <div className={cn("mb-3 flex items-center gap-3")}>
                 <span className={cn("h-px flex-1 bg-[#262626]/10")} />
@@ -243,14 +190,14 @@ export default function Gifts() {
                 </span>
                 <span className={cn("h-px flex-1 bg-[#262626]/10")} />
               </div>
-              <div className={cn("-mx-5 flex gap-2 overflow-x-auto px-5 pb-1")}>
+              <div className={cn("flex flex-wrap justify-center gap-2")}>
                 {["Todos", ...categories].map((category) => (
                   <button
                     key={category}
                     type="button"
                     onClick={() => setActiveCategory(category)}
                     className={cn(
-                      "shrink-0 rounded-full border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition",
+                      "rounded-full border px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition",
                       activeCategory === category
                         ? "border-[#262626] bg-[#262626] text-[#fdf8f3]"
                         : "border-[#262626]/10 bg-white/55 text-[#262626]/55 hover:border-[#ff4582]/40 hover:text-[#ff4582]",
