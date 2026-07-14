@@ -68,10 +68,11 @@ function WeddingApp() {
 
   // Use config from API if available, otherwise fall back to static config
   const activeConfig = config || staticConfig.data;
+  const hasSoundCloudAudio = Boolean(activeConfig?.audio?.soundcloudUrl);
 
   // Initialize audio with config settings
   const audioControls = useAudio({
-    src: activeConfig?.audio?.soundcloudUrl
+    src: hasSoundCloudAudio
       ? ""
       : activeConfig?.audio?.src || "/audio/fulfilling-humming.mp3",
     loop: activeConfig?.audio?.loop !== false,
@@ -84,8 +85,10 @@ function WeddingApp() {
     isOpeningRef.current = true;
     setIsInvitationOpen(true);
     // Audio is optional; browser playback policies should not block the invite.
-    audioControls.play().catch(() => {});
-  }, [audioControls]);
+    if (!hasSoundCloudAudio) {
+      audioControls.play().catch(() => {});
+    }
+  }, [audioControls, hasSoundCloudAudio]);
 
   useEffect(() => {
     const openFromHash = () => {

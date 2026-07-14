@@ -44,11 +44,11 @@ export default function SoundCloudPlayer({
 }) {
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
-  const lastManualPlayRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [promptChoiceMade, setPromptChoiceMade] = useState(false);
   const [shouldPlayWhenReady, setShouldPlayWhenReady] = useState(false);
+  const [showNativePlayer, setShowNativePlayer] = useState(false);
   const isIOS = isIOSDevice();
   const shouldAutoPlay = autoPlay && !isIOS;
 
@@ -82,13 +82,15 @@ export default function SoundCloudPlayer({
         setIsReady(true);
         widget.setVolume(volume);
         if (shouldAutoPlay || shouldPlayWhenReady) {
-          lastManualPlayRef.current = Date.now();
           widget.play();
           setShouldPlayWhenReady(false);
         }
       });
 
-      widget.bind(SC.Widget.Events.PLAY, () => setIsPlaying(true));
+      widget.bind(SC.Widget.Events.PLAY, () => {
+        setIsPlaying(true);
+        setShowNativePlayer(false);
+      });
       widget.bind(SC.Widget.Events.PAUSE, () => {
         setIsPlaying(false);
       });
@@ -110,7 +112,6 @@ export default function SoundCloudPlayer({
   const play = () => {
     if (!widgetRef.current || !isReady) return;
 
-    lastManualPlayRef.current = Date.now();
     widgetRef.current.setVolume(volume);
     widgetRef.current.play();
   };
@@ -121,6 +122,8 @@ export default function SoundCloudPlayer({
 
     if (isPlaying) {
       widgetRef.current.pause();
+    } else if (isIOS) {
+      setShowNativePlayer(true);
     } else {
       play();
     }
@@ -128,6 +131,10 @@ export default function SoundCloudPlayer({
 
   const acceptMusic = () => {
     setPromptChoiceMade(true);
+    if (isIOS) {
+      setShowNativePlayer(true);
+      return;
+    }
     if (isReady) {
       play();
       return;
@@ -137,9 +144,10 @@ export default function SoundCloudPlayer({
 
   const dismissPrompt = () => {
     setPromptChoiceMade(true);
+    setShowNativePlayer(false);
   };
 
-  const showPrompt = !isPlaying && !promptChoiceMade;
+  const showPrompt = !isPlaying && !promptChoiceMade && !showNativePlayer;
 
   return (
     <>
@@ -148,17 +156,22 @@ export default function SoundCloudPlayer({
         title="Musica do casamento"
         src={`https://w.soundcloud.com/player/?${params.toString()}`}
         allow="autoplay"
-        style={{
-          position: "fixed",
-          width: 1,
-          height: 1,
-          opacity: 0,
-          pointerEvents: "none",
-          left: 0,
-          bottom: 0,
-          border: 0,
-        }}
+        className={cn(
+          showNativePlayer
+            ? "fixed right-4 top-[4.75rem] z-[60] h-[86px] w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/70 bg-[#fdf8f3] shadow-[0_18px_55px_rgba(38,38,38,0.18)]"
+            : "pointer-events-none fixed bottom-0 left-0 h-px w-px opacity-0",
+        )}
       />
+
+      {showNativePlayer && (
+        <div
+          className={cn(
+            "fixed right-4 top-[10.55rem] z-[60] w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-white/70 bg-[#fdf8f3]/95 px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[#262626]/60 shadow-[0_14px_40px_rgba(38,38,38,0.12)] backdrop-blur-xl",
+          )}
+        >
+          Toque no play do SoundCloud
+        </div>
+      )}
 
       {showPrompt && (
         <div
