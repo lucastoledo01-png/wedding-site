@@ -20,6 +20,32 @@ import { getClientIp, getDevice } from "../../lib/request-metadata.js";
 const adminRoutes = new Hono();
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
+const GUEST_STATUSES = new Set(["ATTENDING", "NOT_ATTENDING", "PENDING"]);
+
+function getDateRange(query) {
+  const period = query.period || "all";
+  const today = new Date();
+
+  if (period === "7" || period === "14" || period === "30") {
+    const start = new Date(today);
+    start.setDate(start.getDate() - Number(period));
+    return { from: start, to: null };
+  }
+
+  if (period === "custom") {
+    const from = query.dateFrom
+      ? new Date(`${query.dateFrom}T00:00:00-03:00`)
+      : null;
+    const to = query.dateTo ? new Date(`${query.dateTo}T23:59:59-03:00`) : null;
+
+    return {
+      from: from && !Number.isNaN(from.getTime()) ? from : null,
+      to: to && !Number.isNaN(to.getTime()) ? to : null,
+    };
+  }
+
+  return { from: null, to: null };
+}
 
 adminRoutes.post("/auth/login", async (c) => {
   const result = await authenticateAdmin(c, await c.req.json());
@@ -76,14 +102,46 @@ adminRoutes.use("*", async (c, next) => {
 
 adminRoutes.get("/:uid/guests", async (c) => {
   const uid = c.req.param("uid");
+  const search = String(c.req.query("q") || c.req.query("search") || "").trim();
+  const status = String(c.req.query("status") || "all");
+  const { from, to } = getDateRange({
+    period: c.req.query("period"),
+    dateFrom: c.req.query("dateFrom"),
+    dateTo: c.req.query("dateTo"),
+  });
   const pool = await getDbClient(c);
+  const conditions = ["invitation_uid = $1"];
+  const params = [uid];
+
+  if (search) {
+    params.push(`%${search}%`);
+    conditions.push(
+      `(full_name ILIKE $${params.length} OR confirmed_phone ILIKE $${params.length})`,
+    );
+  }
+
+  if (GUEST_STATUSES.has(status)) {
+    params.push(status);
+    conditions.push(`attendance = $${params.length}`);
+  }
+
+  if (from) {
+    params.push(from);
+    conditions.push(`confirmed_at >= $${params.length}`);
+  }
+
+  if (to) {
+    params.push(to);
+    conditions.push(`confirmed_at <= $${params.length}`);
+  }
+
   const result = await pool.query(
     `SELECT id, full_name, party_size, attendance, confirmed_at, message,
             confirmed_phone, confirmed_ip, confirmed_device, created_at
        FROM guests
-      WHERE invitation_uid = $1
-      ORDER BY full_name ASC`,
-    [uid],
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY confirmed_at DESC NULLS LAST, full_name ASC`,
+    params,
   );
   return c.json({ success: true, data: result.rows });
 });

@@ -221,10 +221,48 @@ function createFileDbClient() {
         }
 
         if (compactSql.includes("FROM guests") && compactSql.includes("WHERE invitation_uid = $1")) {
+          let rows = store.guests.filter((item) => item.invitation_uid === uid);
+          let nextParamIndex = 1;
+
+          if (compactSql.includes("full_name ILIKE")) {
+            const search = String(params[nextParamIndex++] || "")
+              .replace(/^%|%$/g, "")
+              .toLowerCase();
+            rows = rows.filter((item) => {
+              const fullName = String(item.full_name || "").toLowerCase();
+              const phone = String(item.confirmed_phone || "").toLowerCase();
+              return fullName.includes(search) || phone.includes(search);
+            });
+          }
+
+          if (compactSql.includes("attendance =")) {
+            const status = params[nextParamIndex++];
+            rows = rows.filter((item) => item.attendance === status);
+          }
+
+          if (compactSql.includes("confirmed_at >=")) {
+            const from = new Date(params[nextParamIndex++]).getTime();
+            rows = rows.filter(
+              (item) => item.confirmed_at && new Date(item.confirmed_at).getTime() >= from,
+            );
+          }
+
+          if (compactSql.includes("confirmed_at <=")) {
+            const to = new Date(params[nextParamIndex++]).getTime();
+            rows = rows.filter(
+              (item) => item.confirmed_at && new Date(item.confirmed_at).getTime() <= to,
+            );
+          }
+
           return {
-            rows: store.guests
-              .filter((item) => item.invitation_uid === uid)
-              .sort((a, b) => a.full_name.localeCompare(b.full_name)),
+            rows: rows.sort((a, b) => {
+              if (a.confirmed_at && b.confirmed_at) {
+                return new Date(b.confirmed_at) - new Date(a.confirmed_at);
+              }
+              if (a.confirmed_at) return -1;
+              if (b.confirmed_at) return 1;
+              return a.full_name.localeCompare(b.full_name);
+            }),
           };
         }
 

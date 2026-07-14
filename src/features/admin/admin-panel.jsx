@@ -97,6 +97,13 @@ export default function AdminPanel() {
   const [setupCode, setSetupCode] = useState("");
   const uid = DEFAULT_UID;
   const [guestNames, setGuestNames] = useState("");
+  const [guestFilters, setGuestFilters] = useState({
+    search: "",
+    status: "all",
+    period: "all",
+    dateFrom: "",
+    dateTo: "",
+  });
   const [giftForm, setGiftForm] = useState({
     url: "",
     name: "",
@@ -219,8 +226,20 @@ export default function AdminPanel() {
   }
 
   const guestsQuery = useQuery({
-    queryKey: ["admin-guests", uid, token],
-    queryFn: async () => (await adminRequest(`/api/admin/${uid}/guests`, token)).data,
+    queryKey: ["admin-guests", uid, token, guestFilters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (guestFilters.search.trim()) params.set("q", guestFilters.search.trim());
+      if (guestFilters.status !== "all") params.set("status", guestFilters.status);
+      if (guestFilters.period !== "all") params.set("period", guestFilters.period);
+      if (guestFilters.period === "custom") {
+        if (guestFilters.dateFrom) params.set("dateFrom", guestFilters.dateFrom);
+        if (guestFilters.dateTo) params.set("dateTo", guestFilters.dateTo);
+      }
+      const query = params.toString();
+      const path = `/api/admin/${uid}/guests${query ? `?${query}` : ""}`;
+      return (await adminRequest(path, token)).data;
+    },
     enabled: enabled && activePage === "presencas",
   });
 
@@ -668,6 +687,133 @@ export default function AdminPanel() {
               <div className={cn("flex items-center gap-2")}>
                 <Users className={cn("h-5 w-5 text-[#ff4582]")} />
                 <h2 className={cn("text-xl font-semibold")}>Lista de presenças</h2>
+              </div>
+
+              <div className={cn("mt-5 rounded-2xl border border-black/5 bg-[#f5f0eb] p-4")}>
+                <div className={cn("grid gap-3 md:grid-cols-[1.4fr_1fr_1fr]")}>
+                  <label className={cn("grid gap-1.5")}>
+                    <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                      Buscar
+                    </span>
+                    <input
+                      type="search"
+                      value={guestFilters.search}
+                      onChange={(event) =>
+                        setGuestFilters((current) => ({
+                          ...current,
+                          search: event.target.value,
+                        }))
+                      }
+                      placeholder="Nome ou WhatsApp"
+                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                    />
+                  </label>
+
+                  <label className={cn("grid gap-1.5")}>
+                    <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                      Status
+                    </span>
+                    <select
+                      value={guestFilters.status}
+                      onChange={(event) =>
+                        setGuestFilters((current) => ({
+                          ...current,
+                          status: event.target.value,
+                        }))
+                      }
+                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                    >
+                      <option value="all">Todos</option>
+                      <option value="ATTENDING">Confirmou presença</option>
+                      <option value="NOT_ATTENDING">Confirmou ausência</option>
+                      <option value="PENDING">Pendente</option>
+                    </select>
+                  </label>
+
+                  <label className={cn("grid gap-1.5")}>
+                    <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                      Período
+                    </span>
+                    <select
+                      value={guestFilters.period}
+                      onChange={(event) =>
+                        setGuestFilters((current) => ({
+                          ...current,
+                          period: event.target.value,
+                          dateFrom: event.target.value === "custom" ? current.dateFrom : "",
+                          dateTo: event.target.value === "custom" ? current.dateTo : "",
+                        }))
+                      }
+                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                    >
+                      <option value="all">Todo período</option>
+                      <option value="7">Últimos 7 dias</option>
+                      <option value="14">Últimos 14 dias</option>
+                      <option value="30">Últimos 30 dias</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
+                  </label>
+                </div>
+
+                {guestFilters.period === "custom" ? (
+                  <div className={cn("mt-3 grid gap-3 md:grid-cols-2")}>
+                    <label className={cn("grid gap-1.5")}>
+                      <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                        Data inicial
+                      </span>
+                      <input
+                        type="date"
+                        value={guestFilters.dateFrom}
+                        onChange={(event) =>
+                          setGuestFilters((current) => ({
+                            ...current,
+                            dateFrom: event.target.value,
+                          }))
+                        }
+                        className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                      />
+                    </label>
+                    <label className={cn("grid gap-1.5")}>
+                      <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                        Data final
+                      </span>
+                      <input
+                        type="date"
+                        value={guestFilters.dateTo}
+                        onChange={(event) =>
+                          setGuestFilters((current) => ({
+                            ...current,
+                            dateTo: event.target.value,
+                          }))
+                        }
+                        className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                      />
+                    </label>
+                  </div>
+                ) : null}
+
+                <div className={cn("mt-3 flex flex-wrap items-center justify-between gap-3")}>
+                  <p className={cn("text-xs font-medium text-black/45")}>
+                    {guestsQuery.isFetching
+                      ? "Atualizando filtros..."
+                      : `${(guestsQuery.data || []).length} resultado(s) encontrado(s).`}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setGuestFilters({
+                        search: "",
+                        status: "all",
+                        period: "all",
+                        dateFrom: "",
+                        dateTo: "",
+                      })
+                    }
+                    className={cn("rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                  >
+                    Limpar filtros
+                  </button>
+                </div>
               </div>
 
               <div className={cn("mt-5 overflow-hidden rounded-2xl border border-black/5 md:max-h-[680px] md:overflow-auto")}>
