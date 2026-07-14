@@ -69,6 +69,14 @@ function WeddingApp() {
   // Use config from API if available, otherwise fall back to static config
   const activeConfig = config || staticConfig.data;
   const hasSoundCloudAudio = Boolean(activeConfig?.audio?.soundcloudUrl);
+  const shareImagePath =
+    !activeConfig?.ogImage || activeConfig.ogImage === "/images/og-image.jpg"
+      ? "/images/lucas-andressa-background.webp"
+      : activeConfig.ogImage;
+  const shareImageUrl =
+    typeof window !== "undefined" && shareImagePath.startsWith("/")
+      ? `${window.location.origin}${shareImagePath}`
+      : shareImagePath;
 
   // Initialize audio with config settings
   const audioControls = useAudio({
@@ -147,7 +155,7 @@ function WeddingApp() {
         <meta property="og:url" content={window.location.href} />
         <meta property="og:title" content={activeConfig.title} />
         <meta property="og:description" content={activeConfig.description} />
-        <meta property="og:image" content={activeConfig.ogImage} />
+        <meta property="og:image" content={shareImageUrl} />
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content={window.location.href} />
@@ -156,7 +164,7 @@ function WeddingApp() {
           property="twitter:description"
           content={activeConfig.description}
         />
-        <meta property="twitter:image" content={activeConfig.ogImage} />
+        <meta property="twitter:image" content={shareImageUrl} />
         {/* Favicon */}
         <link rel="icon" type="image/x-icon" href={activeConfig.favicon} />
         {/* Additional Meta Tags */}

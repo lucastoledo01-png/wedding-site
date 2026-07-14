@@ -1,7 +1,12 @@
 import { Hono } from "hono";
 import { getDbClient } from "../../lib/db-client.js";
 import { createGuest } from "../rsvp/routes.js";
-import { listAdminGifts, reorderGifts, upsertGift } from "../gift-products/routes.js";
+import {
+  PIX_GIFT_URL,
+  listAdminGifts,
+  reorderGifts,
+  upsertGift,
+} from "../gift-products/routes.js";
 import { normalizeName } from "../../lib/text-match.js";
 import { NotFoundError } from "../../lib/errors.js";
 import {
@@ -207,6 +212,16 @@ adminRoutes.delete("/:uid/gifts/:id", async (c) => {
   const uid = c.req.param("uid");
   const id = c.req.param("id");
   const pool = await getDbClient(c);
+  const gift = await pool.query(
+    "SELECT url FROM gift_products WHERE id = $1 AND invitation_uid = $2",
+    [id, uid],
+  );
+  if (gift.rows[0]?.url === PIX_GIFT_URL) {
+    return c.json(
+      { success: false, error: "O presente Pix pode ser ocultado, mas não removido." },
+      400,
+    );
+  }
   await pool.query("DELETE FROM gift_products WHERE id = $1 AND invitation_uid = $2", [id, uid]);
   return c.json({ success: true });
 });

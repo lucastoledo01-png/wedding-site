@@ -116,7 +116,7 @@ wishesRoutes.get("/", zValidator("query", wishesQuerySchema), async (c) => {
   // Get wishes
   const result = await pool.query(
     `SELECT id, name, message, attendance,
-              created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as created_at
+              created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo' as created_at
        FROM wishes
        WHERE invitation_uid = $1
        ORDER BY created_at DESC
@@ -192,9 +192,9 @@ wishesRoutes.post("/", zValidator("json", createWishSchema), async (c) => {
   try {
     const result = await pool.query(
       `INSERT INTO wishes (invitation_uid, name, message, attendance, ip_address, device, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')
+         VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
          RETURNING id, name, message, attendance, ip_address, device,
-                   created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' as created_at`,
+                   created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo' as created_at`,
       [uid, name, message, attendance, ipAddress, getDevice(c)],
     );
 

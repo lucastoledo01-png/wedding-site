@@ -6,6 +6,21 @@ import { fetchWishes, createWish } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
 
+function formatWishDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
+}
+
 export default function Wishes() {
   const { uid } = useInvitation();
   const queryClient = useQueryClient();
@@ -322,9 +337,16 @@ export default function Wishes() {
                     "rounded-[24px] border border-[#262626]/10 bg-[#f5f0eb] p-5",
                   )}
                 >
-                  <p className={cn("text-lg font-medium text-[#262626]")}>
-                    {wish.name}
-                  </p>
+                  <div className={cn("flex flex-wrap items-baseline gap-x-2 gap-y-1")}>
+                    <p className={cn("text-lg font-medium text-[#262626]")}>
+                      {wish.name}
+                    </p>
+                    {formatWishDate(wish.created_at) ? (
+                      <span className={cn("text-xs font-normal text-[#262626]/38")}>
+                        {formatWishDate(wish.created_at)}
+                      </span>
+                    ) : null}
+                  </div>
                   <p
                     className={cn(
                       "mt-2 text-base leading-relaxed text-[#262626]/65",

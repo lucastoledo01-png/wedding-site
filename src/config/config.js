@@ -30,7 +30,7 @@ const config = {
     address:
       "Bairro Por do Sol - R. Maria R. C. Silva, 3850 - Por do Sol, Monte Siao - MG, 37580-000",
     // Image that appears when link is shared on social media
-    ogImage: "/images/og-image.jpg",
+    ogImage: "/images/lucas-andressa-background.webp",
     // Icon that appears in browser tab
     favicon: "/images/favicon.ico",
     // List of event agenda/schedule

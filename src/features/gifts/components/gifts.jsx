@@ -14,6 +14,10 @@ const PIX_INFO = {
   qrCode: "/images/pix-qr-code.png",
 };
 
+function isPixGift(gift) {
+  return gift?.gift_type === "pix" || gift?.url === "pix://lucas-andressa";
+}
+
 function PixModal({ open, onClose }) {
   const [copied, setCopied] = useState(false);
 
@@ -169,50 +173,42 @@ export default function Gifts() {
         )}
 
         <div className={cn("grid grid-cols-2 gap-4")}>
-          <article className={cn("group min-w-0")}>
-            <button type="button" onClick={() => setPixOpen(true)} className={cn("block w-full text-left")}>
-              <div
-                className={cn(
-                  "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#ff4582] text-[#fdf8f3]",
-                )}
-              >
-                <img
-                  src="/images/pix-icon.jpg"
-                  alt="Pix"
-                  className={cn("h-full w-full object-cover")}
-                />
-                <div className={cn("absolute inset-x-3 bottom-3 flex justify-center")}>
-                  <span
-                    className={cn(
-                      "rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582] shadow-lg",
-                    )}
-                  >
-                    Ver QR Code
-                  </span>
-                </div>
-              </div>
-            </button>
-            <div className={cn("mt-3")}>
-              <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>
-                Presenteie com Pix
-              </p>
-              <h3 className={cn("mt-1 text-xl font-semibold leading-none tracking-tight text-[#262626]")}>
-                Um carinho para nós
-              </h3>
-              <p className={cn("mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-[#262626]/45")}>
-                Chave Pix
-              </p>
-            </div>
-          </article>
-
           {gifts.map((gift) => (
             <article key={gift.id} className={cn("group min-w-0")}>
-              <a
-                href={gift.url || "#gifts"}
-                target={gift.url ? "_blank" : undefined}
-                rel={gift.url ? "noreferrer" : undefined}
-                className={cn("block")}
-              >
+              {isPixGift(gift) ? (
+                <button
+                  type="button"
+                  onClick={() => setPixOpen(true)}
+                  className={cn("block w-full text-left")}
+                >
+                  <div
+                    className={cn(
+                      "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#ff4582] text-[#fdf8f3]",
+                    )}
+                  >
+                    <img
+                      src={gift.image_url || "/images/pix-icon.jpg"}
+                      alt="Pix"
+                      className={cn("h-full w-full object-cover")}
+                    />
+                    <div className={cn("absolute inset-x-3 bottom-3 flex justify-center")}>
+                      <span
+                        className={cn(
+                          "rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582] shadow-lg",
+                        )}
+                      >
+                        Ver QR Code
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ) : (
+                <a
+                  href={gift.url || "#gifts"}
+                  target={gift.url ? "_blank" : undefined}
+                  rel={gift.url ? "noreferrer" : undefined}
+                  className={cn("block")}
+                >
                 <div
                   className={cn(
                     "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#f5f0eb]",
@@ -258,10 +254,13 @@ export default function Gifts() {
                     </div>
                   )}
                 </div>
-              </a>
+                </a>
+              )}
 
               <div className={cn("mt-3")}>
-                <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>Presente</p>
+                <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>
+                  {isPixGift(gift) ? "Presenteie com Pix" : "Presente"}
+                </p>
                 <h3
                   className={cn(
                     "mt-1 text-xl font-semibold leading-none tracking-tight text-[#262626]",
@@ -275,7 +274,7 @@ export default function Gifts() {
                   )}
                 >
                   {gift.price || "Valor a consultar"}
-                  {gift.url && (
+                  {gift.url && !isPixGift(gift) && (
                     <>
                       <span>•</span>
                       <ExternalLink className={cn("h-4 w-4")} />

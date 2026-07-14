@@ -350,6 +350,119 @@ function createFileDbClient() {
           };
         }
 
+        if (compactSql.startsWith("SELECT id FROM gift_products")) {
+          const [invitationUid, url] = params;
+          return {
+            rows: store.gift_products
+              .filter(
+                (item) => item.invitation_uid === invitationUid && item.url === url,
+              )
+              .slice(0, 1)
+              .map((item) => ({ id: item.id })),
+          };
+        }
+
+        if (compactSql.startsWith("SELECT url FROM gift_products")) {
+          const [id, invitationUid] = params;
+          return {
+            rows: store.gift_products
+              .filter((item) => item.id === Number(id) && item.invitation_uid === invitationUid)
+              .map((item) => ({ url: item.url })),
+          };
+        }
+
+        if (compactSql.includes("COALESCE(MAX(sort_order)") && compactSql.includes("FROM gift_products")) {
+          const gifts = store.gift_products.filter((item) => item.invitation_uid === uid);
+          const maxOrder = gifts.reduce(
+            (max, item) => Math.max(max, Number(item.sort_order ?? -1)),
+            -1,
+          );
+          return { rows: [{ next_sort_order: maxOrder + 1 }] };
+        }
+
+        if (compactSql.startsWith("SELECT id, url, name, image_url, price")) {
+          const includeInactive = compactSql.includes("is_active, is_received");
+          return {
+            rows: store.gift_products
+              .filter(
+                (item) =>
+                  item.invitation_uid === uid &&
+                  (includeInactive || item.is_active !== false),
+              )
+              .sort(
+                (a, b) =>
+                  Number(a.is_received || false) - Number(b.is_received || false) ||
+                  Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
+                  new Date(b.created_at) - new Date(a.created_at),
+              ),
+          };
+        }
+
+        if (compactSql.startsWith("INSERT INTO gift_products")) {
+          const [
+            invitationUid,
+            url,
+            name,
+            imageUrl,
+            price,
+            isActiveOrSortOrder,
+            isReceived,
+            sortOrder,
+          ] = params;
+          const isEnsurePixInsert = params.length === 6;
+          const gift = {
+            id: store.counters.gift_products++,
+            invitation_uid: invitationUid,
+            url,
+            name,
+            image_url: imageUrl,
+            price,
+            is_active: isEnsurePixInsert ? true : isActiveOrSortOrder,
+            is_received: isEnsurePixInsert ? false : isReceived,
+            sort_order: isEnsurePixInsert ? isActiveOrSortOrder : sortOrder,
+            created_at: nowIso(),
+            updated_at: nowIso(),
+          };
+          store.gift_products.push(gift);
+          return { rows: [gift] };
+        }
+
+        if (compactSql.startsWith("UPDATE gift_products") && compactSql.includes("CASE id")) {
+          const giftIds = params.slice(1).map(Number);
+          for (const gift of store.gift_products) {
+            if (gift.invitation_uid === uid) {
+              const index = giftIds.indexOf(gift.id);
+              if (index >= 0) gift.sort_order = index;
+            }
+          }
+          return { rows: [] };
+        }
+
+        if (compactSql.startsWith("UPDATE gift_products")) {
+          const [url, name, imageUrl, price, isActive, isReceived, sortOrder, id, invitationUid] = params;
+          const gift = store.gift_products.find(
+            (item) => item.id === Number(id) && item.invitation_uid === invitationUid,
+          );
+          if (!gift) return { rows: [] };
+          gift.url = url;
+          gift.name = name;
+          gift.image_url = imageUrl;
+          gift.price = price;
+          gift.is_active = isActive;
+          gift.is_received = isReceived;
+          gift.sort_order = sortOrder;
+          gift.updated_at = nowIso();
+          return { rows: [gift] };
+        }
+
+        if (compactSql.startsWith("DELETE FROM gift_products")) {
+          const [id, invitationUid] = params;
+          store.gift_products = store.gift_products.filter(
+            (item) => !(item.id === Number(id) && item.invitation_uid === invitationUid),
+          );
+          return { rows: [] };
+        }
+
         throw new Error(`File database does not support query: ${compactSql}`);
       });
     },

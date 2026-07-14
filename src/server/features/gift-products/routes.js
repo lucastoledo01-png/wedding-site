@@ -3,9 +3,52 @@ import { getDbClient } from "../../lib/db-client.js";
 import { NotFoundError } from "../../lib/errors.js";
 
 const giftRoutes = new Hono();
+const PIX_GIFT_URL = "pix://lucas-andressa";
 
 function cleanText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function isPixGift(gift) {
+  return gift?.url === PIX_GIFT_URL;
+}
+
+async function ensurePixGift(pool, uid) {
+  const existing = await pool.query(
+    `SELECT id
+       FROM gift_products
+      WHERE invitation_uid = $1 AND url = $2
+      LIMIT 1`,
+    [uid, PIX_GIFT_URL],
+  );
+
+  if (existing.rows[0]) return;
+
+  const orderResult = await pool.query(
+    `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_sort_order
+       FROM gift_products
+      WHERE invitation_uid = $1`,
+    [uid],
+  );
+
+  await pool.query(
+    `INSERT INTO gift_products
+      (invitation_uid, url, name, image_url, price, is_active, is_received, sort_order)
+     VALUES ($1, $2, $3, $4, $5, true, false, $6)`,
+    [
+      uid,
+      PIX_GIFT_URL,
+      "Um carinho para nós",
+      "/images/pix-icon.jpg",
+      "Chave Pix",
+      Number(orderResult.rows[0]?.next_sort_order || 0),
+    ],
+  );
+}
+
+function mapGiftRow(row) {
+  if (!isPixGift(row)) return row;
+  return { ...row, gift_type: "pix" };
 }
 
 function findMeta(html, property) {
@@ -48,6 +91,7 @@ async function extractProductFromUrl(url) {
 giftRoutes.get("/", async (c) => {
   const uid = c.req.param("uid");
   const pool = await getDbClient(c);
+  await ensurePixGift(pool, uid);
   const result = await pool.query(
     `SELECT id, url, name, image_url, price, is_received, sort_order
        FROM gift_products
@@ -56,10 +100,11 @@ giftRoutes.get("/", async (c) => {
     [uid],
   );
 
-  return c.json({ success: true, data: result.rows });
+  return c.json({ success: true, data: result.rows.map(mapGiftRow) });
 });
 
 export async function listAdminGifts(pool, uid) {
+  await ensurePixGift(pool, uid);
   const result = await pool.query(
     `SELECT id, url, name, image_url, price, is_active, is_received, sort_order, created_at
        FROM gift_products
@@ -67,15 +112,25 @@ export async function listAdminGifts(pool, uid) {
       ORDER BY sort_order ASC, created_at DESC`,
     [uid],
   );
-  return result.rows;
+  return result.rows.map(mapGiftRow);
 }
 
 export async function upsertGift(pool, uid, body) {
-  const url = cleanText(body.url);
+  let existingGift = null;
+  if (body.id) {
+    const existing = await pool.query(
+      "SELECT url FROM gift_products WHERE id = $1 AND invitation_uid = $2",
+      [body.id, uid],
+    );
+    existingGift = existing.rows[0] || null;
+  }
+
+  const url =
+    existingGift?.url === PIX_GIFT_URL ? PIX_GIFT_URL : cleanText(body.url);
   let extracted = {};
   const hasSortOrder = body.sortOrder !== undefined || body.sort_order !== undefined;
 
-  if (url && body.extract !== false) {
+  if (/^https?:\/\//i.test(url) && body.extract !== false) {
     try {
       extracted = await extractProductFromUrl(url);
     } catch (error) {
@@ -164,5 +219,7 @@ export async function reorderGifts(pool, uid, giftIds) {
 
   return listAdminGifts(pool, uid);
 }
+
+export { PIX_GIFT_URL };
 
 export default giftRoutes;

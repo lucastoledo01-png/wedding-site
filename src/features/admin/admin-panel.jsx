@@ -44,6 +44,10 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function isPixGift(gift) {
+  return gift?.gift_type === "pix" || gift?.url === "pix://lucas-andressa";
+}
+
 function EmptyState({ children }) {
   return (
     <div className={cn("rounded-2xl border border-dashed border-gray-200 bg-white/70 p-8 text-center text-sm text-gray-500")}>
@@ -814,7 +818,7 @@ export default function AdminPanel() {
                       <div className={cn("grid gap-3")}>
                         <div className={cn("min-w-0")}>
                           <p className={cn("text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff4582]")}>
-                            Ordem {index + 1}
+                            {isPixGift(gift) ? "Pix dos noivos" : `Ordem ${index + 1}`}
                           </p>
                           <p className={cn("mt-1 font-semibold")}>{gift.name}</p>
                         </div>
@@ -856,9 +860,11 @@ export default function AdminPanel() {
                         <button type="button" onClick={() => patchGift.mutate({ id: gift.id, payload: { ...gift, isActive: !gift.is_active } })} className={cn("min-h-10 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
                           {gift.is_active ? "Ocultar" : "Mostrar"}
                         </button>
-                        <button type="button" onClick={() => deleteGift.mutate(gift.id)} className={cn("min-h-10 rounded-full border border-rose-100 px-3 py-2 text-xs font-semibold text-[#ff4582]")}>
-                          Remover
-                        </button>
+                        {!isPixGift(gift) ? (
+                          <button type="button" onClick={() => deleteGift.mutate(gift.id)} className={cn("min-h-10 rounded-full border border-rose-100 px-3 py-2 text-xs font-semibold text-[#ff4582]")}>
+                            Remover
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </div>
