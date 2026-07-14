@@ -667,8 +667,10 @@ export default function AdminPanel() {
                         {guest.attendance} · {guest.party_size || 1} pessoa(s)
                         {guest.confirmed_at ? ` · ${formatDate(guest.confirmed_at)}` : ""}
                       </p>
-                      {guest.confirmed_ip || guest.confirmed_device ? (
+                      {guest.confirmed_phone || guest.confirmed_ip || guest.confirmed_device ? (
                         <p className={cn("mt-1 break-all text-xs text-black/35")}>
+                          {guest.confirmed_phone ? `WhatsApp: ${guest.confirmed_phone}` : ""}
+                          {guest.confirmed_phone && (guest.confirmed_ip || guest.confirmed_device) ? " · " : ""}
                           {guest.confirmed_ip ? `IP: ${guest.confirmed_ip}` : ""}
                           {guest.confirmed_ip && guest.confirmed_device ? " · " : ""}
                           {guest.confirmed_device ? `Dispositivo: ${guest.confirmed_device}` : ""}

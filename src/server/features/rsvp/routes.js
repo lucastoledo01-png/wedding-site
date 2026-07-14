@@ -14,10 +14,14 @@ function findExactGuest(name, guests) {
   return guests.find((guest) => normalizeName(guest.full_name) === normalized) || null;
 }
 
+function cleanPhone(value) {
+  return String(value || "").replace(/[^\d+]/g, "").trim();
+}
+
 async function loadGuests(pool, uid) {
   const result = await pool.query(
     `SELECT id, full_name, party_size, attendance, confirmed_at, message,
-            confirmed_ip, confirmed_device
+            confirmed_phone, confirmed_ip, confirmed_device
        FROM guests
       WHERE invitation_uid = $1
       ORDER BY full_name ASC`,
@@ -50,6 +54,7 @@ rsvpRoutes.post("/confirm", async (c) => {
   const guestId = Number(body.guestId || body.guest_id || 0);
   const attendance = body.attendance === "NOT_ATTENDING" ? "NOT_ATTENDING" : "ATTENDING";
   const message = String(body.message || "").trim();
+  const phone = cleanPhone(body.phone || body.whatsapp || body.confirmedPhone);
   const partySize = Number.isFinite(Number(body.partySize))
     ? Math.max(1, Number(body.partySize))
     : null;
@@ -57,6 +62,13 @@ rsvpRoutes.post("/confirm", async (c) => {
 
   if (!name) {
     return c.json({ success: false, error: "Informe seu nome." }, 400);
+  }
+
+  if (phone.replace(/\D/g, "").length < 10) {
+    return c.json(
+      { success: false, error: "Informe um WhatsApp válido para confirmar." },
+      400,
+    );
   }
 
   const pool = await getDbClient(c);
@@ -81,13 +93,14 @@ rsvpRoutes.post("/confirm", async (c) => {
             party_size = COALESCE($2, party_size),
             message = $3,
             confirmed_at = CURRENT_TIMESTAMP,
-            confirmed_ip = $4,
-            confirmed_device = $5,
+            confirmed_phone = $4,
+            confirmed_ip = $5,
+            confirmed_device = $6,
             updated_at = CURRENT_TIMESTAMP
-      WHERE id = $6 AND invitation_uid = $7
+      WHERE id = $7 AND invitation_uid = $8
       RETURNING id, full_name, party_size, attendance, confirmed_at, message,
-                confirmed_ip, confirmed_device`,
-    [attendance, partySize, message, ipAddress, getDevice(c), best.id, uid],
+                confirmed_phone, confirmed_ip, confirmed_device`,
+    [attendance, partySize, message, phone, ipAddress, getDevice(c), best.id, uid],
   );
 
   const confirmedGuest = result.rows[0];
@@ -96,6 +109,7 @@ rsvpRoutes.post("/confirm", async (c) => {
     await appendRsvpBackup(c, {
       name: confirmedGuest.full_name,
       attendance: confirmedGuest.attendance,
+      phone: confirmedGuest.confirmed_phone,
       device: confirmedGuest.confirmed_device,
       ipAddress: confirmedGuest.confirmed_ip,
     });
@@ -134,7 +148,7 @@ export async function createGuest(pool, uid, guest) {
      ON CONFLICT (invitation_uid, normalized_name)
      DO UPDATE SET full_name = EXCLUDED.full_name, party_size = EXCLUDED.party_size, updated_at = CURRENT_TIMESTAMP
      RETURNING id, full_name, party_size, attendance, confirmed_at, message,
-               confirmed_ip, confirmed_device`,
+               confirmed_phone, confirmed_ip, confirmed_device`,
     [uid, fullName, normalizeName(fullName), Number(guest.partySize || guest.party_size || 1)],
   );
 

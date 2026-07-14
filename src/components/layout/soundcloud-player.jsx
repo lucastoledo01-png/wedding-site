@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PauseCircle, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -102,19 +102,19 @@ export default function SoundCloudPlayer({
     };
   }, [shouldAutoPlay, shouldPlayWhenReady, url, volume]);
 
+  const play = useCallback(() => {
+    if (!widgetRef.current || !isReady) return;
+
+    widgetRef.current.setVolume(volume);
+    widgetRef.current.play();
+  }, [isReady, volume]);
+
   useEffect(() => {
     if (isReady && shouldPlayWhenReady) {
       play();
       setShouldPlayWhenReady(false);
     }
-  }, [isReady, shouldPlayWhenReady]);
-
-  const play = () => {
-    if (!widgetRef.current || !isReady) return;
-
-    widgetRef.current.setVolume(volume);
-    widgetRef.current.play();
-  };
+  }, [isReady, play, shouldPlayWhenReady]);
 
   const toggle = () => {
     if (!widgetRef.current || !isReady) return;

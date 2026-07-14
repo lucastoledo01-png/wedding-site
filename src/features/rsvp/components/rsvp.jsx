@@ -13,6 +13,17 @@ const attendanceLabels = {
   PENDING: "Nome encontrado. Você pode confirmar abaixo.",
 };
 
+function formatPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function phoneDigits(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
 function FeedbackModal({ feedback, onClose }) {
   if (!feedback || typeof document === "undefined") return null;
 
@@ -71,6 +82,9 @@ function ConfirmDecisionModal({
   attendance,
   guestName,
   isPending,
+  phone,
+  phoneError,
+  onPhoneChange,
   onCancel,
   onConfirm,
 }) {
@@ -114,6 +128,40 @@ function ConfirmDecisionModal({
             ? "Você confirma que não irá comparecer?"
             : "Você deseja confirmar sua presença?"}
         </p>
+        <label className={cn("mt-5 block text-left")}>
+          <span className={cn("text-[10px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>
+            WhatsApp
+          </span>
+          <div
+            className={cn(
+              "mt-2 grid grid-cols-[88px_1fr] overflow-hidden rounded-2xl border border-[#262626]/10 bg-white",
+            )}
+          >
+            <div
+              className={cn(
+                "flex items-center justify-center gap-2 border-r border-[#262626]/10 bg-[#f5f0eb] px-3 text-sm font-semibold text-[#262626]/70",
+              )}
+            >
+              <span aria-hidden="true">🇧🇷</span>
+              <span>+55</span>
+            </div>
+            <input
+              value={phone}
+              onChange={(event) => onPhoneChange(formatPhone(event.target.value))}
+              placeholder="(35) 99999-0000"
+              inputMode="tel"
+              autoComplete="tel-national"
+              className={cn(
+                "min-w-0 bg-white px-4 py-4 text-base outline-none",
+              )}
+            />
+          </div>
+          {phoneError ? (
+            <p className={cn("mt-2 text-sm font-medium text-[#b91853]")}>
+              {phoneError}
+            </p>
+          ) : null}
+        </label>
         <div className={cn("mt-6 grid gap-3")}>
           <button
             type="button"
@@ -154,6 +202,8 @@ export default function Rsvp() {
   const [suggestions, setSuggestions] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const canSearch = name.trim().length >= 3 && !!uid;
   const { data, isFetching, error: searchError } = useQuery({
@@ -172,17 +222,23 @@ export default function Rsvp() {
   const canConfirm = Boolean(match) && !hasAlreadyAnswered;
 
   const mutation = useMutation({
-    mutationFn: () =>
-      confirmPresence(uid, {
+    mutationFn: () => {
+      const digits = phoneDigits(phone);
+      const normalizedPhone = digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+      return confirmPresence(uid, {
         guestId: match?.id,
         name: match?.full_name || name,
         attendance,
         message: "",
         partySize: 1,
-      }),
+        phone: normalizedPhone,
+      });
+    },
     onSuccess: (response) => {
       setSuggestions([]);
       setConfirmDecisionOpen(false);
+      setPhone("");
+      setPhoneError("");
       setShowConfetti(true);
       setFeedback({
         type: "success",
@@ -218,8 +274,20 @@ export default function Rsvp() {
         attendance={attendance}
         guestName={confirmDecisionOpen ? match?.full_name : ""}
         isPending={mutation.isPending}
+        phone={phone}
+        phoneError={phoneError}
+        onPhoneChange={(value) => {
+          setPhone(value);
+          setPhoneError("");
+        }}
         onCancel={() => setConfirmDecisionOpen(false)}
-        onConfirm={() => mutation.mutate()}
+        onConfirm={() => {
+          if (phoneDigits(phone).length < 10) {
+            setPhoneError("Informe seu WhatsApp para confirmar.");
+            return;
+          }
+          mutation.mutate();
+        }}
       />
       <img
         src="/images/flowers.png"
@@ -272,6 +340,7 @@ export default function Rsvp() {
                   setName(event.target.value);
                   setSuggestions([]);
                   setConfirmDecisionOpen(false);
+                  setPhoneError("");
                   mutation.reset();
                 }}
                 className={cn(
@@ -350,33 +419,62 @@ export default function Rsvp() {
           )}
 
           {canConfirm && (
-            <div className={cn("grid gap-3 sm:grid-cols-2")}>
-            <button
-              type="button"
-              onClick={() => setAttendance("ATTENDING")}
+            <div
               className={cn(
-                "super-transition flex items-center justify-center gap-2 rounded-full border px-4 py-3 font-semibold",
-                attendance === "ATTENDING"
-                  ? "border-emerald-500 bg-emerald-500 text-white"
-                  : "border-[#262626]/10 bg-white text-[#262626]",
+                "rounded-2xl border border-[#262626]/10 bg-white px-4 py-4",
               )}
             >
-              <CheckCircle className={cn("h-4 w-4")} />
-              Vou Comparecer
-            </button>
-            <button
-              type="button"
-              onClick={() => setAttendance("NOT_ATTENDING")}
-              className={cn(
-                "super-transition flex items-center justify-center gap-2 rounded-full border px-4 py-3 font-semibold",
-                attendance === "NOT_ATTENDING"
-                  ? "border-[#ff4582] bg-[#ff4582] text-[#262626]"
-                  : "border-[#262626]/10 bg-white text-[#262626]",
-              )}
-            >
-              <XCircle className={cn("h-4 w-4")} />
-              Não poderei ir
-            </button>
+              <div className={cn("flex flex-wrap items-center justify-between gap-4")}>
+                <p className={cn("text-base font-medium text-[#262626]")}>
+                  Você irá ao evento?
+                </p>
+                <div className={cn("flex items-center gap-5")}>
+                  <button
+                    type="button"
+                    aria-pressed={attendance === "ATTENDING"}
+                    onClick={() => setAttendance("ATTENDING")}
+                    className={cn(
+                      "super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "grid h-7 w-7 place-items-center rounded-full border",
+                        attendance === "ATTENDING"
+                          ? "border-[#b9bb83] bg-[#fdf8f3]"
+                          : "border-[#262626]/35 bg-white",
+                      )}
+                    >
+                      {attendance === "ATTENDING" ? (
+                        <span className={cn("h-2.5 w-2.5 rounded-full bg-[#b9bb83]")} />
+                      ) : null}
+                    </span>
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={attendance === "NOT_ATTENDING"}
+                    onClick={() => setAttendance("NOT_ATTENDING")}
+                    className={cn(
+                      "super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "grid h-7 w-7 place-items-center rounded-full border",
+                        attendance === "NOT_ATTENDING"
+                          ? "border-[#ff4582] bg-[#fff1f6]"
+                          : "border-[#262626]/35 bg-white",
+                      )}
+                    >
+                      {attendance === "NOT_ATTENDING" ? (
+                        <span className={cn("h-2.5 w-2.5 rounded-full bg-[#ff4582]")} />
+                      ) : null}
+                    </span>
+                    Não
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

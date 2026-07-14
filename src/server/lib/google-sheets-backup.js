@@ -123,26 +123,28 @@ async function appendSheetRow(c, range, row) {
   return { success: true, data };
 }
 
-export async function appendRsvpBackup(c, { name, attendance, device, ipAddress }) {
+export async function appendRsvpBackup(c, { name, attendance, phone, device, ipAddress }) {
   const range =
-    getEnv(c, "GOOGLE_SHEETS_CONFIRMED_RANGE") || "'Presença Confirmada'!A:E";
+    getEnv(c, "GOOGLE_SHEETS_CONFIRMED_RANGE") || "'Presença Confirmada'!A:F";
 
   return appendSheetRow(c, range, [
     nowSaoPaulo(),
     name,
     attendanceLabel(attendance),
+    phone || "",
     device || getDevice(c),
     ipAddress || getClientIp(c),
   ]);
 }
 
 export async function appendGuestListBackup(c, { name, attendance, device, ipAddress }) {
-  const range = getEnv(c, "GOOGLE_SHEETS_TOTAL_RANGE") || "'Lista Total'!A:E";
+  const range = getEnv(c, "GOOGLE_SHEETS_TOTAL_RANGE") || "'Lista Total'!A:F";
 
   return appendSheetRow(c, range, [
     nowSaoPaulo(),
     name,
     attendanceLabel(attendance),
+    "",
     device || getDevice(c) || "Painel admin",
     ipAddress || getClientIp(c),
   ]);

@@ -79,7 +79,7 @@ adminRoutes.get("/:uid/guests", async (c) => {
   const pool = await getDbClient(c);
   const result = await pool.query(
     `SELECT id, full_name, party_size, attendance, confirmed_at, message,
-            confirmed_ip, confirmed_device, created_at
+            confirmed_phone, confirmed_ip, confirmed_device, created_at
        FROM guests
       WHERE invitation_uid = $1
       ORDER BY full_name ASC`,

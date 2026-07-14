@@ -210,6 +210,7 @@ function createFileDbClient() {
               party_size: Number(partySize || 1),
               attendance: "PENDING",
               confirmed_at: null,
+              confirmed_phone: "",
               message: "",
               created_at: nowIso(),
               updated_at: nowIso(),
@@ -240,13 +241,14 @@ function createFileDbClient() {
             if (attendance) guest.attendance = attendance;
             if (message !== null && message !== undefined) guest.message = message;
           } else {
-            const [attendance, partySize, message, confirmedIp, confirmedDevice] = params;
+            const [attendance, partySize, message, confirmedPhone, confirmedIp, confirmedDevice] = params;
             guest.attendance = attendance;
             if (partySize !== null && partySize !== undefined) {
               guest.party_size = Number(partySize);
             }
             guest.message = message;
             guest.confirmed_at = nowIso();
+            guest.confirmed_phone = confirmedPhone || "";
             guest.confirmed_ip = confirmedIp || "";
             guest.confirmed_device = confirmedDevice || "";
           }
@@ -287,7 +289,7 @@ function createFileDbClient() {
               .filter((item) => item.invitation_uid === invitationUid)
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
               .slice(Number(offset), Number(offset) + Number(limit))
-              .map(({ invitation_uid, ...wish }) => wish),
+              .map(({ invitation_uid: _invitationUid, ...wish }) => wish),
           };
         }
 
@@ -520,6 +522,7 @@ async function ensureRuntimeSchema(pool, connectionString) {
 
   await pool.query(`
     ALTER TABLE guests
+      ADD COLUMN IF NOT EXISTS confirmed_phone TEXT,
       ADD COLUMN IF NOT EXISTS confirmed_ip TEXT,
       ADD COLUMN IF NOT EXISTS confirmed_device TEXT
   `);
