@@ -45,7 +45,7 @@ function PixModal({ open, onClose }) {
           "max-h-[92svh] w-full max-w-md overflow-y-auto rounded-[30px] border border-white/70 bg-[#fdf8f3] shadow-[0_24px_90px_rgba(38,38,38,0.24)]",
         )}
       >
-        <div className={cn("relative bg-[#ff4582] px-6 pb-7 pt-6 text-center text-[#fdf8f3]")}>
+        <div className={cn("relative bg-[#ff4582] px-5 pb-5 pt-5 text-center text-[#fdf8f3]")}>
           <button
             type="button"
             onClick={onClose}
@@ -56,16 +56,16 @@ function PixModal({ open, onClose }) {
           >
             <X className={cn("h-5 w-5")} />
           </button>
-          <Heart className={cn("mx-auto h-8 w-8 fill-current")} />
-          <h3 className={cn("mt-3 text-3xl font-semibold leading-none")}>
+          <Heart className={cn("mx-auto h-7 w-7 fill-current")} />
+          <h3 className={cn("mt-3 text-2xl font-semibold leading-none")}>
             Presente em Pix
           </h3>
-          <p className={cn("mx-auto mt-3 max-w-xs text-sm font-medium leading-relaxed text-white/90")}>
+          <p className={cn("mx-auto mt-3 max-w-xs text-[13px] font-medium leading-relaxed text-white/90")}>
             Se quiser nos presentear de uma forma prática, qualquer contribuição
             será recebida com muito carinho para o início da nossa nova fase.
           </p>
 
-          <div className={cn("mx-auto mt-6 w-44 rounded-2xl bg-white p-3 shadow-lg")}>
+          <div className={cn("mx-auto mt-5 w-40 rounded-2xl bg-white p-3 shadow-lg")}>
             <img
               src={PIX_INFO.qrCode}
               alt="QR Code Pix Lucas e Andressa"
@@ -77,7 +77,7 @@ function PixModal({ open, onClose }) {
             type="button"
             onClick={copyPixKey}
             className={cn(
-              "mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-[#ff4582] transition hover:bg-[#fdf8f3]",
+              "mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-[#ff4582] transition hover:bg-[#fdf8f3]",
             )}
           >
             {copied ? <Check className={cn("h-4 w-4")} /> : <Copy className={cn("h-4 w-4")} />}
@@ -85,11 +85,8 @@ function PixModal({ open, onClose }) {
           </button>
         </div>
 
-        <div className={cn("px-6 py-6 text-[#262626]")}>
-          <p className={cn("text-center text-sm text-[#262626]/55")}>
-            Ou use a chave Pix
-          </p>
-          <div className={cn("mt-5 grid gap-4 border-t border-[#262626]/10 pt-5 text-sm")}>
+        <div className={cn("px-5 py-4 text-[#262626]")}>
+          <div className={cn("grid gap-3 border-t border-[#262626]/10 pt-4 text-sm")}>
             <div className={cn("grid grid-cols-[92px_1fr_auto] items-center gap-3")}>
               <span className={cn("font-semibold")}>Chave Pix</span>
               <span className={cn("break-all font-semibold text-[#ff4582]")}>{PIX_KEY}</span>
@@ -176,23 +173,18 @@ export default function Gifts() {
             <button type="button" onClick={() => setPixOpen(true)} className={cn("block w-full text-left")}>
               <div
                 className={cn(
-                  "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#ff4582] p-4 text-[#fdf8f3]",
+                  "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#ff4582] text-[#fdf8f3]",
                 )}
               >
-                <div className={cn("absolute inset-0 opacity-20")}>
-                  <img src="/images/flowers.png" alt="" className={cn("h-full w-full object-cover")} />
-                </div>
-                <div className={cn("relative flex h-full flex-col items-center justify-center text-center")}>
-                  <Heart className={cn("h-12 w-12 fill-current")} />
-                  <p className={cn("mt-4 text-[9px] font-black uppercase tracking-[0.28em]")}>
-                    Presente especial
-                  </p>
-                  <h3 className={cn("mt-2 text-2xl font-semibold leading-none")}>
-                    Pix dos noivos
-                  </h3>
+                <img
+                  src="/images/pix-icon.jpg"
+                  alt="Pix"
+                  className={cn("h-full w-full object-cover")}
+                />
+                <div className={cn("absolute inset-x-3 bottom-3 flex justify-center")}>
                   <span
                     className={cn(
-                      "mt-5 rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582]",
+                      "rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582] shadow-lg",
                     )}
                   >
                     Ver QR Code
@@ -201,7 +193,9 @@ export default function Gifts() {
               </div>
             </button>
             <div className={cn("mt-3")}>
-              <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>Pix</p>
+              <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>
+                Presenteie com Pix
+              </p>
               <h3 className={cn("mt-1 text-xl font-semibold leading-none tracking-tight text-[#262626]")}>
                 Um carinho para nós
               </h3>
