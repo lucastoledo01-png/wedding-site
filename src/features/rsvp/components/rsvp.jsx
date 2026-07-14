@@ -240,13 +240,13 @@ export default function Rsvp() {
       setPhone("");
       setPhoneError("");
       setShowConfetti(true);
+      const isAbsence = response.data?.attendance === "NOT_ATTENDING";
       setFeedback({
         type: "success",
-        title: "Presença confirmada!",
-        message:
-          response.data?.attendance === "NOT_ATTENDING"
-            ? "Registramos que você não poderá ir. Obrigado por avisar."
-            : "Sua presença foi confirmada com sucesso. Esperamos você!",
+        title: isAbsence ? "Ausência Confirmada" : "Presença confirmada!",
+        message: isAbsence
+          ? "Registramos que você não poderá ir. Obrigado por avisar."
+          : "Sua presença foi confirmada com sucesso. Esperamos você!",
       });
       setTimeout(() => setShowConfetti(false), 3200);
     },

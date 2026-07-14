@@ -27,6 +27,11 @@ const ADMIN_PAGES = [
   { id: "comentarios", label: "Comentários", icon: MessageCircleHeart },
 ];
 const SESSION_STORAGE_KEY = "wedding_admin_session";
+const ATTENDANCE_LABELS = {
+  ATTENDING: "Confirmou presença",
+  NOT_ATTENDING: "Confirmou ausência",
+  PENDING: "Pendente",
+};
 
 function getPageFromPath() {
   const page = window.location.pathname.split("/").filter(Boolean)[1];
@@ -41,7 +46,18 @@ function formatDate(value) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   }).format(new Date(value));
+}
+
+function attendanceLabel(status) {
+  return ATTENDANCE_LABELS[status] || status || "Pendente";
+}
+
+function attendanceBadgeClass(status) {
+  if (status === "ATTENDING") return "bg-emerald-50 text-emerald-700";
+  if (status === "NOT_ATTENDING") return "bg-rose-50 text-[#b91853]";
+  return "bg-zinc-100 text-zinc-500";
 }
 
 function isPixGift(gift) {
@@ -651,32 +667,84 @@ export default function AdminPanel() {
             <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
               <div className={cn("flex items-center gap-2")}>
                 <Users className={cn("h-5 w-5 text-[#ff4582]")} />
-                <h2 className={cn("text-xl font-semibold")}>Lista de presencas</h2>
+                <h2 className={cn("text-xl font-semibold")}>Lista de presenças</h2>
               </div>
 
-              <div className={cn("mt-5 rounded-2xl border border-black/5 md:max-h-[680px] md:overflow-auto")}>
+              <div className={cn("mt-5 overflow-hidden rounded-2xl border border-black/5 md:max-h-[680px] md:overflow-auto")}>
                 {guestsQuery.isLoading && <EmptyState>Carregando convidados...</EmptyState>}
                 {!guestsQuery.isLoading && (guestsQuery.data || []).length === 0 && (
                   <EmptyState>Nenhum convidado cadastrado ainda.</EmptyState>
                 )}
+                {!guestsQuery.isLoading && (guestsQuery.data || []).length > 0 && (
+                  <div
+                    className={cn(
+                      "hidden border-b border-black/5 bg-[#f5f0eb] px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black/40 md:grid md:grid-cols-[minmax(180px,1.25fr)_150px_150px_170px_minmax(120px,1fr)_44px] md:gap-3",
+                    )}
+                  >
+                    <span>Nome</span>
+                    <span>WhatsApp</span>
+                    <span>Status</span>
+                    <span>Data da confirmação</span>
+                    <span>IP</span>
+                    <span />
+                  </div>
+                )}
                 {(guestsQuery.data || []).map((guest) => (
-                  <div key={guest.id} className={cn("grid grid-cols-[1fr_auto] gap-3 border-b border-black/5 p-4 last:border-b-0")}>
-                    <div>
-                      <p className={cn("font-semibold")}>{guest.full_name}</p>
-                      <p className={cn("mt-1 text-sm text-black/50")}>
-                        {guest.attendance} · {guest.party_size || 1} pessoa(s)
-                        {guest.confirmed_at ? ` · ${formatDate(guest.confirmed_at)}` : ""}
+                  <div
+                    key={guest.id}
+                    className={cn(
+                      "grid gap-3 border-b border-black/5 p-4 text-sm last:border-b-0 md:grid-cols-[minmax(180px,1.25fr)_150px_150px_170px_minmax(120px,1fr)_44px] md:items-center md:gap-3",
+                    )}
+                  >
+                    <div className={cn("min-w-0")}>
+                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                        Nome
+                      </span>
+                      <p className={cn("break-words font-semibold text-[#262626]")}>
+                        {guest.full_name}
                       </p>
-                      {guest.confirmed_phone || guest.confirmed_ip || guest.confirmed_device ? (
-                        <p className={cn("mt-1 break-all text-xs text-black/35")}>
-                          {guest.confirmed_phone ? `WhatsApp: ${guest.confirmed_phone}` : ""}
-                          {guest.confirmed_phone && (guest.confirmed_ip || guest.confirmed_device) ? " · " : ""}
-                          {guest.confirmed_ip ? `IP: ${guest.confirmed_ip}` : ""}
-                          {guest.confirmed_ip && guest.confirmed_device ? " · " : ""}
-                          {guest.confirmed_device ? `Dispositivo: ${guest.confirmed_device}` : ""}
+                    </div>
+                    <div className={cn("min-w-0")}>
+                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                        WhatsApp
+                      </span>
+                      <p className={cn("break-all text-black/60")}>
+                        {guest.confirmed_phone || "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                        Status
+                      </span>
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-3 py-1.5 text-xs font-semibold",
+                          attendanceBadgeClass(guest.attendance),
+                        )}
+                      >
+                        {attendanceLabel(guest.attendance)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                        Data da confirmação
+                      </span>
+                      <p className={cn("text-black/60")}>
+                        {guest.confirmed_at ? formatDate(guest.confirmed_at) : "-"}
+                      </p>
+                    </div>
+                    <div className={cn("min-w-0")}>
+                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                        IP
+                      </span>
+                      <p className={cn("break-all text-black/60")}>
+                        {guest.confirmed_ip || "-"}
+                      </p>
+                      {guest.confirmed_device ? (
+                        <p className={cn("mt-1 truncate text-xs text-black/35")}>
+                          {guest.confirmed_device}
                         </p>
                       ) : null}
-                      {guest.message && <p className={cn("mt-2 text-sm text-black/65")}>{guest.message}</p>}
                     </div>
                     <button
                       type="button"
