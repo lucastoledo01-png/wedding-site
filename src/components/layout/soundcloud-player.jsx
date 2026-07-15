@@ -4,6 +4,11 @@ import { cn } from "@/lib/utils";
 
 const WIDGET_API = "https://w.soundcloud.com/player/api.js";
 
+const isIOS = typeof window !== "undefined" && (
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+);
+
 
 function loadSoundCloudApi() {
   if (window.SC?.Widget) {
@@ -96,7 +101,7 @@ export default function SoundCloudPlayer({
         if (cancelled) return;
         setIsReady(true);
         widget.setVolume(volume);
-        if (shouldAutoPlay || shouldPlayWhenReady) {
+        if (!isIOS && (shouldAutoPlay || shouldPlayWhenReady)) {
           widget.play();
           setShouldPlayWhenReady(false);
         }
@@ -178,10 +183,9 @@ export default function SoundCloudPlayer({
 
   useEffect(() => {
     const handlePlayMusic = () => {
-      setPromptChoiceMade(true);
       if (isReady) {
         play();
-      } else {
+      } else if (!isIOS) {
         setShouldPlayWhenReady(true);
       }
     };
