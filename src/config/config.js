@@ -67,7 +67,7 @@ const config = {
       // Music file (choose one or replace with your own file)
       src: "",
       soundcloudUrl:
-        "https://soundcloud.com/lucas-wd/jorge-e-mateus-a-hora-e-agora,https://soundcloud.com/creitu-silva-7/jorge-e-mateus-os-anjos-cantam-nosso-amor",
+        "https://soundcloud.com/tassiano-rezende-rodrigues-da-cunha/01-a-hora-agora,https://soundcloud.com/creitu-silva-7/jorge-e-mateus-os-anjos-cantam-nosso-amor",
       // Music title to display
       title: "A Hora é Agora, Os Anjos Cantam Nosso Amor",
       // Whether music plays automatically when website opens
