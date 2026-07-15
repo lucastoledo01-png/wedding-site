@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
   Ban,
+  Download,
   Gift,
   Loader2,
   MessageCircleHeart,
@@ -274,6 +275,70 @@ export default function AdminPanel() {
         .reduce((sum, guest) => sum + Number(guest.party_size || 1), 0),
     };
   }, [guestsQuery.data]);
+
+  const exportToCSV = useCallback(() => {
+    const list = guestsQuery.data || [];
+    if (!list.length) return;
+
+    const headers = [
+      "Nome Completo",
+      "WhatsApp",
+      "Presença",
+      "Data da Confirmação",
+      "IP",
+      "Dispositivo"
+    ];
+
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return "";
+      const stringVal = String(val);
+      if (stringVal.includes(",") || stringVal.includes('"') || stringVal.includes("\n")) {
+        return `"${stringVal.replace(/"/g, '""')}"`;
+      }
+      return stringVal;
+    };
+
+    const rows = list.map((guest) => {
+      const attendanceMap = {
+        ATTENDING: "Confirmou presença",
+        NOT_ATTENDING: "Não vai",
+        PENDING: "Pendente"
+      };
+      
+      return [
+        guest.full_name,
+        guest.confirmed_phone || "-",
+        attendanceMap[guest.attendance] || guest.attendance || "Pendente",
+        guest.confirmed_at ? formatDate(guest.confirmed_at) : "-",
+        guest.ip_address || "-",
+        guest.device || "-"
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map(escapeCSV).join(","))
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    const statusMap = {
+      all: "Todos",
+      yes: "Confirmados",
+      no: "Ausentes",
+      pending: "Pendentes"
+    };
+    const filterName = statusMap[guestFilters.status] || "Filtro";
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `lista_convidados_${filterName.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [guestsQuery.data, guestFilters.status]);
 
   const importGuests = useMutation({
     mutationFn: () =>
@@ -799,21 +864,32 @@ export default function AdminPanel() {
                       ? "Atualizando filtros..."
                       : `${(guestsQuery.data || []).length} resultado(s) encontrado(s).`}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setGuestFilters({
-                        search: "",
-                        status: "all",
-                        period: "all",
-                        dateFrom: "",
-                        dateTo: "",
-                      })
-                    }
-                    className={cn("rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
-                  >
-                    Limpar filtros
-                  </button>
+                  <div className={cn("flex items-center gap-2")}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setGuestFilters({
+                          search: "",
+                          status: "all",
+                          period: "all",
+                          dateFrom: "",
+                          dateTo: "",
+                        })
+                      }
+                      className={cn("rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                    >
+                      Limpar filtros
+                    </button>
+                    <button
+                      type="button"
+                      onClick={exportToCSV}
+                      disabled={guestsQuery.isLoading || !(guestsQuery.data || []).length}
+                      className={cn("inline-flex items-center gap-1.5 rounded-full bg-[#262626] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-black disabled:opacity-50")}
+                    >
+                      <Download className={cn("h-3.5 w-3.5")} />
+                      Exportar CSV
+                    </button>
+                  </div>
                 </div>
               </div>
 
