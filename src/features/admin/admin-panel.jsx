@@ -640,7 +640,7 @@ export default function AdminPanel() {
 
         {enabled && activePage === "presencas" && (
           <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.95fr_1.05fr]")}>
-            <div className={cn("space-y-4")}>
+            <div className={cn("space-y-4 min-w-0")}>
               <div className={cn("grid grid-cols-2 gap-3")}>
                 {[
                   ["Convidados", stats.total],
@@ -684,7 +684,7 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
               <div className={cn("flex items-center gap-2")}>
                 <Users className={cn("h-5 w-5 text-[#ff4582]")} />
                 <h2 className={cn("text-xl font-semibold")}>Lista de presenças</h2>
@@ -910,7 +910,7 @@ export default function AdminPanel() {
 
         {enabled && activePage === "presentes" && (
           <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.85fr_1.15fr]")}>
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
               <div className={cn("flex items-center justify-between gap-3")}>
                 <div className={cn("flex items-center gap-2")}>
                   <Gift className={cn("h-5 w-5 text-[#ff4582]")} />
@@ -1025,7 +1025,7 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
               <h2 className={cn("text-xl font-semibold")}>Lista de presentes</h2>
               <div className={cn("mt-5 grid gap-3")}>
                 {giftsQuery.isLoading && <EmptyState>Carregando presentes...</EmptyState>}
@@ -1112,7 +1112,7 @@ export default function AdminPanel() {
 
         {enabled && activePage === "comentarios" && (
           <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-6 lg:grid-cols-[1fr_0.45fr]")}>
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
               <div className={cn("flex items-center gap-2")}>
                 <MessageCircleHeart className={cn("h-5 w-5 text-[#ff4582]")} />
                 <h2 className={cn("text-xl font-semibold")}>Comentários publicados</h2>
@@ -1176,7 +1176,7 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            <aside className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+            <aside className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
               <div className={cn("flex items-center gap-2")}>
                 <ShieldOff className={cn("h-5 w-5 text-[#ff4582]")} />
                 <h2 className={cn("text-xl font-semibold")}>IPs bloqueados</h2>
