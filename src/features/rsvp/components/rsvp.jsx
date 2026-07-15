@@ -470,12 +470,12 @@ export default function Rsvp() {
                       className={cn(
                         "grid h-7 w-7 place-items-center rounded-full border",
                         attendance === "ATTENDING"
-                          ? "border-[#b9bb83] bg-[#fdf8f3]"
+                          ? "border-emerald-500 bg-emerald-50"
                           : "border-[#262626]/35 bg-white",
                       )}
                     >
                       {attendance === "ATTENDING" ? (
-                        <span className={cn("h-2.5 w-2.5 rounded-full bg-[#b9bb83]")} />
+                        <span className={cn("h-2.5 w-2.5 rounded-full bg-emerald-500")} />
                       ) : null}
                     </span>
                     Sim
