@@ -31,6 +31,7 @@ import staticConfig from "@/config/config";
 import { useMotionPreset } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import AdminPanel from "@/features/admin/admin-panel";
+import TransitionHearts from "@/components/transition-hearts";
 
 // Lazy load components for better performance
 const Layout = lazy(() => import("@/components/layout/layout"));
@@ -61,6 +62,7 @@ const LandingPage = lazy(
  */
 function WeddingApp() {
   const [isInvitationOpen, setIsInvitationOpen] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const isOpeningRef = useRef(false);
   const { config, isLoading, error } = useInvitation();
   const pageEnter = useMotionPreset("pageEnter");
@@ -91,6 +93,7 @@ function WeddingApp() {
   const handleOpenInvitation = useCallback(async () => {
     if (isOpeningRef.current) return;
     isOpeningRef.current = true;
+    setIsTransitioning(true);
     setIsInvitationOpen(true);
     // Audio is optional; browser playback policies should not block the invite.
     if (!hasSoundCloudAudio) {
@@ -256,6 +259,10 @@ function WeddingApp() {
           )}
         </AnimatePresence>
       </Suspense>
+
+      {isTransitioning && (
+        <TransitionHearts onComplete={() => setIsTransitioning(false)} />
+      )}
     </HelmetProvider>
   );
 }
