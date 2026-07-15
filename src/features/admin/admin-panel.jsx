@@ -113,6 +113,7 @@ export default function AdminPanel() {
     sortOrder: "",
   });
   const [editingGiftId, setEditingGiftId] = useState(null);
+  const [guestToDelete, setGuestToDelete] = useState(null);
 
   useEffect(() => {
     document.title = "Painel Lucas & Andressa";
@@ -894,7 +895,7 @@ export default function AdminPanel() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => deleteGuest.mutate(guest.id)}
+                      onClick={() => setGuestToDelete(guest)}
                       className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-rose-50 hover:text-[#ff4582]")}
                       aria-label="Remover convidado"
                     >
@@ -1243,6 +1244,62 @@ export default function AdminPanel() {
             );
           })}
         </nav>
+      ) : null}
+
+      {guestToDelete ? (
+        <div
+          className={cn(
+            "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/35 px-5 backdrop-blur-sm",
+          )}
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setGuestToDelete(null);
+          }}
+        >
+          <div
+            className={cn(
+              "w-full max-w-sm rounded-[28px] border border-white/70 bg-[#fdf8f3] p-6 text-center shadow-[0_24px_80px_rgba(38,38,38,0.22)]",
+            )}
+          >
+            <div
+              className={cn(
+                "mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#ff4582] text-white",
+              )}
+            >
+              <Trash2 className={cn("h-7 w-7")} />
+            </div>
+            <h3 className={cn("mt-5 text-2xl font-medium text-[#262626]")}>
+              Excluir convidado?
+            </h3>
+            <p className={cn("mt-3 text-base leading-relaxed text-[#262626]/65")}>
+              Tem certeza que deseja remover <strong>{guestToDelete.full_name}</strong> da lista? Essa ação não pode ser desfeita.
+            </p>
+            <div className={cn("mt-6 flex flex-col gap-2")}>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteGuest.mutate(guestToDelete.id);
+                  setGuestToDelete(null);
+                }}
+                className={cn(
+                  "w-full rounded-full bg-[#ff4582] px-5 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#f73576] active:scale-95",
+                )}
+              >
+                Sim, excluir
+              </button>
+              <button
+                type="button"
+                onClick={() => setGuestToDelete(null)}
+                className={cn(
+                  "w-full rounded-full bg-[#262626]/10 px-5 py-4 text-sm font-semibold uppercase tracking-[0.16em] text-[#262626] transition hover:bg-[#262626]/20 active:scale-95",
+                )}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </main>
   );
