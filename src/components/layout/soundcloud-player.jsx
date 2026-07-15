@@ -208,8 +208,6 @@ export default function SoundCloudPlayer({
     setPromptChoiceMade(true);
   };
 
-  const showPrompt = isReady && !isPlaying && !promptChoiceMade;
-
   return (
     <>
       <iframe
@@ -222,10 +220,13 @@ export default function SoundCloudPlayer({
         )}
       />
 
-      {showPrompt && (
+      {isReady && (
         <div
           className={cn(
-            "fixed right-[4.25rem] top-4 z-50 w-[190px] rounded-2xl border border-white/55 bg-[#fdf8f3]/90 px-3 py-3 text-[#262626] shadow-[0_18px_50px_rgba(38,38,38,0.16)] backdrop-blur-xl",
+            "fixed right-[4.25rem] top-4 z-50 w-[190px] rounded-2xl border border-white/55 bg-[#fdf8f3]/90 px-3 py-3 text-[#262626] shadow-[0_18px_50px_rgba(38,38,38,0.16)] backdrop-blur-xl transition-all duration-300",
+            (promptChoiceMade || isPlaying)
+              ? "pointer-events-none scale-95 opacity-0"
+              : "scale-100 opacity-100",
           )}
         >
           <div
@@ -234,7 +235,7 @@ export default function SoundCloudPlayer({
             )}
           />
           <p className={cn("text-sm font-medium leading-tight")}>
-            Deseja ouvir nossa música?
+            Deseja ouvir nossa playlist?
           </p>
           <div className={cn("mt-2 flex items-center gap-2")}>
             <button
