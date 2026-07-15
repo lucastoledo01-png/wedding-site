@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PauseCircle, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +41,8 @@ export default function SoundCloudPlayer({
   url,
   autoPlay = false,
   volume = 28,
+  loop = true,
+  onTrackChange,
 }) {
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
@@ -51,8 +53,30 @@ export default function SoundCloudPlayer({
   const isIOS = isIOSDevice();
   const shouldAutoPlay = autoPlay && !isIOS;
 
+  const urls = useMemo(() => {
+    if (!url) return [];
+    if (Array.isArray(url)) return url;
+    return url.split(",").map((s) => s.trim()).filter(Boolean);
+  }, [url]);
+
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
+  useEffect(() => {
+    if (onTrackChange) {
+      onTrackChange(currentTrackIndex);
+    }
+  }, [currentTrackIndex, onTrackChange]);
+
+  const currentTrackIndexRef = useRef(0);
+  currentTrackIndexRef.current = currentTrackIndex;
+
+  const urlsRef = useRef(urls);
+  urlsRef.current = urls;
+
+  const initialTrackUrl = urls[0] || "";
+
   const params = new URLSearchParams({
-    url,
+    url: initialTrackUrl,
     auto_play: shouldAutoPlay ? "true" : "false",
     buying: "false",
     liking: "false",
@@ -92,13 +116,59 @@ export default function SoundCloudPlayer({
       widget.bind(SC.Widget.Events.PAUSE, () => {
         setIsPlaying(false);
       });
-      widget.bind(SC.Widget.Events.FINISH, () => setIsPlaying(false));
+
+      widget.bind(SC.Widget.Events.FINISH, () => {
+        const nextIndex = currentTrackIndexRef.current + 1;
+        const currentUrls = urlsRef.current;
+
+        if (nextIndex < currentUrls.length) {
+          setCurrentTrackIndex(nextIndex);
+          widget.load(currentUrls[nextIndex], {
+            auto_play: true,
+            buying: "false",
+            liking: "false",
+            download: "false",
+            sharing: "false",
+            show_artwork: "false",
+            show_comments: "false",
+            show_playcount: "false",
+            show_user: "false",
+            hide_related: "true",
+            visual: "false",
+            callback: () => {
+              widget.setVolume(volume);
+              widget.play();
+            },
+          });
+        } else if (loop) {
+          setCurrentTrackIndex(0);
+          widget.load(currentUrls[0], {
+            auto_play: true,
+            buying: "false",
+            liking: "false",
+            download: "false",
+            sharing: "false",
+            show_artwork: "false",
+            show_comments: "false",
+            show_playcount: "false",
+            show_user: "false",
+            hide_related: "true",
+            visual: "false",
+            callback: () => {
+              widget.setVolume(volume);
+              widget.play();
+            },
+          });
+        } else {
+          setIsPlaying(false);
+        }
+      });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [shouldAutoPlay, shouldPlayWhenReady, url, volume]);
+  }, [shouldAutoPlay, shouldPlayWhenReady, initialTrackUrl, volume, loop]);
 
   const play = useCallback(() => {
     if (!widgetRef.current || !isReady) return;

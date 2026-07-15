@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Music, PauseCircle, PlayCircle } from "lucide-react";
 import { useConfig } from "@/features/invitation/hooks/use-config";
@@ -27,6 +27,14 @@ const Layout = ({ children, audioControls }) => {
 
   const { isPlaying, toggle } = audioControls || {};
   const soundCloudUrl = config.audio?.soundcloudUrl;
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
+  const trackTitles = useMemo(() => {
+    const titleStr = config.audio?.title || "Background Music";
+    return titleStr.split(",").map((s) => s.trim()).filter(Boolean);
+  }, [config.audio?.title]);
+
+  const currentTitle = trackTitles[currentTrackIndex] || trackTitles[0] || "Background Music";
 
   // Show toast when audio starts playing
   useEffect(() => {
@@ -64,7 +72,13 @@ const Layout = ({ children, audioControls }) => {
         animate="visible"
       >
         {/* Music Control Button with Status Indicator */}
-        {soundCloudUrl && <SoundCloudPlayer url={soundCloudUrl} />}
+        {soundCloudUrl && (
+          <SoundCloudPlayer
+            url={soundCloudUrl}
+            loop={config.audio?.loop !== false}
+            onTrackChange={setCurrentTrackIndex}
+          />
+        )}
 
         {!soundCloudUrl && toggle && (
           <motion.button
@@ -118,7 +132,7 @@ const Layout = ({ children, audioControls }) => {
               >
                 <Music className={cn("w-4 h-4 animate-pulse")} />
                 <span className={cn("text-sm whitespace-nowrap")}>
-                  {config.audio?.title || "Background Music"}
+                  {currentTitle}
                 </span>
               </div>
             </motion.div>
