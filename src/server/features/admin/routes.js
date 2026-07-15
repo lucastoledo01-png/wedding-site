@@ -60,6 +60,8 @@ adminRoutes.post("/auth/login", async (c) => {
       token: result.token,
       expiresAt: result.expiresAt,
       requires2faSetup: result.requires2faSetup,
+      requires2fa: result.requires2fa,
+      username: result.username,
       setupToken: result.setupToken,
       setupExpiresAt: result.setupExpiresAt,
       secret: result.secret,
