@@ -167,9 +167,8 @@ export default function Location() {
             variants={fadeUp}
             className={cn("super-copy max-w-sm text-[1.125rem]")}
           >
-            Nossa história foi construída entre encontros, escolhas e muitos
-            momentos que nos trouxeram até aqui. Agora chegou a hora de celebrar
-            esse novo ciclo ao lado de quem amamos.
+            Cada detalhe foi preparado com muito carinho para que possamos viver
+            juntos este momento tão especial.
           </motion.p>
         </motion.div>
 
