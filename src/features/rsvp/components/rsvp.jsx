@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Confetti from "react-confetti";
 import { CheckCircle, Loader2, Search, UserCheck, XCircle } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -199,6 +199,17 @@ export default function Rsvp() {
   const [name, setName] = useState("");
   const [attendance, setAttendance] = useState("ATTENDING");
   const [showConfetti, setShowConfetti] = useState(false);
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [suggestions, setSuggestions] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
@@ -268,7 +279,25 @@ export default function Rsvp() {
       id="rsvp"
       className={cn("relative overflow-hidden bg-[#f5f0eb]")}
     >
-      {showConfetti && <Confetti recycle={false} numberOfPieces={220} />}
+      {showConfetti &&
+        createPortal(
+          <Confetti
+            width={windowSize.width}
+            height={windowSize.height}
+            recycle={false}
+            numberOfPieces={300}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 10000,
+              pointerEvents: "none",
+            }}
+          />,
+          document.body,
+        )}
       <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
       <ConfirmDecisionModal
         attendance={attendance}
