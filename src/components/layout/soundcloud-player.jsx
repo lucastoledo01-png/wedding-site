@@ -181,18 +181,6 @@ export default function SoundCloudPlayer({
     }
   }, [isReady, play, shouldPlayWhenReady]);
 
-  useEffect(() => {
-    const handlePlayMusic = () => {
-      if (isReady) {
-        play();
-      } else if (!isIOS) {
-        setShouldPlayWhenReady(true);
-      }
-    };
-    window.addEventListener("play-wedding-music", handlePlayMusic);
-    return () => window.removeEventListener("play-wedding-music", handlePlayMusic);
-  }, [isReady, play]);
-
   const toggle = () => {
     if (!widgetRef.current || !isReady) return;
     setPromptChoiceMade(true);

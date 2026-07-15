@@ -100,9 +100,7 @@ function WeddingApp() {
     setIsTransitioning(true);
     setIsInvitationOpen(true);
     // Audio is optional; browser playback policies should not block the invite.
-    if (hasSoundCloudAudio) {
-      window.dispatchEvent(new CustomEvent("play-wedding-music"));
-    } else {
+    if (!hasSoundCloudAudio) {
       audioControls.play().catch(() => {});
     }
   }, [audioControls, hasSoundCloudAudio]);
