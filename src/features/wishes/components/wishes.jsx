@@ -310,7 +310,7 @@ export default function Wishes() {
             <p className={cn("super-label")}>Mensagens</p>
             <h2 className={cn("super-heading text-5xl")}>Deixe sua mensagem</h2>
             <p className={cn("super-copy max-w-sm text-[1.125rem]")}>
-              Escreva algumas palavras para nós. Vamos guardar cada recado como
+              Deixe um recado para nós. Será uma alegria guardar cada mensagem como
               uma lembrança deste dia.
             </p>
           </div>

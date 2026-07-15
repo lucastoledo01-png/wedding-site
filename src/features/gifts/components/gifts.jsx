@@ -172,11 +172,11 @@ export default function Gifts() {
         <div className={cn("mb-12 space-y-5")}>
           <p className={cn("super-label")}>Lista de presentes</p>
           <h2 className={cn("super-heading text-5xl")}>
-            Para celebrar o que vem pela frente
+            Nosso próximo capítulo
           </h2>
           <p className={cn("super-copy max-w-sm text-[1.125rem] font-medium")}>
-            Se quiser fazer parte deste momento com um presente, preparamos
-            algumas sugestões que vão acompanhar o início deste novo ciclo.
+            Se desejar nos presentear, reunimos algumas sugestões que farão parte
+            da nossa nova etapa.
           </p>
         </div>
 
