@@ -47,11 +47,13 @@ function FeedbackModal({ feedback, onClose }) {
           className={cn(
             "mx-auto grid h-14 w-14 place-items-center rounded-full",
             feedback.type === "success"
-              ? "bg-emerald-500 text-white"
+              ? feedback.isAbsence
+                ? "bg-[#ff4582] text-white"
+                : "bg-emerald-500 text-white"
               : "bg-[#ff4582] text-white",
           )}
         >
-          {feedback.type === "success" ? (
+          {feedback.type === "success" && !feedback.isAbsence ? (
             <CheckCircle className={cn("h-7 w-7")} />
           ) : (
             <XCircle className={cn("h-7 w-7")} />
@@ -250,16 +252,19 @@ export default function Rsvp() {
       setConfirmDecisionOpen(false);
       setPhone("");
       setPhoneError("");
-      setShowConfetti(true);
       const isAbsence = response.data?.attendance === "NOT_ATTENDING";
+      if (!isAbsence) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3200);
+      }
       setFeedback({
         type: "success",
+        isAbsence,
         title: isAbsence ? "Ausência Confirmada" : "Presença confirmada!",
         message: isAbsence
           ? "Registramos que você não poderá ir. Obrigado por avisar."
           : "Sua presença foi confirmada com sucesso. Esperamos você!",
       });
-      setTimeout(() => setShowConfetti(false), 3200);
     },
     onError: (error) => {
       setSuggestions(error.suggestions || []);
@@ -309,7 +314,16 @@ export default function Rsvp() {
           </div>,
           document.body,
         )}
-      <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
+      <FeedbackModal
+        feedback={feedback}
+        onClose={() => {
+          if (feedback?.type === "success") {
+            setName("");
+            setAttendance("ATTENDING");
+          }
+          setFeedback(null);
+        }}
+      />
       <ConfirmDecisionModal
         attendance={attendance}
         guestName={confirmDecisionOpen ? match?.full_name : ""}
