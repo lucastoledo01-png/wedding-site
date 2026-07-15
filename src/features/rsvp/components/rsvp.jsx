@@ -281,21 +281,32 @@ export default function Rsvp() {
     >
       {showConfetti &&
         createPortal(
-          <Confetti
-            width={windowSize.width}
-            height={windowSize.height}
-            recycle={false}
-            numberOfPieces={300}
+          <div
             style={{
               position: "fixed",
               top: 0,
               left: 0,
-              width: "100%",
-              height: "100%",
-              zIndex: 10000,
+              width: "100vw",
+              height: "100vh",
+              zIndex: 100000,
               pointerEvents: "none",
             }}
-          />,
+          >
+            <Confetti
+              width={windowSize.width}
+              height={windowSize.height}
+              recycle={false}
+              numberOfPieces={300}
+              gravity={0.18}
+              initialVelocityY={24}
+              confettiSource={{
+                x: windowSize.width / 2,
+                y: windowSize.height + 10,
+                w: 0,
+                h: 0,
+              }}
+            />
+          </div>,
           document.body,
         )}
       <FeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
