@@ -46,7 +46,7 @@ export default function TransitionHearts({ onComplete }) {
           key={heart.id}
           initial={{ y: "105vh", x: 0, opacity: 0, scale: 0.5 }}
           animate={{
-            y: "-15vh",
+            y: "-115vh",
             x: [0, heart.sway, -heart.sway, heart.sway / 2],
             opacity: [0, 0.45, 0.45, 0], // Peak opacity is kept svelte/subtle (45%)
             scale: [0.5, 1, 1, 0.7],
