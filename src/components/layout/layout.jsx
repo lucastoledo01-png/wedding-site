@@ -4,7 +4,6 @@ import { Music, PauseCircle, PlayCircle } from "lucide-react";
 import { useConfig } from "@/features/invitation/hooks/use-config";
 import BottomBar from "@/components/layout/bottom-bar";
 import InvitationFooter from "@/components/layout/invitation-footer";
-import SoundCloudPlayer from "@/components/layout/soundcloud-player";
 import { useMotionPreset } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +17,7 @@ import { cn } from "@/lib/utils";
  * @param {boolean} props.audioControls.isPlaying - Whether audio is playing
  * @param {Function} props.audioControls.toggle - Toggle audio play/pause
  */
-const Layout = ({ children, audioControls }) => {
+const Layout = ({ children, audioControls, currentTrackIndex = 0 }) => {
   const config = useConfig();
   const [showToast, setShowToast] = useState(false);
   const fade = useMotionPreset("fade");
@@ -27,7 +26,6 @@ const Layout = ({ children, audioControls }) => {
 
   const { isPlaying, toggle } = audioControls || {};
   const soundCloudUrl = config.audio?.soundcloudUrl;
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
   const trackTitles = useMemo(() => {
     const titleStr = config.audio?.title || "Background Music";
@@ -71,14 +69,7 @@ const Layout = ({ children, audioControls }) => {
         initial="hidden"
         animate="visible"
       >
-        {/* Music Control Button with Status Indicator */}
-        {soundCloudUrl && (
-          <SoundCloudPlayer
-            url={soundCloudUrl}
-            loop={config.audio?.loop !== false}
-            onTrackChange={setCurrentTrackIndex}
-          />
-        )}
+
 
         {!soundCloudUrl && toggle && (
           <motion.button

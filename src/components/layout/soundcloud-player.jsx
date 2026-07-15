@@ -4,13 +4,6 @@ import { cn } from "@/lib/utils";
 
 const WIDGET_API = "https://w.soundcloud.com/player/api.js";
 
-function isIOSDevice() {
-  if (typeof navigator === "undefined") return false;
-  return (
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
 
 function loadSoundCloudApi() {
   if (window.SC?.Widget) {
@@ -39,10 +32,10 @@ function loadSoundCloudApi() {
 
 export default function SoundCloudPlayer({
   url,
-  autoPlay = false,
   volume = 28,
   loop = true,
   onTrackChange,
+  isInvitationOpen = false,
 }) {
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
@@ -50,8 +43,7 @@ export default function SoundCloudPlayer({
   const [isReady, setIsReady] = useState(false);
   const [promptChoiceMade, setPromptChoiceMade] = useState(false);
   const [shouldPlayWhenReady, setShouldPlayWhenReady] = useState(false);
-  const isIOS = isIOSDevice();
-  const shouldAutoPlay = autoPlay && !isIOS;
+  const shouldAutoPlay = false; // Always start paused to enable gesture sync on click
 
   const urls = useMemo(() => {
     if (!url) return [];
@@ -184,6 +176,19 @@ export default function SoundCloudPlayer({
     }
   }, [isReady, play, shouldPlayWhenReady]);
 
+  useEffect(() => {
+    const handlePlayMusic = () => {
+      setPromptChoiceMade(true);
+      if (isReady) {
+        play();
+      } else {
+        setShouldPlayWhenReady(true);
+      }
+    };
+    window.addEventListener("play-wedding-music", handlePlayMusic);
+    return () => window.removeEventListener("play-wedding-music", handlePlayMusic);
+  }, [isReady, play]);
+
   const toggle = () => {
     if (!widgetRef.current || !isReady) return;
     setPromptChoiceMade(true);
@@ -220,7 +225,7 @@ export default function SoundCloudPlayer({
         )}
       />
 
-      {isReady && (
+      {isInvitationOpen && isReady && (
         <div
           className={cn(
             "fixed right-[4.25rem] top-4 z-50 w-[190px] rounded-2xl border border-white/55 bg-[#fdf8f3]/90 px-3 py-3 text-[#262626] shadow-[0_18px_50px_rgba(38,38,38,0.16)] backdrop-blur-xl transition-all duration-300",
@@ -260,29 +265,31 @@ export default function SoundCloudPlayer({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={toggle}
-        className={cn(
-          "super-glass fixed right-4 top-4 z-50 rounded-full p-3 shadow-lg transition hover:scale-105 disabled:opacity-60",
-          !isPlaying && isReady && "animate-pulse",
-        )}
-        disabled={!isReady}
-        aria-label={isPlaying ? "Pausar musica" : "Tocar musica"}
-      >
-        {isPlaying ? (
-          <div className={cn("relative")}>
-            <PauseCircle className={cn("h-6 w-6 text-[#262626]")} />
-            <span
-              className={cn(
-                "absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#ff4582] animate-pulse",
-              )}
-            />
-          </div>
-        ) : (
-          <PlayCircle className={cn("h-6 w-6 text-[#262626]")} />
-        )}
-      </button>
+      {isInvitationOpen && (
+        <button
+          type="button"
+          onClick={toggle}
+          className={cn(
+            "super-glass fixed right-4 top-4 z-50 rounded-full p-3 shadow-lg transition hover:scale-105 disabled:opacity-60",
+            !isPlaying && isReady && "animate-pulse",
+          )}
+          disabled={!isReady}
+          aria-label={isPlaying ? "Pausar musica" : "Tocar musica"}
+        >
+          {isPlaying ? (
+            <div className={cn("relative")}>
+              <PauseCircle className={cn("h-6 w-6 text-[#262626]")} />
+              <span
+                className={cn(
+                  "absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#ff4582] animate-pulse",
+                )}
+              />
+            </div>
+          ) : (
+            <PlayCircle className={cn("h-6 w-6 text-[#262626]")} />
+          )}
+        </button>
+      )}
     </>
   );
 }

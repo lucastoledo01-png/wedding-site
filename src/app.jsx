@@ -41,6 +41,9 @@ const MainContent = lazy(
 const LandingPage = lazy(
   () => import("@/features/invitation/components/landing-page"),
 );
+const SoundCloudPlayer = lazy(
+  () => import("@/components/layout/soundcloud-player"),
+);
 
 /**
  * App component serves as the root of the application.
@@ -63,6 +66,7 @@ const LandingPage = lazy(
 function WeddingApp() {
   const [isInvitationOpen, setIsInvitationOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const isOpeningRef = useRef(false);
   const { config, isLoading, error } = useInvitation();
   const pageEnter = useMotionPreset("pageEnter");
@@ -96,7 +100,9 @@ function WeddingApp() {
     setIsTransitioning(true);
     setIsInvitationOpen(true);
     // Audio is optional; browser playback policies should not block the invite.
-    if (!hasSoundCloudAudio) {
+    if (hasSoundCloudAudio) {
+      window.dispatchEvent(new CustomEvent("play-wedding-music"));
+    } else {
       audioControls.play().catch(() => {});
     }
   }, [audioControls, hasSoundCloudAudio]);
@@ -252,13 +258,27 @@ function WeddingApp() {
               animate="visible"
               exit={pageExit}
             >
-              <Layout audioControls={audioControls}>
+              <Layout
+                audioControls={audioControls}
+                currentTrackIndex={currentTrackIndex}
+              >
                 <MainContent />
               </Layout>
             </motion.div>
           )}
         </AnimatePresence>
       </Suspense>
+
+      {hasSoundCloudAudio && (
+        <Suspense fallback={null}>
+          <SoundCloudPlayer
+            url={activeConfig?.audio?.soundcloudUrl}
+            loop={activeConfig?.audio?.loop !== false}
+            onTrackChange={setCurrentTrackIndex}
+            isInvitationOpen={isInvitationOpen}
+          />
+        </Suspense>
+      )}
 
       {isTransitioning && (
         <TransitionHearts onComplete={() => setIsTransitioning(false)} />
