@@ -85,7 +85,7 @@ export default function Hero() {
           >
             Nossa história foi construída entre encontros, escolhas e muitos
             momentos que nos trouxeram até aqui. Agora chegou a hora de celebrar
-            este ciclo ao lado de quem faz parte dele.
+            esse novo ciclo ao lado de quem amamos.
           </p>
         </motion.div>
 
