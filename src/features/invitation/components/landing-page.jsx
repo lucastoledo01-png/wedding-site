@@ -112,7 +112,6 @@ const LandingPage = ({ onOpenInvitation }) => {
             <motion.a
               href="#convite"
               role="button"
-              onPointerDown={onOpenInvitation}
               onClick={onOpenInvitation}
               animate={{
                 scale: [1, 1.035, 1],

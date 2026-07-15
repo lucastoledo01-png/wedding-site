@@ -94,7 +94,7 @@ function WeddingApp() {
 
   // Handle opening the invitation - this is called from a user click,
   // which is the perfect opportunity to start audio (browser policy compliant)
-  const handleOpenInvitation = useCallback(async () => {
+  const handleOpenInvitation = useCallback(() => {
     if (isOpeningRef.current) return;
     isOpeningRef.current = true;
     setIsTransitioning(true);
