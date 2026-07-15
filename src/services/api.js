@@ -177,7 +177,7 @@ export async function adminLogin(payload) {
     body: JSON.stringify(payload),
   });
   const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "Não foi possível entrar no painel");
+  if (!response.ok || !data.success) throw new Error(data.error || "Não foi possível entrar no painel");
   return data;
 }
 
@@ -188,7 +188,7 @@ export async function adminActivateTwoFactor(payload) {
     body: JSON.stringify(payload),
   });
   const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "Não foi possível ativar o 2FA");
+  if (!response.ok || !data.success) throw new Error(data.error || "Não foi possível ativar o 2FA");
   return data;
 }
 
@@ -203,6 +203,6 @@ export async function adminRequest(path, token, options = {}) {
     },
   });
   const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "Erro administrativo");
+  if (!response.ok || !data.success) throw new Error(data.error || "Erro administrativo");
   return data;
 }
