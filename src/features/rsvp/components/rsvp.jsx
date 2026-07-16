@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import Confetti from "react-confetti";
+import { useState } from "react";
+import confetti from "canvas-confetti";
 import { CheckCircle, Loader2, Search, UserCheck, XCircle } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
@@ -200,18 +200,7 @@ export default function Rsvp() {
   const { uid } = useInvitation();
   const [name, setName] = useState("");
   const [attendance, setAttendance] = useState("ATTENDING");
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
   const [suggestions, setSuggestions] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
@@ -254,8 +243,37 @@ export default function Rsvp() {
       setPhoneError("");
       const isAbsence = response.data?.attendance === "NOT_ATTENDING";
       if (!isAbsence) {
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 8000);
+        // Trigger a gorgeous, staggered 3-way confetti burst (highly compatible & high performance)
+        confetti({
+          particleCount: 140,
+          spread: 80,
+          origin: { x: 0.5, y: 0.8 },
+          colors: ["#ff4582", "#ff85a2", "#ffb3c1", "#10b981", "#34d399", "#fbbf24"],
+          gravity: 0.9,
+          ticks: 200,
+        });
+        setTimeout(() => {
+          confetti({
+            particleCount: 70,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0, y: 0.85 },
+            colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
+            gravity: 0.9,
+            ticks: 200,
+          });
+        }, 180);
+        setTimeout(() => {
+          confetti({
+            particleCount: 70,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1, y: 0.85 },
+            colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
+            gravity: 0.9,
+            ticks: 200,
+          });
+        }, 360);
       }
       setFeedback({
         type: "success",
@@ -284,36 +302,7 @@ export default function Rsvp() {
       id="rsvp"
       className={cn("relative overflow-hidden bg-[#f5f0eb]")}
     >
-      {showConfetti &&
-        createPortal(
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
-              zIndex: 100000,
-              pointerEvents: "none",
-            }}
-          >
-            <Confetti
-              width={windowSize.width}
-              height={windowSize.height}
-              recycle={false}
-              numberOfPieces={300}
-              gravity={0.18}
-              initialVelocityY={24}
-              confettiSource={{
-                x: windowSize.width / 2,
-                y: windowSize.height + 10,
-                w: 0,
-                h: 0,
-              }}
-            />
-          </div>,
-          document.body,
-        )}
+
       <FeedbackModal
         feedback={feedback}
         onClose={() => {

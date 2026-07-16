@@ -33,7 +33,7 @@ export default defineConfig({
           "react-vendor": ["react", "react-dom", "react-router-dom"],
           "animation-vendor": ["framer-motion"],
           "query-vendor": ["@tanstack/react-query"],
-          "ui-vendor": ["lucide-react", "react-confetti"],
+          "ui-vendor": ["lucide-react", "canvas-confetti"],
         },
       },
     },
