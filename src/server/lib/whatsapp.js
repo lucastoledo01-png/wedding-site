@@ -11,7 +11,7 @@ import { getDbClient } from "./db-client.js";
  * @param {string} payload.phone - Phone number of the guest
  * @param {string} payload.attendance - Attendance status ('ATTENDING' or 'NOT_ATTENDING')
  */
-export async function triggerWhatsAppNotification(c, { invitationUid, guestName, phone, attendance }) {
+export async function triggerWhatsAppNotification(c, { invitationUid, guestName, phone, attendance, existingLogId = null }) {
   const webhookUrl = c.env?.N8N_WHATSAPP_WEBHOOK_URL || process.env.N8N_WHATSAPP_WEBHOOK_URL;
 
   if (!webhookUrl) {
@@ -21,18 +21,29 @@ export async function triggerWhatsAppNotification(c, { invitationUid, guestName,
 
   const pool = await getDbClient(c);
 
-  // 1. Insert initial log record as 'triggered'
-  let logId = null;
+  // 1. Insert or update initial log record as 'triggered'
+  let logId = existingLogId;
   try {
-    const logResult = await pool.query(
-      `INSERT INTO whatsapp_logs (invitation_uid, guest_name, phone, attendance, status, response_body)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id`,
-      [invitationUid, guestName, phone, attendance, "triggered", "Webhook request initiated"]
-    );
-    logId = logResult.rows[0]?.id;
+    if (logId) {
+      await pool.query(
+        `UPDATE whatsapp_logs
+            SET status = $1,
+                response_body = $2,
+                updated_at = CURRENT_TIMESTAMP
+          WHERE id = $3`,
+        ["triggered", "Webhook retry initiated", logId]
+      );
+    } else {
+      const logResult = await pool.query(
+        `INSERT INTO whatsapp_logs (invitation_uid, guest_name, phone, attendance, status, response_body)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id`,
+        [invitationUid, guestName, phone, attendance, "triggered", "Webhook request initiated"]
+      );
+      logId = logResult.rows[0]?.id;
+    }
   } catch (dbError) {
-    console.error("[WhatsApp] Failed to write initial log entry:", dbError.message);
+    console.error("[WhatsApp] Failed to write/update initial log entry:", dbError.message);
   }
 
   // 2. Perform the fetch request to the n8n Webhook URL

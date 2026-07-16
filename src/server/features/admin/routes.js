@@ -433,6 +433,7 @@ adminRoutes.post("/:uid/whatsapp-logs/retry/:id", async (c) => {
       guestName: logEntry.guest_name,
       phone: logEntry.phone,
       attendance: logEntry.attendance,
+      existingLogId: id,
     });
     return c.json({ success: true });
   } catch (err) {
