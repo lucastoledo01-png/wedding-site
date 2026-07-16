@@ -117,6 +117,7 @@ export default function AdminPanel() {
   });
   const [editingGiftId, setEditingGiftId] = useState(null);
   const [guestToDelete, setGuestToDelete] = useState(null);
+  const [viewingLog, setViewingLog] = useState(null);
 
   useEffect(() => {
     document.title = "Painel Lucas & Andressa";
@@ -1387,8 +1388,18 @@ export default function AdminPanel() {
                                 : "Disparado"}
                             </span>
                           </td>
-                          <td className={cn("px-4 py-4 md:px-6 max-w-xs truncate text-xs text-black/55")} title={log.response_body}>
-                            <code>{log.response_body || "-"}</code>
+                          <td className={cn("px-4 py-4 md:px-6 max-w-[180px] md:max-w-xs truncate text-xs text-black/55")}>
+                            {log.response_body ? (
+                              <button
+                                type="button"
+                                onClick={() => setViewingLog(log)}
+                                className={cn("text-left font-mono underline hover:text-[#ff4582] transition-colors truncate block w-full")}
+                              >
+                                {log.response_body}
+                              </button>
+                            ) : (
+                              "-"
+                            )}
                           </td>
                           <td className={cn("px-4 py-4 md:px-6 text-right whitespace-nowrap")}>
                             <button
@@ -1491,6 +1502,110 @@ export default function AdminPanel() {
                 )}
               >
                 Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {viewingLog ? (
+        <div
+          className={cn(
+            "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/35 px-5 backdrop-blur-sm",
+          )}
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setViewingLog(null);
+          }}
+        >
+          <div
+            className={cn(
+              "w-full max-w-lg rounded-[28px] border border-white/70 bg-[#fdf8f3] p-6 shadow-[0_24px_80px_rgba(38,38,38,0.22)]",
+            )}
+          >
+            <div className={cn("flex items-center justify-between border-b border-black/5 pb-4")}>
+              <div>
+                <h3 className={cn("text-xl font-semibold text-[#262626]")}>
+                  Detalhes do Log
+                </h3>
+                <p className={cn("text-xs text-black/45 mt-1")}>
+                  Enviado em {formatDate(viewingLog.created_at)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingLog(null)}
+                className={cn("h-8 w-8 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center transition-colors")}
+              >
+                <X className={cn("h-4 w-4")} />
+              </button>
+            </div>
+
+            <div className={cn("mt-4 space-y-4")}>
+              <div className={cn("grid grid-cols-2 gap-4")}>
+                <div>
+                  <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block")}>
+                    Convidado
+                  </span>
+                  <span className={cn("text-sm font-semibold text-[#262626]")}>
+                    {viewingLog.guest_name}
+                  </span>
+                </div>
+                <div>
+                  <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block block")}>
+                    Telefone
+                  </span>
+                  <span className={cn("text-sm font-semibold text-[#262626]")}>
+                    {viewingLog.phone}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block mb-1")}>
+                  Resposta completa da API / Webhook
+                </span>
+                <div className={cn("relative group")}>
+                  <pre className={cn("bg-[#f5f0eb] p-4 rounded-2xl text-[11px] font-mono overflow-auto max-h-60 text-black/75 whitespace-pre-wrap break-all border border-black/5")}>
+                    {viewingLog.response_body || "Nenhuma resposta de log disponível."}
+                  </pre>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(viewingLog.response_body || "");
+                      alert("Log copiado com sucesso!");
+                    }}
+                    className={cn("absolute right-2 top-2 rounded-lg bg-white/85 px-2 py-1 text-[10px] font-semibold text-black/55 hover:bg-white transition opacity-0 group-hover:opacity-100 shadow-sm border border-black/5")}
+                  >
+                    Copiar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className={cn("mt-6 flex gap-3")}>
+              <button
+                type="button"
+                onClick={() => {
+                  retryWhatsAppLog.mutate(viewingLog.id);
+                  setViewingLog(null);
+                }}
+                disabled={retryWhatsAppLog.isPending}
+                className={cn(
+                  "flex-1 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#f73576] active:scale-95 disabled:opacity-50",
+                )}
+              >
+                {retryWhatsAppLog.isPending ? "Reenviando..." : "Reenviar Disparo"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewingLog(null)}
+                className={cn(
+                  "rounded-full bg-[#262626]/10 px-5 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#262626] transition hover:bg-[#262626]/20 active:scale-95",
+                )}
+              >
+                Fechar
               </button>
             </div>
           </div>
