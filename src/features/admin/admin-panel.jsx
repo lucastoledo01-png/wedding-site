@@ -1410,7 +1410,7 @@ export default function AdminPanel() {
                                 "rounded-full bg-white border border-black/10 px-3 py-1.5 text-xs font-semibold text-black/55 transition hover:border-[#ff4582] hover:text-[#ff4582] disabled:opacity-50"
                               )}
                             >
-                              {retryWhatsAppLog.isPending ? "Reenviando..." : "Reenviar"}
+                              {retryWhatsAppLog.isPending && retryWhatsAppLog.variables === log.id ? "Reenviando..." : "Reenviar"}
                             </button>
                           </td>
                         </tr>

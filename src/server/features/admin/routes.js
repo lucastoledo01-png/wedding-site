@@ -411,7 +411,7 @@ adminRoutes.get("/:uid/whatsapp-logs", async (c) => {
 
 adminRoutes.post("/:uid/whatsapp-logs/retry/:id", async (c) => {
   const uid = c.req.param("uid");
-  const id = c.req.param("id");
+  const id = Number(c.req.param("id"));
   const pool = await getDbClient(c);
 
   const logResult = await pool.query(
