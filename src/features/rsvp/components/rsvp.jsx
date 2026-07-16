@@ -7,8 +7,8 @@ import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
 
 const attendanceLabels = {
-  ATTENDING: "Nome já confirmou presença.",
-  NOT_ATTENDING: "Nome já confirmou ausência.",
+  ATTENDING: "Nome já confirmou",
+  NOT_ATTENDING: "Nome confirmou ausência",
   PENDING: "Nome encontrado. Você pode confirmar abaixo.",
 };
 
@@ -234,52 +234,75 @@ export default function Rsvp() {
       });
     },
     onSuccess: (response) => {
-      setSuggestions([]);
-      setConfirmDecisionOpen(false);
-      setPhone("");
-      setPhoneError("");
-      const isAbsence = response.data?.attendance === "NOT_ATTENDING";
-      if (!isAbsence) {
-        // Trigger a gorgeous, staggered 3-way confetti burst (highly compatible & high performance)
-        confetti({
-          particleCount: 140,
-          spread: 80,
-          origin: { x: 0.5, y: 0.8 },
-          colors: ["#ff4582", "#ff85a2", "#ffb3c1", "#10b981", "#34d399", "#fbbf24"],
-          gravity: 0.9,
-          ticks: 200,
+      try {
+        setSuggestions([]);
+        setConfirmDecisionOpen(false);
+        setPhone("");
+        setPhoneError("");
+        const isAbsence = response.data?.attendance === "NOT_ATTENDING";
+        if (!isAbsence) {
+          try {
+            // Trigger a gorgeous, staggered 3-way confetti burst (highly compatible & high performance)
+            confetti({
+              particleCount: 140,
+              spread: 80,
+              origin: { x: 0.5, y: 0.8 },
+              colors: ["#ff4582", "#ff85a2", "#ffb3c1", "#10b981", "#34d399", "#fbbf24"],
+              gravity: 0.9,
+              ticks: 200,
+            });
+            setTimeout(() => {
+              try {
+                confetti({
+                  particleCount: 70,
+                  angle: 60,
+                  spread: 55,
+                  origin: { x: 0, y: 0.85 },
+                  colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
+                  gravity: 0.9,
+                  ticks: 200,
+                });
+              } catch (e) {
+                console.error("Confetti second burst error:", e);
+              }
+            }, 180);
+            setTimeout(() => {
+              try {
+                confetti({
+                  particleCount: 70,
+                  angle: 120,
+                  spread: 55,
+                  origin: { x: 1, y: 0.85 },
+                  colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
+                  gravity: 0.9,
+                  ticks: 200,
+                });
+              } catch (e) {
+                console.error("Confetti third burst error:", e);
+              }
+            }, 360);
+          } catch (confettiError) {
+            console.error("Confetti launch failed:", confettiError);
+          }
+        }
+        setFeedback({
+          type: "success",
+          isAbsence,
+          title: isAbsence ? "Ausência Confirmada" : "Presença confirmada!",
+          message: isAbsence
+            ? "Registramos que você não poderá ir. Obrigado por avisar."
+            : "Sua presença foi confirmada com sucesso. Esperamos você!",
         });
-        setTimeout(() => {
-          confetti({
-            particleCount: 70,
-            angle: 60,
-            spread: 55,
-            origin: { x: 0, y: 0.85 },
-            colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
-            gravity: 0.9,
-            ticks: 200,
-          });
-        }, 180);
-        setTimeout(() => {
-          confetti({
-            particleCount: 70,
-            angle: 120,
-            spread: 55,
-            origin: { x: 1, y: 0.85 },
-            colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
-            gravity: 0.9,
-            ticks: 200,
-          });
-        }, 360);
+      } catch (err) {
+        console.error("onSuccess handler failed:", err);
+        // Fallback feedback even if processing fails, ensuring guest sees confirmation
+        setFeedback({
+          type: "success",
+          isAbsence: false,
+          title: "Presença confirmada!",
+          message: "Sua presença foi confirmada com sucesso. Esperamos você!",
+        });
       }
-      setFeedback({
-        type: "success",
-        isAbsence,
-        title: isAbsence ? "Ausência Confirmada" : "Presença confirmada!",
-        message: isAbsence
-          ? "Registramos que você não poderá ir. Obrigado por avisar."
-          : "Sua presença foi confirmada com sucesso. Esperamos você!",
-      });
     },
     onError: (error) => {
       setSuggestions(error.suggestions || []);
