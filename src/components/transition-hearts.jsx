@@ -13,12 +13,12 @@ export default function TransitionHearts({ onComplete }) {
   const [centerHearts, setCenterHearts] = useState([]);
 
   useEffect(() => {
-    // 1. Generate 38 subtle background hearts (increased from 14 for richer density)
+    // 1. Generate 38 subtle background hearts (increased density, slow rising)
     const bg = Array.from({ length: 38 }).map((_, index) => {
-      const size = Math.random() * 12 + 8; // 8px to 20px (diverse sizes for depth)
+      const size = Math.random() * 12 + 8; // 8px to 20px
       const left = Math.random() * 100;
-      const delay = Math.random() * 0.7; // 0s to 0.7s delay
-      const duration = Math.random() * 1.2 + 2.2; // 2.2s to 3.4s (slower and smoother)
+      const delay = Math.random() * 1.0; // 0s to 1.0s delay
+      const duration = Math.random() * 2.5 + 3.5; // 3.5s to 6.0s (slower and more delicate)
       const sway = Math.random() * 40 - 20;
       const peakOpacity = Math.random() * 0.3 + 0.15; // 0.15 to 0.45 opacity
 
@@ -34,85 +34,85 @@ export default function TransitionHearts({ onComplete }) {
     });
     setBackgroundHearts(bg);
 
-    // 2. Define 7 larger, main central hearts (increased from 3 for a fuller central column)
+    // 2. Define 7 larger, main central hearts with longer durations for a slow flow
     const center = [
       {
         id: "center-1",
-        size: 36, // Large central heart
+        size: 36,
         left: "50%",
         initialX: -40,
         sway: [-40, -10, -50, -40],
         delay: 0.1,
-        duration: 2.8,
+        duration: 5.2,
         opacity: [0, 0.75, 0.75, 0],
       },
       {
         id: "center-2",
-        size: 20, // Small central heart
+        size: 20,
         left: "50%",
         initialX: -10,
         sway: [-10, 15, -15, -10],
-        delay: 0.4,
-        duration: 3.0,
+        delay: 0.5,
+        duration: 5.6,
         opacity: [0, 0.65, 0.65, 0],
       },
       {
         id: "center-3",
-        size: 28, // Medium-large central heart
+        size: 28,
         left: "50%",
         initialX: 25,
         sway: [25, 5, 35, 25],
-        delay: 0.25,
-        duration: 2.7,
+        delay: 0.3,
+        duration: 5.0,
         opacity: [0, 0.75, 0.75, 0],
       },
       {
         id: "center-4",
-        size: 24, // Medium central heart
+        size: 24,
         left: "50%",
         initialX: -25,
         sway: [-25, -5, -35, -25],
-        delay: 0.55,
-        duration: 2.9,
+        delay: 0.7,
+        duration: 5.4,
         opacity: [0, 0.7, 0.7, 0],
       },
       {
         id: "center-5",
-        size: 40, // Very large central heart
+        size: 40,
         left: "50%",
         initialX: 10,
         sway: [10, 35, 0, 10],
-        delay: 0.18,
-        duration: 2.6,
+        delay: 0.2,
+        duration: 4.8,
         opacity: [0, 0.8, 0.8, 0],
       },
       {
         id: "center-6",
-        size: 22, // Small-medium central heart
+        size: 22,
         left: "50%",
         initialX: 40,
         sway: [40, 20, 50, 40],
-        delay: 0.48,
-        duration: 3.1,
+        delay: 0.6,
+        duration: 5.8,
         opacity: [0, 0.65, 0.65, 0],
       },
       {
         id: "center-7",
-        size: 32, // Large central heart
+        size: 32,
         left: "50%",
         initialX: 5,
         sway: [5, -25, 25, 5],
-        delay: 0.35,
-        duration: 2.8,
+        delay: 0.4,
+        duration: 5.1,
         opacity: [0, 0.75, 0.75, 0],
       },
     ];
     setCenterHearts(center);
 
-    // Complete the transition and unmount after 4.1s (longer to allow all animations to finish cleanly)
+    // Complete the transition and unmount after 7.0s (slower animation lifecycle)
     const timer = setTimeout(() => {
       if (onComplete) onComplete();
-    }, 4100);
+    }, 7000);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
