@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * TransitionHearts component renders small, svelte, floating animated hearts.
- * In addition to background hearts, it displays 3 larger central hearts that float
+ * In addition to background hearts, it displays 7 larger central hearts that float
  * up in a staggered, elegant sequence right down the middle of the viewport.
  */
 export default function TransitionHearts({ onComplete }) {
@@ -13,13 +13,14 @@ export default function TransitionHearts({ onComplete }) {
   const [centerHearts, setCenterHearts] = useState([]);
 
   useEffect(() => {
-    // 1. Generate 14 subtle background hearts
-    const bg = Array.from({ length: 14 }).map((_, index) => {
-      const size = Math.random() * 6 + 6; // 6px to 12px (very small and subtle)
+    // 1. Generate 38 subtle background hearts (increased from 14 for richer density)
+    const bg = Array.from({ length: 38 }).map((_, index) => {
+      const size = Math.random() * 12 + 8; // 8px to 20px (diverse sizes for depth)
       const left = Math.random() * 100;
-      const delay = Math.random() * 0.8;
-      const duration = Math.random() * 1.5 + 1.8; // 1.8s to 3.3s
-      const sway = Math.random() * 30 - 15;
+      const delay = Math.random() * 0.7; // 0s to 0.7s delay
+      const duration = Math.random() * 1.2 + 2.2; // 2.2s to 3.4s (slower and smoother)
+      const sway = Math.random() * 40 - 20;
+      const peakOpacity = Math.random() * 0.3 + 0.15; // 0.15 to 0.45 opacity
 
       return {
         id: `bg-${index}`,
@@ -28,50 +29,90 @@ export default function TransitionHearts({ onComplete }) {
         delay,
         duration,
         sway,
-        opacity: [0, 0.35, 0.35, 0], // Svelte background opacity
+        opacity: [0, peakOpacity, peakOpacity, 0], // Smooth fade-in, display, fade-out
       };
     });
     setBackgroundHearts(bg);
 
-    // 2. Define 3 larger, main central hearts
+    // 2. Define 7 larger, main central hearts (increased from 3 for a fuller central column)
     const center = [
       {
         id: "center-1",
-        size: 32, // Large central heart
+        size: 36, // Large central heart
         left: "50%",
-        initialX: -25,
-        sway: [-25, 0, -40, -25],
-        delay: 0.15,
-        duration: 2.3,
-        opacity: [0, 0.7, 0.7, 0], // More prominent
+        initialX: -40,
+        sway: [-40, -10, -50, -40],
+        delay: 0.1,
+        duration: 2.8,
+        opacity: [0, 0.75, 0.75, 0],
       },
       {
         id: "center-2",
-        size: 20, // Medium central heart
+        size: 20, // Small central heart
         left: "50%",
-        initialX: 0,
-        sway: [0, 20, -20, 0],
-        delay: 0.45,
-        duration: 2.5,
+        initialX: -10,
+        sway: [-10, 15, -15, -10],
+        delay: 0.4,
+        duration: 3.0,
         opacity: [0, 0.65, 0.65, 0],
       },
       {
         id: "center-3",
-        size: 26, // Medium-large central heart
+        size: 28, // Medium-large central heart
         left: "50%",
         initialX: 25,
         sway: [25, 5, 35, 25],
-        delay: 0.3,
-        duration: 2.2,
+        delay: 0.25,
+        duration: 2.7,
+        opacity: [0, 0.75, 0.75, 0],
+      },
+      {
+        id: "center-4",
+        size: 24, // Medium central heart
+        left: "50%",
+        initialX: -25,
+        sway: [-25, -5, -35, -25],
+        delay: 0.55,
+        duration: 2.9,
         opacity: [0, 0.7, 0.7, 0],
+      },
+      {
+        id: "center-5",
+        size: 40, // Very large central heart
+        left: "50%",
+        initialX: 10,
+        sway: [10, 35, 0, 10],
+        delay: 0.18,
+        duration: 2.6,
+        opacity: [0, 0.8, 0.8, 0],
+      },
+      {
+        id: "center-6",
+        size: 22, // Small-medium central heart
+        left: "50%",
+        initialX: 40,
+        sway: [40, 20, 50, 40],
+        delay: 0.48,
+        duration: 3.1,
+        opacity: [0, 0.65, 0.65, 0],
+      },
+      {
+        id: "center-7",
+        size: 32, // Large central heart
+        left: "50%",
+        initialX: 5,
+        sway: [5, -25, 25, 5],
+        delay: 0.35,
+        duration: 2.8,
+        opacity: [0, 0.75, 0.75, 0],
       },
     ];
     setCenterHearts(center);
 
-    // Complete the transition and unmount after 2.8s
+    // Complete the transition and unmount after 4.1s (longer to allow all animations to finish cleanly)
     const timer = setTimeout(() => {
       if (onComplete) onComplete();
-    }, 2800);
+    }, 4100);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -92,7 +133,7 @@ export default function TransitionHearts({ onComplete }) {
           transition={{
             duration: heart.duration,
             delay: heart.delay,
-            ease: "easeOut",
+            ease: "easeInOut",
           }}
           style={{
             position: "absolute",
@@ -109,7 +150,7 @@ export default function TransitionHearts({ onComplete }) {
         </motion.div>
       ))}
 
-      {/* 3 Prominent Central Hearts */}
+      {/* 7 Prominent Central Hearts */}
       {centerHearts.map((heart) => (
         <motion.div
           key={heart.id}
@@ -123,7 +164,7 @@ export default function TransitionHearts({ onComplete }) {
           transition={{
             duration: heart.duration,
             delay: heart.delay,
-            ease: "easeOut",
+            ease: "easeInOut",
           }}
           style={{
             position: "absolute",
