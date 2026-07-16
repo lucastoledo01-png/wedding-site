@@ -49,6 +49,18 @@ export default function SoundCloudPlayer({
   const [promptChoiceMade, setPromptChoiceMade] = useState(false);
   const [shouldPlayWhenReady, setShouldPlayWhenReady] = useState(false);
   const shouldAutoPlay = false; // Always start paused to enable gesture sync on click
+  const [delayedInvitationOpen, setDelayedInvitationOpen] = useState(false);
+
+  useEffect(() => {
+    if (isInvitationOpen) {
+      const timer = setTimeout(() => {
+        setDelayedInvitationOpen(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    } else {
+      setDelayedInvitationOpen(false);
+    }
+  }, [isInvitationOpen]);
 
   const urls = useMemo(() => {
     if (!url) return [];
@@ -217,7 +229,7 @@ export default function SoundCloudPlayer({
         )}
       />
 
-      {isInvitationOpen && isReady && (
+      {delayedInvitationOpen && isReady && (
         <div
           className={cn(
             "fixed right-[4.25rem] top-4 z-50 w-[190px] rounded-2xl border border-white/55 bg-[#fdf8f3]/90 px-3 py-3 text-[#262626] shadow-[0_18px_50px_rgba(38,38,38,0.16)] backdrop-blur-xl transition-all duration-300",
