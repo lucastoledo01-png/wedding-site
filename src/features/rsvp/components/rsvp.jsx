@@ -2,7 +2,6 @@ import { useState } from "react";
 import confetti from "canvas-confetti";
 import { CheckCircle, Loader2, Search, UserCheck, XCircle } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createPortal } from "react-dom";
 import { confirmPresence, searchGuest } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
@@ -25,9 +24,9 @@ function phoneDigits(value) {
 }
 
 function FeedbackModal({ feedback, onClose }) {
-  if (!feedback || typeof document === "undefined") return null;
+  if (!feedback) return null;
 
-  return createPortal(
+  return (
     <div
       className={cn(
         "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/35 px-5 backdrop-blur-sm",
@@ -60,10 +59,10 @@ function FeedbackModal({ feedback, onClose }) {
           )}
         </div>
         <h3 className={cn("mt-5 text-2xl font-medium text-[#262626]")}>
-          {feedback.title}
+          <span>{feedback.title}</span>
         </h3>
         <p className={cn("mt-3 text-base leading-relaxed text-[#262626]/65")}>
-          {feedback.message}
+          <span>{feedback.message}</span>
         </p>
         <button
           type="button"
@@ -75,8 +74,7 @@ function FeedbackModal({ feedback, onClose }) {
           Fechar
         </button>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
 }
 
@@ -90,11 +88,11 @@ function ConfirmDecisionModal({
   onCancel,
   onConfirm,
 }) {
-  if (!guestName || typeof document === "undefined") return null;
+  if (!guestName) return null;
 
   const isAbsence = attendance === "NOT_ATTENDING";
 
-  return createPortal(
+  return (
     <div
       className={cn(
         "fixed inset-0 z-[9999] flex items-center justify-center bg-[#262626]/35 px-5 backdrop-blur-sm",
@@ -123,7 +121,7 @@ function ConfirmDecisionModal({
           )}
         </div>
         <h3 className={cn("mt-5 text-2xl font-medium text-[#262626]")}>
-          {guestName}
+          <span>{guestName}</span>
         </h3>
         <p className={cn("mt-3 text-base leading-relaxed text-[#262626]/65")}>
           {isAbsence
@@ -191,8 +189,7 @@ function ConfirmDecisionModal({
           </button>
         </div>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
 }
 
