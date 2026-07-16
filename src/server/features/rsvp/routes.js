@@ -4,6 +4,7 @@ import { normalizeName } from "../../lib/text-match.js";
 import { NotFoundError } from "../../lib/errors.js";
 import { appendRsvpBackup } from "../../lib/google-sheets-backup.js";
 import { getClientIp, getDevice } from "../../lib/request-metadata.js";
+import { triggerWhatsAppNotification } from "../../lib/whatsapp.js";
 
 const rsvpRoutes = new Hono();
 
@@ -113,8 +114,19 @@ rsvpRoutes.post("/confirm", async (c) => {
       device: confirmedGuest.confirmed_device,
       ipAddress: confirmedGuest.confirmed_ip,
     });
-  } catch (error) {
-    console.error("Google Sheets RSVP backup failed:", error.message);
+  } catch (backupError) {
+    console.error("Google Sheets RSVP backup failed:", backupError.message);
+  }
+
+  try {
+    await triggerWhatsAppNotification(c, {
+      invitationUid: uid,
+      guestName: confirmedGuest.full_name,
+      phone: confirmedGuest.confirmed_phone,
+      attendance: confirmedGuest.attendance,
+    });
+  } catch (waError) {
+    console.error("WhatsApp notification dispatch failed:", waError.message);
   }
 
   return c.json({ success: true, data: confirmedGuest });

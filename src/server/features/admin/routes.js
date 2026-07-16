@@ -16,6 +16,7 @@ import {
 } from "../../lib/admin-auth.js";
 import { appendGuestListBackup } from "../../lib/google-sheets-backup.js";
 import { getClientIp, getDevice } from "../../lib/request-metadata.js";
+import { triggerWhatsAppNotification } from "../../lib/whatsapp.js";
 
 const adminRoutes = new Hono();
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -392,6 +393,51 @@ adminRoutes.delete("/:uid/blocked-ips/:id", async (c) => {
 
   if (!result.rows[0]) throw new NotFoundError("Blocked IP not found");
   return c.json({ success: true });
+});
+
+adminRoutes.get("/:uid/whatsapp-logs", async (c) => {
+  const uid = c.req.param("uid");
+  const pool = await getDbClient(c);
+  const result = await pool.query(
+    `SELECT id, guest_name, phone, attendance, status, response_body, created_at, updated_at
+       FROM whatsapp_logs
+      WHERE invitation_uid = $1
+      ORDER BY created_at DESC`,
+    [uid],
+  );
+
+  return c.json({ success: true, data: result.rows });
+});
+
+adminRoutes.post("/:uid/whatsapp-logs/retry/:id", async (c) => {
+  const uid = c.req.param("uid");
+  const id = c.req.param("id");
+  const pool = await getDbClient(c);
+
+  const logResult = await pool.query(
+    `SELECT id, guest_name, phone, attendance
+       FROM whatsapp_logs
+      WHERE id = $1 AND invitation_uid = $2`,
+    [id, uid]
+  );
+
+  const logEntry = logResult.rows[0];
+  if (!logEntry) {
+    return c.json({ success: false, error: "Registro não encontrado" }, 404);
+  }
+
+  // Dispatch again
+  try {
+    await triggerWhatsAppNotification(c, {
+      invitationUid: uid,
+      guestName: logEntry.guest_name,
+      phone: logEntry.phone,
+      attendance: logEntry.attendance,
+    });
+    return c.json({ success: true });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 export default adminRoutes;

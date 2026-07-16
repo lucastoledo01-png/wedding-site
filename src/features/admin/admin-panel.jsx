@@ -7,6 +7,7 @@ import {
   Gift,
   Loader2,
   MessageCircleHeart,
+  MessageSquare,
   Pencil,
   Plus,
   Save,
@@ -26,6 +27,7 @@ const ADMIN_PAGES = [
   { id: "presencas", label: "Presenças", icon: Users },
   { id: "presentes", label: "Presentes", icon: Gift },
   { id: "comentarios", label: "Comentários", icon: MessageCircleHeart },
+  { id: "whatsapp", label: "Logs WhatsApp", icon: MessageSquare },
 ];
 const SESSION_STORAGE_KEY = "wedding_admin_session";
 const ATTENDANCE_LABELS = {
@@ -263,6 +265,12 @@ export default function AdminPanel() {
     enabled: enabled && activePage === "comentarios",
   });
 
+  const whatsappLogsQuery = useQuery({
+    queryKey: ["admin-whatsapp-logs", uid, token],
+    queryFn: async () => (await adminRequest(`/api/admin/${uid}/whatsapp-logs`, token)).data,
+    enabled: enabled && activePage === "whatsapp",
+  });
+
   const stats = useMemo(() => {
     const guests = guestsQuery.data || [];
     return {
@@ -450,6 +458,16 @@ export default function AdminPanel() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-blocked-ips"] });
+    },
+  });
+
+  const retryWhatsAppLog = useMutation({
+    mutationFn: (id) =>
+      adminRequest(`/api/admin/${uid}/whatsapp-logs/retry/${id}`, token, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-whatsapp-logs"] });
     },
   });
 
@@ -679,7 +697,7 @@ export default function AdminPanel() {
             ) : null}
           </div>
 
-          <nav className={cn("mt-5 hidden gap-2 rounded-full border border-black/5 bg-[#f5f0eb] p-1 md:grid md:grid-cols-3")}>
+          <nav className={cn("mt-5 hidden gap-2 rounded-full border border-black/5 bg-[#f5f0eb] p-1 md:grid md:grid-cols-4")}>
             {ADMIN_PAGES.map((page) => {
               const Icon = page.icon;
               const active = activePage === page.id;
@@ -1291,11 +1309,112 @@ export default function AdminPanel() {
             </aside>
           </section>
         )}
+
+        {enabled && activePage === "whatsapp" && (
+          <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8")}>
+            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
+              <div className={cn("flex items-center gap-2")}>
+                <MessageSquare className={cn("h-5 w-5 text-[#ff4582]")} />
+                <h2 className={cn("text-xl font-semibold")}>Mensagens WhatsApp</h2>
+              </div>
+              <p className={cn("mt-2 max-w-2xl text-sm text-black/55")}>
+                Logs de envios automáticos para os convidados que confirmaram presença ou ausência. Os disparos são feitos via webhook n8n em segundo plano.
+              </p>
+
+              <div className={cn("mt-5 overflow-x-auto rounded-2xl border border-black/5 bg-[#fdf8f3]")}>
+                <table className={cn("w-full border-collapse text-left text-sm text-[#262626]")}>
+                  <thead>
+                    <tr className={cn("border-b border-black/5 bg-[#f5f0eb] font-semibold text-black/55")}>
+                      <th className={cn("px-4 py-3 md:px-6")}>Data/Hora</th>
+                      <th className={cn("px-4 py-3 md:px-6")}>Convidado</th>
+                      <th className={cn("px-4 py-3 md:px-6")}>Telefone</th>
+                      <th className={cn("px-4 py-3 md:px-6")}>Presença</th>
+                      <th className={cn("px-4 py-3 md:px-6")}>Status</th>
+                      <th className={cn("px-4 py-3 md:px-6")}>Resposta / Log</th>
+                      <th className={cn("px-4 py-3 md:px-6 text-right")}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {whatsappLogsQuery.isLoading && (
+                      <tr>
+                        <td colSpan={7} className={cn("p-6 text-center text-black/35")}>
+                          Carregando logs do WhatsApp...
+                        </td>
+                      </tr>
+                    )}
+                    {!whatsappLogsQuery.isLoading && (whatsappLogsQuery.data || []).length === 0 && (
+                      <tr>
+                        <td colSpan={7} className={cn("p-6 text-center text-black/35")}>
+                          Nenhuma mensagem disparada ainda.
+                        </td>
+                      </tr>
+                    )}
+                    {!whatsappLogsQuery.isLoading &&
+                      (whatsappLogsQuery.data || []).map((log) => (
+                        <tr key={log.id} className={cn("border-b border-black/5 last:border-0 hover:bg-white/40 transition-colors")}>
+                          <td className={cn("px-4 py-4 md:px-6 whitespace-nowrap text-xs font-medium text-black/45")}>
+                            {formatDate(log.created_at)}
+                          </td>
+                          <td className={cn("px-4 py-4 md:px-6 font-semibold")}>
+                            {log.guest_name}
+                          </td>
+                          <td className={cn("px-4 py-4 md:px-6 whitespace-nowrap")}>
+                            {log.phone}
+                          </td>
+                          <td className={cn("px-4 py-4 md:px-6")}>
+                            <span className={cn(
+                              "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                              log.attendance === "ATTENDING"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-rose-50 text-[#b91853]"
+                            )}>
+                              {log.attendance === "ATTENDING" ? "Presença" : "Ausência"}
+                            </span>
+                          </td>
+                          <td className={cn("px-4 py-4 md:px-6")}>
+                            <span className={cn(
+                              "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                              log.status === "sent"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : log.status === "failed"
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-gray-100 text-gray-800"
+                            )}>
+                              {log.status === "sent"
+                                ? "Enviado"
+                                : log.status === "failed"
+                                ? "Falhou"
+                                : "Disparado"}
+                            </span>
+                          </td>
+                          <td className={cn("px-4 py-4 md:px-6 max-w-xs truncate text-xs text-black/55")} title={log.response_body}>
+                            <code>{log.response_body || "-"}</code>
+                          </td>
+                          <td className={cn("px-4 py-4 md:px-6 text-right whitespace-nowrap")}>
+                            <button
+                              type="button"
+                              onClick={() => retryWhatsAppLog.mutate(log.id)}
+                              disabled={retryWhatsAppLog.isPending}
+                              className={cn(
+                                "rounded-full bg-white border border-black/10 px-3 py-1.5 text-xs font-semibold text-black/55 transition hover:border-[#ff4582] hover:text-[#ff4582] disabled:opacity-50"
+                              )}
+                            >
+                              {retryWhatsAppLog.isPending ? "Reenviando..." : "Reenviar"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
       {enabled ? (
         <nav
           className={cn(
-            "fixed inset-x-4 bottom-4 z-50 grid grid-cols-3 gap-1 rounded-[28px] border border-black/10 bg-white/90 p-1.5 shadow-[0_18px_60px_rgba(38,38,38,0.20)] backdrop-blur-xl md:hidden",
+            "fixed inset-x-4 bottom-4 z-50 grid grid-cols-4 gap-1 rounded-[28px] border border-black/10 bg-white/90 p-1.5 shadow-[0_18px_60px_rgba(38,38,38,0.20)] backdrop-blur-xl md:hidden",
           )}
         >
           {ADMIN_PAGES.map((page) => {
