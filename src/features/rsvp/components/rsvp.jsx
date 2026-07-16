@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { CheckCircle, Loader2, Search, UserCheck, XCircle } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -195,6 +195,7 @@ function ConfirmDecisionModal({
 
 export default function Rsvp() {
   const { uid } = useInvitation();
+  const canvasRef = useRef(null);
   const [name, setName] = useState("");
   const [attendance, setAttendance] = useState("ATTENDING");
 
@@ -242,8 +243,16 @@ export default function Rsvp() {
         const isAbsence = response.data?.attendance === "NOT_ATTENDING";
         if (!isAbsence) {
           try {
+            // Instantiate canvas-confetti on our custom canvas ref to strictly control z-index and keep it above modals
+            const myConfetti = canvasRef.current
+              ? confetti.create(canvasRef.current, {
+                  resize: true,
+                  useWorker: true,
+                })
+              : confetti;
+
             // Trigger a gorgeous, staggered 3-way confetti burst (highly compatible & high performance)
-            confetti({
+            myConfetti({
               particleCount: 140,
               spread: 80,
               origin: { x: 0.5, y: 0.8 },
@@ -253,7 +262,7 @@ export default function Rsvp() {
             });
             setTimeout(() => {
               try {
-                confetti({
+                myConfetti({
                   particleCount: 70,
                   angle: 60,
                   spread: 55,
@@ -268,7 +277,7 @@ export default function Rsvp() {
             }, 180);
             setTimeout(() => {
               try {
-                confetti({
+                myConfetti({
                   particleCount: 70,
                   angle: 120,
                   spread: 55,
@@ -576,6 +585,10 @@ export default function Rsvp() {
           </button>
         </form>
       </div>
+      <canvas
+        ref={canvasRef}
+        className={cn("pointer-events-none fixed inset-0 z-[100000] h-full w-full")}
+      />
     </section>
   );
 }
