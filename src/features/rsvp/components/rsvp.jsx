@@ -255,7 +255,7 @@ export default function Rsvp() {
       const isAbsence = response.data?.attendance === "NOT_ATTENDING";
       if (!isAbsence) {
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3200);
+        setTimeout(() => setShowConfetti(false), 8000);
       }
       setFeedback({
         type: "success",
