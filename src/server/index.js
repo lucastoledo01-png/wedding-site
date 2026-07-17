@@ -166,6 +166,8 @@ app.use(
   }),
 );
 app.use("/images/*", serveStatic({ root: "./dist" }));
+// Serve audio files: check root (public_html/audio/), dist, and public in order
+app.use("/audio/*", serveStatic({ root: "./" }));
 app.use("/audio/*", serveStatic({ root: "./dist" }));
 app.use("/audio/*", serveStatic({ root: "./public" }));
 app.use("/uploads/*", serveStatic({ root: "./public" }));

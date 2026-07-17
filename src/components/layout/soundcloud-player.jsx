@@ -127,10 +127,11 @@ export default function SoundCloudPlayer({
   shouldPlayWhenReadyRef.current = shouldPlayWhenReady;
 
   // Initialize SoundCloud API (only if not local mode)
-  // For local mode, isReady is driven by the <audio> canplaythrough / loadeddata event
+  // For local mode isReady is set immediately so play() can be called
+  // synchronously inside the iOS Safari user-gesture boundary.
   useEffect(() => {
     if (isLocal) {
-      setIsReady(false); // reset until the audio element fires canplaythrough
+      setIsReady(true);
       return;
     }
 
@@ -306,15 +307,11 @@ export default function SoundCloudPlayer({
           src={encodeAudioSrc(urls[currentTrackIndex])}
           preload="auto"
           loop={urls.length === 1 && loop}
-          onCanPlayThrough={() => setIsReady(true)}
-          onLoadedData={() => setIsReady(true)}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={handleLocalTrackEnded}
           onError={(e) => {
             console.error("Audio load error:", e.nativeEvent);
-            // Still mark ready so the button doesn't spin forever
-            setIsReady(true);
           }}
         />
       ) : (
