@@ -92,6 +92,12 @@ export default function SoundCloudPlayer({
     return firstUrl.endsWith(".mp3") || firstUrl.includes("/audio/") || firstUrl.includes(".mp3?");
   }, [initialTrackUrl]);
 
+  // Encode a local file path so spaces and special chars are valid in src URLs
+  const encodeAudioSrc = useCallback((rawPath) => {
+    // Only encode each path segment, preserving slashes
+    return rawPath.split("/").map((seg) => encodeURIComponent(seg)).join("/");
+  }, []);
+
   const iframeSrc = useMemo(() => {
     if (isLocal) return "";
     const p = new URLSearchParams({
@@ -121,9 +127,10 @@ export default function SoundCloudPlayer({
   shouldPlayWhenReadyRef.current = shouldPlayWhenReady;
 
   // Initialize SoundCloud API (only if not local mode)
+  // For local mode, isReady is driven by the <audio> canplaythrough / loadeddata event
   useEffect(() => {
     if (isLocal) {
-      setIsReady(true);
+      setIsReady(false); // reset until the audio element fires canplaythrough
       return;
     }
 
@@ -296,12 +303,19 @@ export default function SoundCloudPlayer({
       {isLocal ? (
         <audio
           ref={localAudioRef}
-          src={urls[currentTrackIndex]}
+          src={encodeAudioSrc(urls[currentTrackIndex])}
           preload="auto"
           loop={urls.length === 1 && loop}
+          onCanPlayThrough={() => setIsReady(true)}
+          onLoadedData={() => setIsReady(true)}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={handleLocalTrackEnded}
+          onError={(e) => {
+            console.error("Audio load error:", e.nativeEvent);
+            // Still mark ready so the button doesn't spin forever
+            setIsReady(true);
+          }}
         />
       ) : (
         <iframe
