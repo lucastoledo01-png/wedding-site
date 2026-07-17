@@ -57,7 +57,7 @@ export default function SoundCloudPlayer({
     if (isInvitationOpen) {
       const timer = setTimeout(() => {
         setDelayedInvitationOpen(true);
-      }, 2000);
+      }, 3000);
       return () => clearTimeout(timer);
     } else {
       setDelayedInvitationOpen(false);
