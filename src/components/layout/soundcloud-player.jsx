@@ -9,7 +9,6 @@ const isIOS = typeof window !== "undefined" && (
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
 );
 
-
 function loadSoundCloudApi() {
   if (window.SC?.Widget) {
     return Promise.resolve(window.SC);
@@ -46,6 +45,8 @@ export default function SoundCloudPlayer({
 }) {
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
+  const localAudioRef = useRef(null);
+  
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [promptChoiceMade, setPromptChoiceMade] = useState(false);
@@ -85,7 +86,14 @@ export default function SoundCloudPlayer({
 
   const initialTrackUrl = urls[0] || "";
 
+  // Auto-detect local MP3 files vs SoundCloud links
+  const isLocal = useMemo(() => {
+    const firstUrl = initialTrackUrl.toLowerCase();
+    return firstUrl.endsWith(".mp3") || firstUrl.includes("/audio/") || firstUrl.includes(".mp3?");
+  }, [initialTrackUrl]);
+
   const iframeSrc = useMemo(() => {
+    if (isLocal) return "";
     const p = new URLSearchParams({
       url: initialTrackUrl,
       auto_play: "false",
@@ -101,7 +109,7 @@ export default function SoundCloudPlayer({
       visual: "false",
     });
     return `https://w.soundcloud.com/player/?${p.toString()}`;
-  }, [initialTrackUrl]);
+  }, [initialTrackUrl, isLocal]);
 
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
@@ -112,7 +120,13 @@ export default function SoundCloudPlayer({
   const shouldPlayWhenReadyRef = useRef(shouldPlayWhenReady);
   shouldPlayWhenReadyRef.current = shouldPlayWhenReady;
 
+  // Initialize SoundCloud API (only if not local mode)
   useEffect(() => {
+    if (isLocal) {
+      setIsReady(true);
+      return;
+    }
+
     let cancelled = false;
     setIsReady(false);
 
@@ -190,13 +204,53 @@ export default function SoundCloudPlayer({
     return () => {
       cancelled = true;
     };
-  }, [initialTrackUrl]);
+  }, [initialTrackUrl, isLocal]);
+
+  // Adjust volume for local audio element
+  useEffect(() => {
+    if (isLocal && localAudioRef.current) {
+      localAudioRef.current.volume = volumeRef.current / 100;
+    }
+  }, [isLocal, currentTrackIndex]);
+
+  // Handle local track completion and transitions
+  const handleLocalTrackEnded = useCallback(() => {
+    const nextIndex = currentTrackIndexRef.current + 1;
+    const currentUrls = urlsRef.current;
+
+    if (nextIndex < currentUrls.length) {
+      setCurrentTrackIndex(nextIndex);
+      setTimeout(() => {
+        if (localAudioRef.current) {
+          localAudioRef.current.play().catch(console.error);
+        }
+      }, 100);
+    } else if (loopRef.current) {
+      setCurrentTrackIndex(0);
+      setTimeout(() => {
+        if (localAudioRef.current) {
+          localAudioRef.current.play().catch(console.error);
+        }
+      }, 100);
+    } else {
+      setIsPlaying(false);
+    }
+  }, []);
 
   const play = useCallback(() => {
-    if (!widgetRef.current || !isReady) return;
-    widgetRef.current.play();
-  }, [isReady]);
+    if (isLocal) {
+      if (localAudioRef.current) {
+        localAudioRef.current.play().catch((err) => {
+          console.error("Local audio play failed:", err);
+        });
+      }
+    } else {
+      if (!widgetRef.current || !isReady) return;
+      widgetRef.current.play();
+    }
+  }, [isLocal, isReady]);
 
+  // Triggers play if player became ready after click
   useEffect(() => {
     if (isReady && shouldPlayWhenReady) {
       play();
@@ -204,12 +258,21 @@ export default function SoundCloudPlayer({
     }
   }, [isReady, play, shouldPlayWhenReady]);
 
-  const toggle = () => {
-    if (!widgetRef.current || !isReady) return;
-    setPromptChoiceMade(true);
+  // Autoplay track changes when already playing in local mode
+  useEffect(() => {
+    if (isLocal && isPlaying && localAudioRef.current) {
+      localAudioRef.current.play().catch(console.error);
+    }
+  }, [currentTrackIndex, isLocal, isPlaying]);
 
+  const toggle = () => {
+    setPromptChoiceMade(true);
     if (isPlaying) {
-      widgetRef.current.pause();
+      if (isLocal) {
+        if (localAudioRef.current) localAudioRef.current.pause();
+      } else {
+        if (widgetRef.current) widgetRef.current.pause();
+      }
     } else {
       play();
     }
@@ -230,21 +293,33 @@ export default function SoundCloudPlayer({
 
   return (
     <>
-      <iframe
-        ref={iframeRef}
-        title="Musica do casamento"
-        src={iframeSrc}
-        allow="autoplay"
-        style={{
-          position: "fixed",
-          bottom: "-9999px",
-          left: "-9999px",
-          width: "10px",
-          height: "10px",
-          opacity: 0.01,
-          pointerEvents: "none",
-        }}
-      />
+      {isLocal ? (
+        <audio
+          ref={localAudioRef}
+          src={urls[currentTrackIndex]}
+          preload="auto"
+          loop={urls.length === 1 && loop}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={handleLocalTrackEnded}
+        />
+      ) : (
+        <iframe
+          ref={iframeRef}
+          title="Musica do casamento"
+          src={iframeSrc}
+          allow="autoplay"
+          style={{
+            position: "fixed",
+            bottom: "-9999px",
+            left: "-9999px",
+            width: "10px",
+            height: "10px",
+            opacity: 0.01,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       {delayedInvitationOpen && isReady && (
         <div
