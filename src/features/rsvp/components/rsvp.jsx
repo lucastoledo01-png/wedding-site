@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { CheckCircle, Loader2, UserCheck, XCircle } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -203,8 +203,31 @@ export default function Rsvp() {
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [guestMatch, setGuestMatch] = useState(null);
 
   const canOpen = name.trim().length >= 3 && !!uid;
+
+  useEffect(() => {
+    if (!uid || name.trim().length < 3) {
+      setGuestMatch(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const result = await searchGuest(uid, name);
+        if (!cancelled) setGuestMatch(result.data?.match || null);
+      } catch {
+        if (!cancelled) setGuestMatch(null);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [uid, name]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -414,7 +437,7 @@ export default function Rsvp() {
               />
             </div>
           </label>
-          {canOpen && (
+          {guestMatch && (
             <div className={cn("rounded-2xl border border-[#262626]/10 bg-white px-4 py-4")}>
               <div className={cn("flex flex-wrap items-center justify-between gap-4")}>
                 <p className={cn("text-base font-medium text-[#262626]")}>Você irá ao evento?</p>
