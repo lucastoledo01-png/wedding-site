@@ -1,16 +1,12 @@
 import { useRef, useState } from "react";
 import confetti from "canvas-confetti";
-import { CheckCircle, Loader2, Search, UserCheck, XCircle } from "lucide-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { CheckCircle, Loader2, UserCheck, XCircle } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { confirmPresence, searchGuest } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
 
-const attendanceLabels = {
-  ATTENDING: "Nome já confirmou",
-  NOT_ATTENDING: "Nome confirmou ausência",
-  PENDING: "Nome encontrado. Você pode confirmar abaixo.",
-};
+
 
 function formatPhone(value) {
   const digits = String(value || "").replace(/\D/g, "").slice(0, 11);
@@ -203,35 +199,39 @@ export default function Rsvp() {
   const [name, setName] = useState("");
   const [attendance, setAttendance] = useState("ATTENDING");
 
-  const [suggestions, setSuggestions] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
-  const canSearch = name.trim().length >= 3 && !!uid;
-  const { data, isFetching, error: searchError } = useQuery({
-    queryKey: ["guest-search", uid, name],
-    queryFn: async () => (await searchGuest(uid, name)).data,
-    enabled: canSearch,
-    staleTime: 5 * 1000,
-    retry: false,
-  });
-
-  const match = data?.match;
-  const hasSearchResult = canSearch && !isFetching && Boolean(data);
-  const attendanceStatus = match?.attendance || "PENDING";
-  const hasAlreadyAnswered =
-    attendanceStatus === "ATTENDING" || attendanceStatus === "NOT_ATTENDING";
-  const canConfirm = Boolean(match) && !hasAlreadyAnswered;
+  const canOpen = name.trim().length >= 3 && !!uid;
 
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const digits = phoneDigits(phone);
       const normalizedPhone = digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+
+      const searchResult = await searchGuest(uid, name);
+      const match = searchResult.data?.match;
+
+      if (!match) {
+        throw Object.assign(
+          new Error("Este nome não está na nossa lista de convidados. Verifique se está exatamente como no convite."),
+          { type: "NOT_FOUND" },
+        );
+      }
+
+      if (match.attendance === "ATTENDING" || match.attendance === "NOT_ATTENDING") {
+        const label = match.attendance === "ATTENDING" ? "presença" : "ausência";
+        throw Object.assign(
+          new Error(`${match.full_name} já confirmou ${label} no nosso casamento!`),
+          { type: "ALREADY_CONFIRMED", attendance: match.attendance, guestName: match.full_name },
+        );
+      }
+
       return confirmPresence(uid, {
-        guestId: match?.id,
-        name: match?.full_name || name,
+        guestId: match.id,
+        name: match.full_name || name,
         attendance,
         message: "",
         partySize: 1,
@@ -240,63 +240,56 @@ export default function Rsvp() {
     },
     onSuccess: (response) => {
       try {
-        setSuggestions([]);
         setConfirmDecisionOpen(false);
         setPhone("");
         setPhoneError("");
         const isAbsence = response.data?.attendance === "NOT_ATTENDING";
         if (!isAbsence) {
-          try {
-            // Instantiate canvas-confetti on our custom canvas ref to strictly control z-index and keep it above modals
-            const myConfetti = canvasRef.current
-              ? confetti.create(canvasRef.current, {
-                  resize: true,
-                  useWorker: true,
-                })
-              : confetti;
+          const myConfetti = canvasRef.current
+            ? confetti.create(canvasRef.current, {
+                resize: true,
+                useWorker: true,
+              })
+            : confetti;
 
-            // Trigger a gorgeous, staggered 3-way confetti burst (highly compatible & high performance)
-            myConfetti({
-              particleCount: 140,
-              spread: 80,
-              origin: { x: 0.5, y: 0.8 },
-              colors: ["#ff4582", "#ff85a2", "#ffb3c1", "#10b981", "#34d399", "#fbbf24"],
-              gravity: 0.9,
-              ticks: 200,
-            });
-            setTimeout(() => {
-              try {
-                myConfetti({
-                  particleCount: 70,
-                  angle: 60,
-                  spread: 55,
-                  origin: { x: 0, y: 0.85 },
-                  colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
-                  gravity: 0.9,
-                  ticks: 200,
-                });
-              } catch (e) {
-                console.error("Confetti second burst error:", e);
-              }
-            }, 180);
-            setTimeout(() => {
-              try {
-                myConfetti({
-                  particleCount: 70,
-                  angle: 120,
-                  spread: 55,
-                  origin: { x: 1, y: 0.85 },
-                  colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
-                  gravity: 0.9,
-                  ticks: 200,
-                });
-              } catch (e) {
-                console.error("Confetti third burst error:", e);
-              }
-            }, 360);
-          } catch (confettiError) {
-            console.error("Confetti launch failed:", confettiError);
-          }
+          myConfetti({
+            particleCount: 140,
+            spread: 80,
+            origin: { x: 0.5, y: 0.8 },
+            colors: ["#ff4582", "#ff85a2", "#ffb3c1", "#10b981", "#34d399", "#fbbf24"],
+            gravity: 0.9,
+            ticks: 200,
+          });
+          setTimeout(() => {
+            try {
+              myConfetti({
+                particleCount: 70,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0, y: 0.85 },
+                colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
+                gravity: 0.9,
+                ticks: 200,
+              });
+            } catch (e) {
+              console.error("Confetti second burst error:", e);
+            }
+          }, 180);
+          setTimeout(() => {
+            try {
+              myConfetti({
+                particleCount: 70,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1, y: 0.85 },
+                colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
+                gravity: 0.9,
+                ticks: 200,
+              });
+            } catch (e) {
+              console.error("Confetti third burst error:", e);
+            }
+          }, 360);
         }
         setFeedback({
           type: "success",
@@ -307,8 +300,6 @@ export default function Rsvp() {
             : "Sua presença foi confirmada com sucesso. Esperamos você!",
         });
       } catch (err) {
-        console.error("onSuccess handler failed:", err);
-        // Fallback feedback even if processing fails, ensuring guest sees confirmation
         setFeedback({
           type: "success",
           isAbsence: false,
@@ -318,24 +309,40 @@ export default function Rsvp() {
       }
     },
     onError: (error) => {
-      setSuggestions(error.suggestions || []);
       setConfirmDecisionOpen(false);
+      setPhone("");
+      setPhoneError("");
+
+      if (error.type === "NOT_FOUND") {
+        setFeedback({
+          type: "error",
+          title: "Nome não encontrado",
+          message: error.message,
+        });
+        return;
+      }
+
+      if (error.type === "ALREADY_CONFIRMED") {
+        setFeedback({
+          type: "error",
+          title: error.attendance === "ATTENDING"
+            ? "Presença já confirmada! ✓"
+            : "Ausência já registrada",
+          message: error.message,
+        });
+        return;
+      }
+
       setFeedback({
         type: "error",
         title: "Não foi possível confirmar",
-        message:
-          error.message ||
-          "Tente novamente em alguns instantes ou confira se o nome está igual ao convite.",
+        message: error.message || "Tente novamente em alguns instantes.",
       });
     },
   });
 
   return (
-    <section
-      id="rsvp"
-      className={cn("relative overflow-hidden bg-[#f5f0eb]")}
-    >
-
+    <section id="rsvp" className={cn("relative overflow-hidden bg-[#f5f0eb]")}>
       <FeedbackModal
         feedback={feedback}
         onClose={() => {
@@ -345,9 +352,7 @@ export default function Rsvp() {
             if (!feedback.isAbsence) {
               setTimeout(() => {
                 const giftsSection = document.getElementById("gifts");
-                if (giftsSection) {
-                  giftsSection.scrollIntoView({ behavior: "smooth" });
-                }
+                if (giftsSection) giftsSection.scrollIntoView({ behavior: "smooth" });
               }, 100);
             }
           }
@@ -356,7 +361,7 @@ export default function Rsvp() {
       />
       <ConfirmDecisionModal
         attendance={attendance}
-        guestName={confirmDecisionOpen ? match?.full_name : ""}
+        guestName={confirmDecisionOpen ? name : ""}
         isPending={mutation.isPending}
         phone={phone}
         phoneError={phoneError}
@@ -364,7 +369,10 @@ export default function Rsvp() {
           setPhone(value);
           setPhoneError("");
         }}
-        onCancel={() => setConfirmDecisionOpen(false)}
+        onCancel={() => {
+          setConfirmDecisionOpen(false);
+          mutation.reset();
+        }}
         onConfirm={() => {
           if (phoneDigits(phone).length < 10) {
             setPhoneError("Informe seu WhatsApp para confirmar.");
@@ -373,187 +381,53 @@ export default function Rsvp() {
           mutation.mutate();
         }}
       />
-      <img
-        src="/images/flowers.png"
-        alt=""
-        className={cn(
-          "pointer-events-none absolute -left-24 top-14 w-52 -rotate-12 opacity-25",
-        )}
-      />
-      <div
-        className={cn(
-          "relative z-10 mx-auto px-5 py-20",
-        )}
-      >
+      <img src="/images/flowers.png" alt="" className={cn("pointer-events-none absolute -left-24 top-14 w-52 -rotate-12 opacity-25")} />
+      <div className={cn("relative z-10 mx-auto px-5 py-20")}>
         <div className={cn("space-y-5 text-center")}>
           <p className={cn("super-label")}>Confirmação</p>
-          <h2 className={cn("super-heading text-5xl")}>
-            Confirmação de Presença
-          </h2>
+          <h2 className={cn("super-heading text-5xl")}>Confirmação de Presença</h2>
         </div>
-
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            if (canConfirm) setConfirmDecisionOpen(true);
+            if (canOpen) setConfirmDecisionOpen(true);
           }}
-          className={cn(
-            "mt-12 grid gap-5 rounded-[24px] border border-[#262626]/10 bg-[#fdf8f3] p-5 shadow-[0_24px_70px_rgba(38,38,38,0.10)]",
-          )}
+          className={cn("mt-12 grid gap-5 rounded-[24px] border border-[#262626]/10 bg-[#fdf8f3] p-5 shadow-[0_24px_70px_rgba(38,38,38,0.10)]")}
         >
-          <label
-            className={cn(
-              "grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]",
-            )}
-          >
+          <label className={cn("grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]")}>
             <span>
               Digite abaixo o nome completo{" "}
-              <em className={cn("font-light normal-case tracking-normal text-[#262626]/55")}>
-                (conforme está no convite)
-              </em>
+              <em className={cn("font-light normal-case tracking-normal text-[#262626]/55")}>(conforme está no convite)</em>
             </span>
             <div className={cn("relative")}>
-              <Search
-                className={cn(
-                  "absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#ff4582]",
-                )}
-              />
               <input
                 value={name}
                 onChange={(event) => {
                   setName(event.target.value);
-                  setSuggestions([]);
                   setConfirmDecisionOpen(false);
                   setPhoneError("");
                   mutation.reset();
                 }}
-                className={cn(
-                  "super-transition w-full rounded-full border border-[#262626]/10 bg-white py-4 pl-11 pr-4 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]",
-                )}
+                className={cn("super-transition w-full rounded-full border border-[#262626]/10 bg-white py-4 px-5 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]")}
                 placeholder="Ex.: Lucas Toledo"
                 required
               />
             </div>
           </label>
-
-          {isFetching && (
-            <p
-              className={cn(
-                "flex items-center gap-2 text-sm font-medium text-[#262626]/50",
-              )}
-            >
-              <Loader2 className={cn("h-4 w-4 animate-spin")} />
-              Procurando na lista...
-            </p>
-          )}
-
-          {searchError && (
-            <div
-              className={cn(
-                "rounded-2xl bg-[#ff4582]/10 p-4 text-sm font-medium text-[#b91853]",
-              )}
-            >
-              Não foi possível buscar o nome agora. Tente novamente em alguns
-              instantes.
-            </div>
-          )}
-
-          {hasSearchResult && !match && (
-            <div
-              className={cn(
-                "rounded-2xl border border-[#ff4582]/20 bg-white p-4 text-sm font-medium text-[#262626]",
-              )}
-            >
-              Nome não existe na lista.
-            </div>
-          )}
-
-          {match && (
-            <div
-              className={cn(
-                "rounded-2xl bg-[#f5f0eb] p-4 text-left",
-              )}
-            >
-              <div className={cn("flex items-center justify-between gap-3")}>
-                <div>
-                  <p className={cn("super-label text-[#262626]/45")}>
-                    Encontramos
-                  </p>
-                  <p
-                    className={cn("mt-1 text-xl font-semibold text-[#262626]")}
-                  >
-                    {match.full_name}
-                  </p>
-                </div>
-              </div>
-              <p
-                className={cn(
-                  "mt-3 rounded-2xl px-4 py-3 text-sm font-semibold",
-                  attendanceStatus === "ATTENDING" &&
-                    "bg-emerald-500/10 text-emerald-700",
-                  attendanceStatus === "NOT_ATTENDING" &&
-                    "bg-[#ff4582]/10 text-[#b91853]",
-                  !hasAlreadyAnswered && "bg-white text-[#262626]/65",
-                )}
-              >
-                {attendanceLabels[attendanceStatus] ||
-                  "Nome encontrado. Você pode confirmar abaixo."}
-              </p>
-            </div>
-          )}
-
-          {canConfirm && (
-            <div
-              className={cn(
-                "rounded-2xl border border-[#262626]/10 bg-white px-4 py-4",
-              )}
-            >
+          {canOpen && (
+            <div className={cn("rounded-2xl border border-[#262626]/10 bg-white px-4 py-4")}>
               <div className={cn("flex flex-wrap items-center justify-between gap-4")}>
-                <p className={cn("text-base font-medium text-[#262626]")}>
-                  Você irá ao evento?
-                </p>
+                <p className={cn("text-base font-medium text-[#262626]")}>Você irá ao evento?</p>
                 <div className={cn("flex items-center gap-5")}>
-                  <button
-                    type="button"
-                    aria-pressed={attendance === "ATTENDING"}
-                    onClick={() => setAttendance("ATTENDING")}
-                    className={cn(
-                      "super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "grid h-7 w-7 place-items-center rounded-full border",
-                        attendance === "ATTENDING"
-                          ? "border-emerald-500 bg-emerald-50"
-                          : "border-[#262626]/35 bg-white",
-                      )}
-                    >
-                      {attendance === "ATTENDING" ? (
-                        <span className={cn("h-2.5 w-2.5 rounded-full bg-emerald-500")} />
-                      ) : null}
+                  <button type="button" aria-pressed={attendance === "ATTENDING"} onClick={() => setAttendance("ATTENDING")} className={cn("super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]")}>
+                    <span className={cn("grid h-7 w-7 place-items-center rounded-full border", attendance === "ATTENDING" ? "border-emerald-500 bg-emerald-50" : "border-[#262626]/35 bg-white")}>
+                      {attendance === "ATTENDING" && <span className={cn("h-2.5 w-2.5 rounded-full bg-emerald-500")} />}
                     </span>
                     Sim
                   </button>
-                  <button
-                    type="button"
-                    aria-pressed={attendance === "NOT_ATTENDING"}
-                    onClick={() => setAttendance("NOT_ATTENDING")}
-                    className={cn(
-                      "super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "grid h-7 w-7 place-items-center rounded-full border",
-                        attendance === "NOT_ATTENDING"
-                          ? "border-[#ff4582] bg-[#fff1f6]"
-                          : "border-[#262626]/35 bg-white",
-                      )}
-                    >
-                      {attendance === "NOT_ATTENDING" ? (
-                        <span className={cn("h-2.5 w-2.5 rounded-full bg-[#ff4582]")} />
-                      ) : null}
+                  <button type="button" aria-pressed={attendance === "NOT_ATTENDING"} onClick={() => setAttendance("NOT_ATTENDING")} className={cn("super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]")}>
+                    <span className={cn("grid h-7 w-7 place-items-center rounded-full border", attendance === "NOT_ATTENDING" ? "border-[#ff4582] bg-[#fff1f6]" : "border-[#262626]/35 bg-white")}>
+                      {attendance === "NOT_ATTENDING" && <span className={cn("h-2.5 w-2.5 rounded-full bg-[#ff4582]")} />}
                     </span>
                     Não
                   </button>
@@ -561,46 +435,21 @@ export default function Rsvp() {
               </div>
             </div>
           )}
-
-          {mutation.error && (
-            <div
-              className={cn(
-                "rounded-2xl bg-white p-4 text-sm font-medium text-[#262626]",
-              )}
-            >
-              <p>{mutation.error.message}</p>
-              {suggestions.length > 0 && (
-                <p className={cn("mt-2 text-gray-600")}>
-                  Talvez seja: {suggestions.join(", ")}
-                </p>
-              )}
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={mutation.isPending || !canConfirm}
+            disabled={mutation.isPending || !canOpen}
             onClick={(event) => {
               event.preventDefault();
-              if (canConfirm) setConfirmDecisionOpen(true);
+              if (canOpen) setConfirmDecisionOpen(true);
             }}
-            className={cn(
-              "super-transition flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 font-medium uppercase tracking-[0.18em] text-white shadow-lg hover:bg-[#ff4582] hover:text-[#262626] disabled:cursor-not-allowed disabled:opacity-60",
-            )}
+            className={cn("super-transition flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 font-medium uppercase tracking-[0.18em] text-white shadow-lg hover:bg-[#ff4582] hover:text-[#262626] disabled:cursor-not-allowed disabled:opacity-60")}
           >
-            {mutation.isPending ? (
-              <Loader2 className={cn("h-4 w-4 animate-spin")} />
-            ) : (
-              <UserCheck className={cn("h-4 w-4")} />
-            )}
+            {mutation.isPending ? <Loader2 className={cn("h-4 w-4 animate-spin")} /> : <UserCheck className={cn("h-4 w-4")} />}
             Confirmar!
           </button>
         </form>
       </div>
-      <canvas
-        ref={canvasRef}
-        className={cn("pointer-events-none fixed inset-0 z-[100000] h-full w-full")}
-      />
+      <canvas ref={canvasRef} className={cn("pointer-events-none fixed inset-0 z-[100000] h-full w-full")} />
     </section>
   );
 }
