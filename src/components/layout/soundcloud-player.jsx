@@ -85,20 +85,23 @@ export default function SoundCloudPlayer({
 
   const initialTrackUrl = urls[0] || "";
 
-  const params = new URLSearchParams({
-    url: initialTrackUrl,
-    auto_play: shouldAutoPlay ? "true" : "false",
-    buying: "false",
-    liking: "false",
-    download: "false",
-    sharing: "false",
-    show_artwork: "false",
-    show_comments: "false",
-    show_playcount: "false",
-    show_user: "false",
-    hide_related: "true",
-    visual: "false",
-  });
+  const iframeSrc = useMemo(() => {
+    const p = new URLSearchParams({
+      url: initialTrackUrl,
+      auto_play: "false",
+      buying: "false",
+      liking: "false",
+      download: "false",
+      sharing: "false",
+      show_artwork: "false",
+      show_comments: "false",
+      show_playcount: "false",
+      show_user: "false",
+      hide_related: "true",
+      visual: "false",
+    });
+    return `https://w.soundcloud.com/player/?${p.toString()}`;
+  }, [initialTrackUrl]);
 
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
@@ -191,10 +194,8 @@ export default function SoundCloudPlayer({
 
   const play = useCallback(() => {
     if (!widgetRef.current || !isReady) return;
-
-    widgetRef.current.setVolume(volume);
     widgetRef.current.play();
-  }, [isReady, volume]);
+  }, [isReady]);
 
   useEffect(() => {
     if (isReady && shouldPlayWhenReady) {
@@ -232,7 +233,7 @@ export default function SoundCloudPlayer({
       <iframe
         ref={iframeRef}
         title="Musica do casamento"
-        src={`https://w.soundcloud.com/player/?${params.toString()}`}
+        src={iframeSrc}
         allow="autoplay"
         style={{
           position: "fixed",
