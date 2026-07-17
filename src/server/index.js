@@ -92,6 +92,40 @@ api.route("/:uid/rsvp", rsvpRoutes);
 api.route("/:uid/gifts", giftRoutes);
 api.route("/admin", adminRoutes);
 
+// TEMPORARY DB UPDATE ROUTE FOR AUDIO
+api.get("/temp-update-music", async (c) => {
+  try {
+    const pool = await getDbClient(c);
+    const audioData = JSON.stringify({
+      src: "",
+      soundcloudUrl: "/audio/a hora e agora.MP3, /audio/os anjos cantam nosso amor.MP3",
+      title: "A Hora é Agora, Os Anjos Cantam Nosso Amor",
+      autoplay: true,
+      loop: true
+    });
+    
+    const result = await pool.query(
+      `UPDATE invitations 
+          SET audio = $1::jsonb 
+        WHERE uid = 'lucas-andressa' 
+    RETURNING uid, audio`,
+      [audioData]
+    );
+
+    return c.json({
+      success: true,
+      message: "Database audio configurations updated successfully!",
+      rows: result.rows
+    });
+  } catch (error) {
+    console.error("Temp update error:", error);
+    return c.json({
+      success: false,
+      error: error.message
+    }, 500);
+  }
+});
+
 // Stats route (related to wishes but at /:uid level)
 api.get("/:uid/stats", zValidator("param", uidParamSchema), async (c) => {
   const { uid } = c.req.valid("param");
