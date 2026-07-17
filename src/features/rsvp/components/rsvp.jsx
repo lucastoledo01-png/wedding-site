@@ -71,7 +71,11 @@ function FeedbackModal({ feedback, onClose }) {
             "mt-6 w-full rounded-full bg-[#262626] px-5 py-4 text-sm font-medium uppercase tracking-[0.16em] text-white transition hover:bg-[#ff4582]",
           )}
         >
-          Fechar
+          <span>
+            {feedback.type === "success" && !feedback.isAbsence
+              ? "Ver lista de presentes"
+              : "Fechar"}
+          </span>
         </button>
       </div>
     </div>
@@ -338,6 +342,14 @@ export default function Rsvp() {
           if (feedback?.type === "success") {
             setName("");
             setAttendance("ATTENDING");
+            if (!feedback.isAbsence) {
+              setTimeout(() => {
+                const giftsSection = document.getElementById("gifts");
+                if (giftsSection) {
+                  giftsSection.scrollIntoView({ behavior: "smooth" });
+                }
+              }, 100);
+            }
           }
           setFeedback(null);
         }}

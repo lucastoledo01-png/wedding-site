@@ -35,6 +35,8 @@ function loadSoundCloudApi() {
   });
 }
 
+const shouldAutoPlay = false; // Always start paused to enable gesture sync on click
+
 export default function SoundCloudPlayer({
   url,
   volume = 28,
@@ -48,7 +50,6 @@ export default function SoundCloudPlayer({
   const [isReady, setIsReady] = useState(false);
   const [promptChoiceMade, setPromptChoiceMade] = useState(false);
   const [shouldPlayWhenReady, setShouldPlayWhenReady] = useState(false);
-  const shouldAutoPlay = false; // Always start paused to enable gesture sync on click
   const [delayedInvitationOpen, setDelayedInvitationOpen] = useState(false);
 
   useEffect(() => {
@@ -99,6 +100,15 @@ export default function SoundCloudPlayer({
     visual: "false",
   });
 
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+
+  const loopRef = useRef(loop);
+  loopRef.current = loop;
+
+  const shouldPlayWhenReadyRef = useRef(shouldPlayWhenReady);
+  shouldPlayWhenReadyRef.current = shouldPlayWhenReady;
+
   useEffect(() => {
     let cancelled = false;
     setIsReady(false);
@@ -112,8 +122,8 @@ export default function SoundCloudPlayer({
       widget.bind(SC.Widget.Events.READY, () => {
         if (cancelled) return;
         setIsReady(true);
-        widget.setVolume(volume);
-        if (!isIOS && (shouldAutoPlay || shouldPlayWhenReady)) {
+        widget.setVolume(volumeRef.current);
+        if (!isIOS && (shouldAutoPlay || shouldPlayWhenReadyRef.current)) {
           widget.play();
           setShouldPlayWhenReady(false);
         }
@@ -145,11 +155,11 @@ export default function SoundCloudPlayer({
             hide_related: "true",
             visual: "false",
             callback: () => {
-              widget.setVolume(volume);
+              widget.setVolume(volumeRef.current);
               widget.play();
             },
           });
-        } else if (loop) {
+        } else if (loopRef.current) {
           setCurrentTrackIndex(0);
           widget.load(currentUrls[0], {
             auto_play: true,
@@ -164,7 +174,7 @@ export default function SoundCloudPlayer({
             hide_related: "true",
             visual: "false",
             callback: () => {
-              widget.setVolume(volume);
+              widget.setVolume(volumeRef.current);
               widget.play();
             },
           });
@@ -177,7 +187,7 @@ export default function SoundCloudPlayer({
     return () => {
       cancelled = true;
     };
-  }, [shouldAutoPlay, shouldPlayWhenReady, initialTrackUrl, volume, loop]);
+  }, [initialTrackUrl]);
 
   const play = useCallback(() => {
     if (!widgetRef.current || !isReady) return;
@@ -224,9 +234,15 @@ export default function SoundCloudPlayer({
         title="Musica do casamento"
         src={`https://w.soundcloud.com/player/?${params.toString()}`}
         allow="autoplay"
-        className={cn(
-          "pointer-events-none fixed bottom-0 left-0 h-px w-px opacity-0",
-        )}
+        style={{
+          position: "fixed",
+          bottom: "-9999px",
+          left: "-9999px",
+          width: "10px",
+          height: "10px",
+          opacity: 0.01,
+          pointerEvents: "none",
+        }}
       />
 
       {delayedInvitationOpen && isReady && (
