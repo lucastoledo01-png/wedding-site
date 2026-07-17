@@ -67,7 +67,7 @@ const config = {
       // Music file (choose one or replace with your own file)
       src: "",
       soundcloudUrl:
-        "/audio/a hora e agora.MP3, /audio/os anjos cantam nosso amor.MP3",
+        "/audio/a_hora_e_agora.MP3, /audio/os_anjos_cantam_nosso_amor.MP3",
       // Music title to display
       title: "A Hora é Agora, Os Anjos Cantam Nosso Amor",
       // Whether music plays automatically when website opens

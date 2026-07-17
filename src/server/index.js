@@ -98,7 +98,7 @@ api.get("/temp-update-music", async (c) => {
     const pool = await getDbClient(c);
     const audioData = JSON.stringify({
       src: "",
-      soundcloudUrl: "/audio/a hora e agora.MP3, /audio/os anjos cantam nosso amor.MP3",
+      soundcloudUrl: "/audio/a_hora_e_agora.MP3, /audio/os_anjos_cantam_nosso_amor.MP3",
       title: "A Hora é Agora, Os Anjos Cantam Nosso Amor",
       autoplay: true,
       loop: true
