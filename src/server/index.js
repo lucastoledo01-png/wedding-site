@@ -166,6 +166,8 @@ app.use(
   }),
 );
 app.use("/images/*", serveStatic({ root: "./dist" }));
+app.use("/audio/*", serveStatic({ root: "./dist" }));
+app.use("/audio/*", serveStatic({ root: "./public" }));
 app.use("/uploads/*", serveStatic({ root: "./public" }));
 app.use("/favicon.ico", serveStatic({ root: "./dist" }));
 app.use("*", serveStatic({ root: "./dist", path: "index.html" }));
