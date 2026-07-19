@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import confetti from "canvas-confetti";
 import { CheckCircle, Loader2, UserCheck, XCircle } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -82,9 +82,6 @@ function ConfirmDecisionModal({
   attendance,
   guestName,
   isPending,
-  phone,
-  phoneError,
-  onPhoneChange,
   onCancel,
   onConfirm,
 }) {
@@ -128,40 +125,6 @@ function ConfirmDecisionModal({
             ? "Você confirma que não irá comparecer?"
             : "Você deseja confirmar sua presença?"}
         </p>
-        <label className={cn("mt-5 block text-left")}>
-          <span className={cn("text-[10px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>
-            WhatsApp
-          </span>
-          <div
-            className={cn(
-              "mt-2 grid grid-cols-[88px_1fr] overflow-hidden rounded-2xl border border-[#262626]/10 bg-white",
-            )}
-          >
-            <div
-              className={cn(
-                "flex items-center justify-center gap-2 border-r border-[#262626]/10 bg-[#f5f0eb] px-3 text-sm font-semibold text-[#262626]/70",
-              )}
-            >
-              <span aria-hidden="true">🇧🇷</span>
-              <span>+55</span>
-            </div>
-            <input
-              value={phone}
-              onChange={(event) => onPhoneChange(formatPhone(event.target.value))}
-              placeholder="(35) 99999-0000"
-              inputMode="tel"
-              autoComplete="tel-national"
-              className={cn(
-                "min-w-0 bg-white px-4 py-4 text-base outline-none",
-              )}
-            />
-          </div>
-          {phoneError ? (
-            <p className={cn("mt-2 text-sm font-medium text-[#b91853]")}>
-              {phoneError}
-            </p>
-          ) : null}
-        </label>
         <div className={cn("mt-6 grid gap-3")}>
           <button
             type="button"
@@ -202,32 +165,10 @@ export default function Rsvp() {
   const [feedback, setFeedback] = useState(null);
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
   const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [guestMatch, setGuestMatch] = useState(null);
 
-  const canOpen = name.trim().length >= 3 && !!uid;
-
-  useEffect(() => {
-    if (!uid || name.trim().length < 3) {
-      setGuestMatch(null);
-      return;
-    }
-
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        const result = await searchGuest(uid, name);
-        if (!cancelled) setGuestMatch(result.data?.match || null);
-      } catch {
-        if (!cancelled) setGuestMatch(null);
-      }
-    }, 500);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [uid, name]);
+  const nameEntered = name.trim().length >= 3;
+  const phoneValid = phoneDigits(phone).length >= 10;
+  const canOpen = nameEntered && phoneValid && !!uid;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -265,7 +206,6 @@ export default function Rsvp() {
       try {
         setConfirmDecisionOpen(false);
         setPhone("");
-        setPhoneError("");
         const isAbsence = response.data?.attendance === "NOT_ATTENDING";
         if (!isAbsence) {
           const myConfetti = canvasRef.current
@@ -334,7 +274,6 @@ export default function Rsvp() {
     onError: (error) => {
       setConfirmDecisionOpen(false);
       setPhone("");
-      setPhoneError("");
 
       if (error.type === "NOT_FOUND") {
         setFeedback({
@@ -386,21 +325,11 @@ export default function Rsvp() {
         attendance={attendance}
         guestName={confirmDecisionOpen ? name : ""}
         isPending={mutation.isPending}
-        phone={phone}
-        phoneError={phoneError}
-        onPhoneChange={(value) => {
-          setPhone(value);
-          setPhoneError("");
-        }}
         onCancel={() => {
           setConfirmDecisionOpen(false);
           mutation.reset();
         }}
         onConfirm={() => {
-          if (phoneDigits(phone).length < 10) {
-            setPhoneError("Informe seu WhatsApp para confirmar.");
-            return;
-          }
           mutation.mutate();
         }}
       />
@@ -428,7 +357,6 @@ export default function Rsvp() {
                 onChange={(event) => {
                   setName(event.target.value);
                   setConfirmDecisionOpen(false);
-                  setPhoneError("");
                   mutation.reset();
                 }}
                 className={cn("super-transition w-full rounded-full border border-[#262626]/10 bg-white py-4 px-5 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]")}
@@ -437,7 +365,38 @@ export default function Rsvp() {
               />
             </div>
           </label>
-          {guestMatch && (
+          {nameEntered && (
+            <label className={cn("grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]")}>
+              <span>WhatsApp</span>
+              <div
+                className={cn(
+                  "grid grid-cols-[88px_1fr] overflow-hidden rounded-full border border-[#262626]/10 bg-white",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex items-center justify-center gap-2 border-r border-[#262626]/10 bg-[#f5f0eb] px-3 text-sm font-semibold normal-case tracking-normal text-[#262626]/70",
+                  )}
+                >
+                  <span aria-hidden="true">🇧🇷</span>
+                  <span>+55</span>
+                </div>
+                <input
+                  value={phone}
+                  onChange={(event) => {
+                    setPhone(formatPhone(event.target.value));
+                    setConfirmDecisionOpen(false);
+                    mutation.reset();
+                  }}
+                  placeholder="(35) 99999-0000"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  className={cn("min-w-0 bg-white py-4 px-5 text-base normal-case tracking-normal outline-none")}
+                />
+              </div>
+            </label>
+          )}
+          {phoneValid && (
             <div className={cn("rounded-2xl border border-[#262626]/10 bg-white px-4 py-4")}>
               <div className={cn("flex flex-wrap items-center justify-between gap-4")}>
                 <p className={cn("text-base font-medium text-[#262626]")}>Você irá ao evento?</p>
