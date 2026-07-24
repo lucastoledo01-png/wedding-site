@@ -253,7 +253,8 @@ giftRoutes.post("/:id/checkout", async (c) => {
   }
 
   const externalReference = `gift-${giftId}-${Date.now()}`;
-  const baseUrl = c.env?.PUBLIC_API_URL || process.env.PUBLIC_API_URL || new URL(c.req.url).origin;
+  const baseUrl =
+    c.env?.PUBLIC_API_URL || process.env.PUBLIC_API_URL || "https://casamento.olucastoledo.com.br";
 
   const paymentRecord = await pool.query(
     `INSERT INTO gift_payments
