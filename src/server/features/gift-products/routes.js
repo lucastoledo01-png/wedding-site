@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { getDbClient } from "../../lib/db-client.js";
 import { NotFoundError } from "../../lib/errors.js";
-import { createPayment, getPayment, verifyWebhookSignature } from "../../lib/mercadopago.js";
+import { createPreference, getPayment, verifyWebhookSignature } from "../../lib/mercadopago.js";
 
 const giftRoutes = new Hono();
 const PIX_GIFT_URL = "pix://lucas-andressa";
@@ -234,7 +234,6 @@ export async function reorderGifts(pool, uid, giftIds) {
 giftRoutes.post("/:id/checkout", async (c) => {
   const uid = c.req.param("uid");
   const giftId = Number(c.req.param("id"));
-  const body = await c.req.json();
   const pool = await getDbClient(c);
 
   const giftResult = await pool.query(
@@ -253,63 +252,34 @@ giftRoutes.post("/:id/checkout", async (c) => {
     return c.json({ success: false, error: "Este presente já foi conquistado por outra pessoa." }, 400);
   }
 
-  const paymentMethodId = body.paymentMethodId === "pix" ? "pix" : body.paymentMethodId;
-  const payerName = String(body.payerName || body.payer?.first_name || "Convidado").trim();
-  const payerEmail = String(body.payerEmail || body.payer?.email || "").trim();
-
-  if (!payerEmail) {
-    return c.json({ success: false, error: "Informe um e-mail para o pagamento." }, 400);
-  }
-
   const externalReference = `gift-${giftId}-${Date.now()}`;
   const baseUrl = c.env?.PUBLIC_API_URL || process.env.PUBLIC_API_URL || new URL(c.req.url).origin;
 
   const paymentRecord = await pool.query(
     `INSERT INTO gift_payments
-      (invitation_uid, gift_product_id, external_reference, status, amount_cents, payer_name, payer_email, payment_method)
-     VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7)
+      (invitation_uid, gift_product_id, external_reference, status, amount_cents)
+     VALUES ($1, $2, $3, 'pending', $4)
      RETURNING id`,
-    [uid, giftId, externalReference, gift.price_cents, payerName, payerEmail, paymentMethodId],
+    [uid, giftId, externalReference, gift.price_cents],
   );
 
   try {
-    const mpPayment = await createPayment(c, {
-      transactionAmount: gift.price_cents / 100,
-      description: `Presente: ${gift.name}`,
-      paymentMethodId,
-      token: body.token,
-      installments: body.installments,
-      payer: {
-        email: payerEmail,
-        first_name: payerName,
-      },
+    const preference = await createPreference(c, {
+      title: `Presente: ${gift.name}`,
+      unitPrice: gift.price_cents / 100,
       externalReference,
       notificationUrl: `${baseUrl}/api/${uid}/gifts/webhook/mercadopago`,
+      backUrls: {
+        success: `${baseUrl}/?gift_payment=success#gifts`,
+        pending: `${baseUrl}/?gift_payment=pending#gifts`,
+        failure: `${baseUrl}/?gift_payment=failure#gifts`,
+      },
     });
-
-    await pool.query(
-      `UPDATE gift_payments
-          SET mp_payment_id = $1, status = $2, raw_response = $3, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $4`,
-      [String(mpPayment.id), mpPayment.status, JSON.stringify(mpPayment), paymentRecord.rows[0].id],
-    );
-
-    if (mpPayment.status === "approved") {
-      await pool.query(
-        "UPDATE gift_products SET is_received = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
-        [giftId],
-      );
-    }
 
     return c.json({
       success: true,
       data: {
-        status: mpPayment.status,
-        statusDetail: mpPayment.status_detail,
-        paymentId: mpPayment.id,
-        qrCode: mpPayment.point_of_interaction?.transaction_data?.qr_code,
-        qrCodeBase64: mpPayment.point_of_interaction?.transaction_data?.qr_code_base64,
-        ticketUrl: mpPayment.point_of_interaction?.transaction_data?.ticket_url,
+        checkoutUrl: preference.sandbox_init_point || preference.init_point,
       },
     }, 201);
   } catch (error) {
@@ -320,26 +290,10 @@ giftRoutes.post("/:id/checkout", async (c) => {
       [JSON.stringify(error.mpResponse || { message: error.message }), paymentRecord.rows[0].id],
     );
     return c.json(
-      { success: false, error: error.mpResponse?.message || "Não foi possível processar o pagamento." },
+      { success: false, error: error.mpResponse?.message || "Não foi possível iniciar o pagamento." },
       error.status || 500,
     );
   }
-});
-
-giftRoutes.get("/:id/checkout/:paymentId", async (c) => {
-  const uid = c.req.param("uid");
-  const giftId = Number(c.req.param("id"));
-  const paymentId = c.req.param("paymentId");
-  const pool = await getDbClient(c);
-
-  const result = await pool.query(
-    `SELECT status FROM gift_payments
-      WHERE mp_payment_id = $1 AND gift_product_id = $2 AND invitation_uid = $3`,
-    [paymentId, giftId, uid],
-  );
-
-  if (!result.rows[0]) return c.json({ success: false, error: "Pagamento não encontrado." }, 404);
-  return c.json({ success: true, data: { status: result.rows[0].status } });
 });
 
 giftRoutes.post("/webhook/mercadopago", async (c) => {
@@ -374,10 +328,10 @@ giftRoutes.post("/webhook/mercadopago", async (c) => {
 
   const paymentRow = await pool.query(
     `UPDATE gift_payments
-        SET status = $1, raw_response = $2, updated_at = CURRENT_TIMESTAMP
-      WHERE mp_payment_id = $3 AND invitation_uid = $4
+        SET status = $1, mp_payment_id = $2, raw_response = $3, updated_at = CURRENT_TIMESTAMP
+      WHERE external_reference = $4 AND invitation_uid = $5
       RETURNING gift_product_id`,
-    [payment.status, JSON.stringify(payment), String(payment.id), uid],
+    [payment.status, String(payment.id), JSON.stringify(payment), payment.external_reference, uid],
   );
 
   if (paymentRow.rows[0] && payment.status === "approved") {

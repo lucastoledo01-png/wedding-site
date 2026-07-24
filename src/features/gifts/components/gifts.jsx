@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, CheckCircle, Copy, ExternalLink, Gift, Heart, X } from "lucide-react";
+import { Check, CheckCircle, Copy, ExternalLink, Gift, Heart, Loader2, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchGiftProducts } from "@/services/api";
+import { fetchGiftProducts, createGiftCheckout } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
-import GiftCheckoutModal from "./gift-checkout-modal";
 
 const PIX_KEY = "08080098697";
 const PIX_INFO = {
@@ -129,7 +128,7 @@ function PixModal({ open, onClose }) {
   );
 }
 
-function GiftCardVisual({ gift }) {
+function GiftCardVisual({ gift, isLoading }) {
   return (
     <div
       className={cn(
@@ -154,9 +153,10 @@ function GiftCardVisual({ gift }) {
       <div
         className={cn(
           "super-transition absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[8px] font-medium uppercase tracking-[0.14em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
+          isLoading && "!scale-100 !opacity-100",
         )}
       >
-        {gift.price_cents ? "Presentear" : "Ver"}
+        {isLoading ? <Loader2 className={cn("h-5 w-5 animate-spin")} /> : gift.price_cents ? "Presentear" : "Ver"}
       </div>
 
       {gift.is_received && (
@@ -182,15 +182,44 @@ function GiftCardVisual({ gift }) {
 export default function Gifts() {
   const { uid } = useInvitation();
   const [pixOpen, setPixOpen] = useState(false);
-  const [checkoutGift, setCheckoutGift] = useState(null);
+  const [checkoutLoadingId, setCheckoutLoadingId] = useState(null);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [returnStatus, setReturnStatus] = useState(null);
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [visibleCount, setVisibleCount] = useState(8);
-  const { data: gifts = [], isLoading } = useQuery({
+  const { data: gifts = [], isLoading, refetch: refetchGifts } = useQuery({
     queryKey: ["gift-products", uid],
     queryFn: async () => (await fetchGiftProducts(uid)).data,
     enabled: !!uid,
     staleTime: 60 * 1000,
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("gift_payment");
+    if (!status) return;
+
+    setReturnStatus(status);
+    window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+
+    if (status === "success" || status === "pending") {
+      // The webhook may take a moment to confirm the payment; give it a beat.
+      const timer = setTimeout(() => refetchGifts(), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [refetchGifts]);
+
+  async function handleGiftCheckout(gift) {
+    setCheckoutError("");
+    setCheckoutLoadingId(gift.id);
+    try {
+      const response = await createGiftCheckout(uid, gift.id);
+      window.location.href = response.data.checkoutUrl;
+    } catch (error) {
+      setCheckoutError(error.message);
+      setCheckoutLoadingId(null);
+    }
+  }
   const categories = useMemo(() => {
     const unique = [...new Set(gifts.map(getGiftCategory))].filter(Boolean);
     return unique.sort((a, b) => {
@@ -213,8 +242,26 @@ export default function Gifts() {
   return (
     <section id="gifts" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
       <PixModal open={pixOpen} onClose={() => setPixOpen(false)} />
-      {checkoutGift && (
-        <GiftCheckoutModal gift={checkoutGift} onClose={() => setCheckoutGift(null)} />
+      {returnStatus && (
+        <div
+          className={cn(
+            "mx-auto mb-6 max-w-md rounded-2xl border px-5 py-4 text-center text-sm font-medium",
+            returnStatus === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : returnStatus === "pending"
+                ? "border-amber-200 bg-amber-50 text-amber-700"
+                : "border-[#ff4582]/20 bg-[#fff1f6] text-[#b91853]",
+          )}
+        >
+          {returnStatus === "success" && "Presente confirmado! Muito obrigado pelo carinho."}
+          {returnStatus === "pending" && "Recebemos seu pagamento e estamos aguardando a confirmação."}
+          {returnStatus === "failure" && "Não foi possível concluir o pagamento. Tente novamente."}
+        </div>
+      )}
+      {checkoutError && (
+        <div className={cn("mx-auto mb-6 max-w-md rounded-2xl border border-[#ff4582]/20 bg-[#fff1f6] px-5 py-4 text-center text-sm font-medium text-[#b91853]")}>
+          {checkoutError}
+        </div>
       )}
       <img
         src="/images/flowers.png"
@@ -316,10 +363,11 @@ export default function Gifts() {
               ) : gift.price_cents && !gift.is_received ? (
                 <button
                   type="button"
-                  onClick={() => setCheckoutGift(gift)}
-                  className={cn("block w-full text-left")}
+                  onClick={() => handleGiftCheckout(gift)}
+                  disabled={checkoutLoadingId === gift.id}
+                  className={cn("block w-full text-left disabled:opacity-60")}
                 >
-                  <GiftCardVisual gift={gift} />
+                  <GiftCardVisual gift={gift} isLoading={checkoutLoadingId === gift.id} />
                 </button>
               ) : (
                 <a

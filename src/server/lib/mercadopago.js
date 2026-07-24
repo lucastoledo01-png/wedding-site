@@ -6,10 +6,6 @@ function getAccessToken(c) {
   return c.env?.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
 }
 
-function getWebhookSecret(c) {
-  return c.env?.MP_WEBHOOK_SECRET || process.env.MP_WEBHOOK_SECRET;
-}
-
 async function mpRequest(c, path, options = {}) {
   const accessToken = getAccessToken(c);
   if (!accessToken) throw new Error("MP_ACCESS_TOKEN não configurado.");
@@ -36,34 +32,37 @@ async function mpRequest(c, path, options = {}) {
 }
 
 /**
- * Creates a payment via Mercado Pago's Payments API.
- * For card payments, `token` (generated client-side by the Payment Brick) is required.
- * For Pix, omit `token` and set paymentMethodId to "pix".
+ * Creates a Checkout Pro preference. The guest is redirected to the returned
+ * init_point (or sandbox_init_point, when using test credentials) to complete
+ * the payment on Mercado Pago's own hosted page.
  */
-export async function createPayment(c, {
-  transactionAmount,
-  description,
-  paymentMethodId,
-  token,
-  installments,
-  payer,
+export async function createPreference(c, {
+  title,
+  unitPrice,
   externalReference,
   notificationUrl,
+  backUrls,
 }) {
-  return mpRequest(c, "/v1/payments", {
+  const preference = await mpRequest(c, "/checkout/preferences", {
     method: "POST",
     idempotencyKey: externalReference,
     body: JSON.stringify({
-      transaction_amount: transactionAmount,
-      description,
-      payment_method_id: paymentMethodId,
-      token,
-      installments: installments || 1,
-      payer,
+      items: [
+        {
+          title,
+          quantity: 1,
+          unit_price: unitPrice,
+          currency_id: "BRL",
+        },
+      ],
       external_reference: externalReference,
       notification_url: notificationUrl,
+      back_urls: backUrls,
+      auto_return: "approved",
     }),
   });
+
+  return preference;
 }
 
 /**
