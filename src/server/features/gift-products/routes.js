@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { getDbClient } from "../../lib/db-client.js";
 import { NotFoundError } from "../../lib/errors.js";
+import { createPayment, getPayment, verifyWebhookSignature } from "../../lib/mercadopago.js";
 
 const giftRoutes = new Hono();
 const PIX_GIFT_URL = "pix://lucas-andressa";
@@ -94,7 +95,7 @@ giftRoutes.get("/", async (c) => {
   const pool = await getDbClient(c);
   await ensurePixGift(pool, uid);
   const result = await pool.query(
-    `SELECT id, url, name, image_url, price, category, is_received, sort_order
+    `SELECT id, url, name, image_url, price, price_cents, category, is_received, sort_order
        FROM gift_products
       WHERE invitation_uid = $1 AND is_active = true
       ORDER BY is_received ASC, sort_order ASC, created_at DESC`,
@@ -107,7 +108,7 @@ giftRoutes.get("/", async (c) => {
 export async function listAdminGifts(pool, uid) {
   await ensurePixGift(pool, uid);
   const result = await pool.query(
-    `SELECT id, url, name, image_url, price, category, is_active, is_received, sort_order, created_at
+    `SELECT id, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order, created_at
        FROM gift_products
       WHERE invitation_uid = $1
       ORDER BY sort_order ASC, created_at DESC`,
@@ -143,6 +144,8 @@ export async function upsertGift(pool, uid, body) {
     name: cleanText(body.name) || extracted.name || "Presente",
     imageUrl: cleanText(body.imageUrl || body.image_url) || extracted.imageUrl || "",
     price: cleanText(body.price) || extracted.price || "",
+    priceCents:
+      body.priceCents ?? body.price_cents ?? null,
     category: url === PIX_GIFT_URL
       ? "Pix"
       : cleanText(body.category) || "Presentes",
@@ -154,16 +157,17 @@ export async function upsertGift(pool, uid, body) {
   if (body.id) {
     const result = await pool.query(
       `UPDATE gift_products
-          SET url = $1, name = $2, image_url = $3, price = $4,
-              category = $5, is_active = $6, is_received = $7, sort_order = $8,
+          SET url = $1, name = $2, image_url = $3, price = $4, price_cents = $5,
+              category = $6, is_active = $7, is_received = $8, sort_order = $9,
               updated_at = CURRENT_TIMESTAMP
-        WHERE id = $9 AND invitation_uid = $10
-        RETURNING id, url, name, image_url, price, category, is_active, is_received, sort_order`,
+        WHERE id = $10 AND invitation_uid = $11
+        RETURNING id, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order`,
       [
         url,
         payload.name,
         payload.imageUrl,
         payload.price,
+        payload.priceCents,
         payload.category,
         payload.isActive,
         payload.isReceived,
@@ -188,15 +192,16 @@ export async function upsertGift(pool, uid, body) {
 
   const result = await pool.query(
     `INSERT INTO gift_products
-      (invitation_uid, url, name, image_url, price, category, is_active, is_received, sort_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-     RETURNING id, url, name, image_url, price, category, is_active, is_received, sort_order`,
+      (invitation_uid, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     RETURNING id, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order`,
     [
       uid,
       url,
       payload.name,
       payload.imageUrl,
       payload.price,
+      payload.priceCents,
       payload.category,
       payload.isActive,
       payload.isReceived,
@@ -225,6 +230,165 @@ export async function reorderGifts(pool, uid, giftIds) {
 
   return listAdminGifts(pool, uid);
 }
+
+giftRoutes.post("/:id/checkout", async (c) => {
+  const uid = c.req.param("uid");
+  const giftId = Number(c.req.param("id"));
+  const body = await c.req.json();
+  const pool = await getDbClient(c);
+
+  const giftResult = await pool.query(
+    `SELECT id, name, price_cents, is_received
+       FROM gift_products
+      WHERE id = $1 AND invitation_uid = $2 AND is_active = true`,
+    [giftId, uid],
+  );
+  const gift = giftResult.rows[0];
+
+  if (!gift) return c.json({ success: false, error: "Presente não encontrado." }, 404);
+  if (!gift.price_cents) {
+    return c.json({ success: false, error: "Este presente não aceita pagamento direto." }, 400);
+  }
+  if (gift.is_received) {
+    return c.json({ success: false, error: "Este presente já foi conquistado por outra pessoa." }, 400);
+  }
+
+  const paymentMethodId = body.paymentMethodId === "pix" ? "pix" : body.paymentMethodId;
+  const payerName = String(body.payerName || body.payer?.first_name || "Convidado").trim();
+  const payerEmail = String(body.payerEmail || body.payer?.email || "").trim();
+
+  if (!payerEmail) {
+    return c.json({ success: false, error: "Informe um e-mail para o pagamento." }, 400);
+  }
+
+  const externalReference = `gift-${giftId}-${Date.now()}`;
+  const baseUrl = c.env?.PUBLIC_API_URL || process.env.PUBLIC_API_URL || new URL(c.req.url).origin;
+
+  const paymentRecord = await pool.query(
+    `INSERT INTO gift_payments
+      (invitation_uid, gift_product_id, external_reference, status, amount_cents, payer_name, payer_email, payment_method)
+     VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7)
+     RETURNING id`,
+    [uid, giftId, externalReference, gift.price_cents, payerName, payerEmail, paymentMethodId],
+  );
+
+  try {
+    const mpPayment = await createPayment(c, {
+      transactionAmount: gift.price_cents / 100,
+      description: `Presente: ${gift.name}`,
+      paymentMethodId,
+      token: body.token,
+      installments: body.installments,
+      payer: {
+        email: payerEmail,
+        first_name: payerName,
+      },
+      externalReference,
+      notificationUrl: `${baseUrl}/api/${uid}/gifts/webhook/mercadopago`,
+    });
+
+    await pool.query(
+      `UPDATE gift_payments
+          SET mp_payment_id = $1, status = $2, raw_response = $3, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $4`,
+      [String(mpPayment.id), mpPayment.status, JSON.stringify(mpPayment), paymentRecord.rows[0].id],
+    );
+
+    if (mpPayment.status === "approved") {
+      await pool.query(
+        "UPDATE gift_products SET is_received = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+        [giftId],
+      );
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        status: mpPayment.status,
+        statusDetail: mpPayment.status_detail,
+        paymentId: mpPayment.id,
+        qrCode: mpPayment.point_of_interaction?.transaction_data?.qr_code,
+        qrCodeBase64: mpPayment.point_of_interaction?.transaction_data?.qr_code_base64,
+        ticketUrl: mpPayment.point_of_interaction?.transaction_data?.ticket_url,
+      },
+    }, 201);
+  } catch (error) {
+    await pool.query(
+      `UPDATE gift_payments
+          SET status = 'rejected', raw_response = $1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2`,
+      [JSON.stringify(error.mpResponse || { message: error.message }), paymentRecord.rows[0].id],
+    );
+    return c.json(
+      { success: false, error: error.mpResponse?.message || "Não foi possível processar o pagamento." },
+      error.status || 500,
+    );
+  }
+});
+
+giftRoutes.get("/:id/checkout/:paymentId", async (c) => {
+  const uid = c.req.param("uid");
+  const giftId = Number(c.req.param("id"));
+  const paymentId = c.req.param("paymentId");
+  const pool = await getDbClient(c);
+
+  const result = await pool.query(
+    `SELECT status FROM gift_payments
+      WHERE mp_payment_id = $1 AND gift_product_id = $2 AND invitation_uid = $3`,
+    [paymentId, giftId, uid],
+  );
+
+  if (!result.rows[0]) return c.json({ success: false, error: "Pagamento não encontrado." }, 404);
+  return c.json({ success: true, data: { status: result.rows[0].status } });
+});
+
+giftRoutes.post("/webhook/mercadopago", async (c) => {
+  const uid = c.req.param("uid");
+  const body = await c.req.json().catch(() => ({}));
+  const dataId = c.req.query("data.id") || body.data?.id;
+  const topic = c.req.query("type") || body.type;
+
+  if (topic !== "payment" || !dataId) {
+    return c.json({ success: true });
+  }
+
+  const secret = c.env?.MP_WEBHOOK_SECRET || process.env.MP_WEBHOOK_SECRET;
+  if (secret) {
+    const isValid = verifyWebhookSignature({
+      xSignature: c.req.header("x-signature"),
+      xRequestId: c.req.header("x-request-id"),
+      dataId,
+      secret,
+    });
+    if (!isValid) {
+      console.warn("[MercadoPago] Webhook com assinatura inválida, ignorado.");
+      return c.json({ success: false, error: "Assinatura inválida." }, 401);
+    }
+  } else {
+    console.warn("[MercadoPago] MP_WEBHOOK_SECRET não configurado — assinatura do webhook não validada.");
+  }
+
+  // Never trust the webhook body for the actual status — re-fetch from Mercado Pago.
+  const payment = await getPayment(c, dataId);
+  const pool = await getDbClient(c);
+
+  const paymentRow = await pool.query(
+    `UPDATE gift_payments
+        SET status = $1, raw_response = $2, updated_at = CURRENT_TIMESTAMP
+      WHERE mp_payment_id = $3 AND invitation_uid = $4
+      RETURNING gift_product_id`,
+    [payment.status, JSON.stringify(payment), String(payment.id), uid],
+  );
+
+  if (paymentRow.rows[0] && payment.status === "approved") {
+    await pool.query(
+      "UPDATE gift_products SET is_received = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1",
+      [paymentRow.rows[0].gift_product_id],
+    );
+  }
+
+  return c.json({ success: true });
+});
 
 export { PIX_GIFT_URL };
 

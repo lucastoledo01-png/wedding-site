@@ -112,6 +112,7 @@ export default function AdminPanel() {
     name: "",
     imageUrl: "",
     price: "",
+    priceReais: "",
     category: "",
     sortOrder: "",
   });
@@ -198,6 +199,7 @@ export default function AdminPanel() {
       name: "",
       imageUrl: "",
       price: "",
+      priceReais: "",
       category: "",
       sortOrder: "",
     });
@@ -210,6 +212,7 @@ export default function AdminPanel() {
       name: gift.name || "",
       imageUrl: gift.image_url || "",
       price: gift.price || "",
+      priceReais: gift.price_cents ? String(gift.price_cents / 100) : "",
       category: gift.category || "",
       sortOrder: String(gift.sort_order ?? ""),
     });
@@ -363,12 +366,17 @@ export default function AdminPanel() {
 
   const saveGift = useMutation({
     mutationFn: () => {
+      const { priceReais, ...rest } = giftForm;
       const payload = {
-        ...giftForm,
+        ...rest,
         sortOrder:
           giftForm.sortOrder === "" || giftForm.sortOrder === null
             ? undefined
             : Number(giftForm.sortOrder),
+        priceCents:
+          priceReais === "" || priceReais === null
+            ? null
+            : Math.round(Number(priceReais.replace(",", ".")) * 100),
       };
 
       return adminRequest(
@@ -1080,7 +1088,19 @@ export default function AdminPanel() {
                   ) : null}
                 </div>
                 <input value={giftForm.imageUrl} onChange={(event) => setGiftForm({ ...giftForm, imageUrl: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="URL da foto, opcional" />
-                <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preço, opcional" />
+                <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preço, opcional (texto exibido na lista)" />
+                <div className={cn("grid gap-1")}>
+                  <input
+                    value={giftForm.priceReais}
+                    onChange={(event) => setGiftForm({ ...giftForm, priceReais: event.target.value })}
+                    className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                    placeholder="Valor para pagamento automático (R$), ex.: 199.90"
+                    inputMode="decimal"
+                  />
+                  <p className={cn("px-1 text-xs text-black/45")}>
+                    Preenchendo isso, o convidado paga direto no site (cartão ou Pix) e o presente é marcado como "Ganhamos" automaticamente.
+                  </p>
+                </div>
                 <input
                   value={giftForm.category}
                   onChange={(event) => setGiftForm({ ...giftForm, category: event.target.value })}

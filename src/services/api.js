@@ -163,6 +163,24 @@ export async function fetchGiftProducts(uid) {
   return data;
 }
 
+export async function createGiftPayment(uid, giftId, payload) {
+  const response = await fetch(apiUrl(`/api/${uid}/gifts/${giftId}/checkout`), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await readJsonResponse(response);
+  if (!response.ok) throw new Error(data.error || "Não foi possível processar o pagamento");
+  return data;
+}
+
+export async function fetchGiftPaymentStatus(uid, giftId, paymentId) {
+  const response = await fetch(apiUrl(`/api/${uid}/gifts/${giftId}/checkout/${paymentId}`));
+  const data = await readJsonResponse(response);
+  if (!response.ok) throw new Error(data.error || "Não foi possível consultar o pagamento");
+  return data;
+}
+
 function adminHeaders(token, hasFormData = false) {
   return {
     ...(hasFormData ? {} : { "Content-Type": "application/json" }),

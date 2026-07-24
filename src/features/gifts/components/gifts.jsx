@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchGiftProducts } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
+import GiftCheckoutModal from "./gift-checkout-modal";
 
 const PIX_KEY = "08080098697";
 const PIX_INFO = {
@@ -128,9 +129,60 @@ function PixModal({ open, onClose }) {
   );
 }
 
+function GiftCardVisual({ gift }) {
+  return (
+    <div
+      className={cn(
+        "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#f5f0eb]",
+      )}
+    >
+      <div className={cn("absolute inset-0 flex items-center justify-center")}>
+        <Gift className={cn("h-16 w-16 text-[#ff4582]")} />
+      </div>
+      {gift.image_url ? (
+        <img
+          src={gift.image_url}
+          alt={gift.name}
+          className={cn("super-image relative h-full w-full object-cover")}
+          loading="lazy"
+          onError={(event) => {
+            event.currentTarget.remove();
+          }}
+        />
+      ) : null}
+
+      <div
+        className={cn(
+          "super-transition absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[8px] font-medium uppercase tracking-[0.14em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
+        )}
+      >
+        {gift.price_cents ? "Presentear" : "Ver"}
+      </div>
+
+      {gift.is_received && (
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center bg-[#fdf8f3]/80",
+          )}
+        >
+          <span
+            className={cn(
+              "flex items-center gap-1 rounded-full bg-[#262626] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white",
+            )}
+          >
+            <CheckCircle className={cn("h-3 w-3")} />
+            Ganhamos
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Gifts() {
   const { uid } = useInvitation();
   const [pixOpen, setPixOpen] = useState(false);
+  const [checkoutGift, setCheckoutGift] = useState(null);
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [visibleCount, setVisibleCount] = useState(8);
   const { data: gifts = [], isLoading } = useQuery({
@@ -161,6 +213,9 @@ export default function Gifts() {
   return (
     <section id="gifts" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
       <PixModal open={pixOpen} onClose={() => setPixOpen(false)} />
+      {checkoutGift && (
+        <GiftCheckoutModal gift={checkoutGift} onClose={() => setCheckoutGift(null)} />
+      )}
       <img
         src="/images/flowers.png"
         alt=""
@@ -258,6 +313,14 @@ export default function Gifts() {
                     </div>
                   </div>
                 </button>
+              ) : gift.price_cents && !gift.is_received ? (
+                <button
+                  type="button"
+                  onClick={() => setCheckoutGift(gift)}
+                  className={cn("block w-full text-left")}
+                >
+                  <GiftCardVisual gift={gift} />
+                </button>
               ) : (
                 <a
                   href={gift.url || "#gifts"}
@@ -265,51 +328,7 @@ export default function Gifts() {
                   rel={gift.url ? "noreferrer" : undefined}
                   className={cn("block")}
                 >
-                <div
-                  className={cn(
-                    "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#f5f0eb]",
-                  )}
-                >
-                  <div className={cn("absolute inset-0 flex items-center justify-center")}>
-                    <Gift className={cn("h-16 w-16 text-[#ff4582]")} />
-                  </div>
-                  {gift.image_url ? (
-                    <img
-                      src={gift.image_url}
-                      alt={gift.name}
-                      className={cn("super-image relative h-full w-full object-cover")}
-                      loading="lazy"
-                      onError={(event) => {
-                        event.currentTarget.remove();
-                      }}
-                    />
-                  ) : null}
-
-                  <div
-                    className={cn(
-                      "super-transition absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[8px] font-medium uppercase tracking-[0.14em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
-                    )}
-                  >
-                    Ver
-                  </div>
-
-                  {gift.is_received && (
-                    <div
-                      className={cn(
-                        "absolute inset-0 flex items-center justify-center bg-[#fdf8f3]/80",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "flex items-center gap-1 rounded-full bg-[#262626] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white",
-                        )}
-                      >
-                        <CheckCircle className={cn("h-3 w-3")} />
-                        Ganhamos
-                      </span>
-                    </div>
-                  )}
-                </div>
+                  <GiftCardVisual gift={gift} />
                 </a>
               )}
 
