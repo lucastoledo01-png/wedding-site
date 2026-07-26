@@ -280,7 +280,7 @@ giftRoutes.post("/:id/checkout", async (c) => {
     return c.json({
       success: true,
       data: {
-        checkoutUrl: preference.sandbox_init_point || preference.init_point,
+        checkoutUrl: preference.init_point || preference.sandbox_init_point,
       },
     }, 201);
   } catch (error) {
