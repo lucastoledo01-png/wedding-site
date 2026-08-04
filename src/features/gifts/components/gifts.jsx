@@ -6,31 +6,35 @@ import { fetchGiftProducts, createGiftCheckout } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
 
-const PIX_KEY = "08080098697";
-const PIX_INFO = {
+const PIX_HOLDER = {
   name: "Lucas Toledo Casaloti",
   bank: "260 - Nu Pagamentos S.A.",
   document: "***.800.986-**",
-  qrCode: "/images/pix-qr-code.png",
 };
 
 function isPixGift(gift) {
-  return gift?.gift_type === "pix" || gift?.url === "pix://lucas-andressa";
+  return String(gift?.url || "").startsWith("pix://");
+}
+
+function getPixKey(gift) {
+  return String(gift?.url || "").replace("pix://", "");
 }
 
 function getGiftCategory(gift) {
-  if (isPixGift(gift)) return "Pix";
   return String(gift?.category || "Presentes").trim() || "Presentes";
 }
 
-function PixModal({ open, onClose }) {
+function PixModal({ gift, onClose }) {
   const [copied, setCopied] = useState(false);
 
-  if (!open || typeof document === "undefined") return null;
+  if (!gift || typeof document === "undefined") return null;
+
+  const pixKey = getPixKey(gift);
+  const qrImage = gift.pix_qr_image_url || gift.image_url;
 
   async function copyPixKey() {
     try {
-      await navigator.clipboard.writeText(PIX_KEY);
+      await navigator.clipboard.writeText(pixKey);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2200);
     } catch {
@@ -67,20 +71,21 @@ function PixModal({ open, onClose }) {
           </button>
           <Heart className={cn("mx-auto h-7 w-7 fill-current")} />
           <h3 className={cn("mt-3 text-2xl font-semibold leading-none")}>
-            Presente em Pix
+            {gift.name}
           </h3>
           <p className={cn("mx-auto mt-3 max-w-xs text-[13px] font-medium leading-relaxed text-white/90")}>
-            Se quiser nos presentear de uma forma prática, qualquer contribuição
-            será recebida com muito carinho para o início da nossa nova fase.
+            {gift.price || "Presenteie via Pix — qualquer contribuição será recebida com muito carinho."}
           </p>
 
-          <div className={cn("mx-auto mt-5 w-40 rounded-2xl bg-white p-3 shadow-lg")}>
-            <img
-              src={PIX_INFO.qrCode}
-              alt="QR Code Pix Lucas e Andressa"
-              className={cn("h-full w-full")}
-            />
-          </div>
+          {qrImage && (
+            <div className={cn("mx-auto mt-5 w-40 rounded-2xl bg-white p-3 shadow-lg")}>
+              <img
+                src={qrImage}
+                alt={`QR Code Pix — ${gift.name}`}
+                className={cn("h-full w-full")}
+              />
+            </div>
+          )}
 
           <button
             type="button"
@@ -98,7 +103,7 @@ function PixModal({ open, onClose }) {
           <div className={cn("grid gap-3 border-t border-[#262626]/10 pt-4 text-sm")}>
             <div className={cn("grid grid-cols-[92px_1fr_auto] items-center gap-3")}>
               <span className={cn("font-semibold")}>Chave Pix</span>
-              <span className={cn("break-all font-semibold text-[#ff4582]")}>{PIX_KEY}</span>
+              <span className={cn("break-all font-semibold text-[#ff4582]")}>{pixKey}</span>
               <button
                 type="button"
                 onClick={copyPixKey}
@@ -110,15 +115,15 @@ function PixModal({ open, onClose }) {
             </div>
             <div className={cn("grid grid-cols-[92px_1fr] gap-3")}>
               <span className={cn("font-semibold")}>Nome</span>
-              <span>{PIX_INFO.name}</span>
+              <span>{PIX_HOLDER.name}</span>
             </div>
             <div className={cn("grid grid-cols-[92px_1fr] gap-3")}>
               <span className={cn("font-semibold")}>CPF</span>
-              <span>{PIX_INFO.document}</span>
+              <span>{PIX_HOLDER.document}</span>
             </div>
             <div className={cn("grid grid-cols-[92px_1fr] gap-3")}>
               <span className={cn("font-semibold")}>Banco</span>
-              <span>{PIX_INFO.bank}</span>
+              <span>{PIX_HOLDER.bank}</span>
             </div>
           </div>
         </div>
@@ -181,7 +186,7 @@ function GiftCardVisual({ gift, isLoading }) {
 
 export default function Gifts() {
   const { uid } = useInvitation();
-  const [pixOpen, setPixOpen] = useState(false);
+  const [pixModalGift, setPixModalGift] = useState(null);
   const [checkoutLoadingId, setCheckoutLoadingId] = useState(null);
   const [checkoutError, setCheckoutError] = useState("");
   const [returnStatus, setReturnStatus] = useState(null);
@@ -241,7 +246,7 @@ export default function Gifts() {
 
   return (
     <section id="gifts" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
-      <PixModal open={pixOpen} onClose={() => setPixOpen(false)} />
+      <PixModal gift={pixModalGift} onClose={() => setPixModalGift(null)} />
       {returnStatus && (
         <div
           className={cn(
@@ -336,7 +341,7 @@ export default function Gifts() {
               {isPixGift(gift) ? (
                 <button
                   type="button"
-                  onClick={() => setPixOpen(true)}
+                  onClick={() => setPixModalGift(gift)}
                   className={cn("block w-full text-left")}
                 >
                   <div

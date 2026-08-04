@@ -11,7 +11,7 @@ function cleanText(value) {
 }
 
 function isPixGift(gift) {
-  return gift?.url === PIX_GIFT_URL;
+  return String(gift?.url || "").startsWith("pix://");
 }
 
 async function ensurePixGift(pool, uid) {
@@ -49,8 +49,7 @@ async function ensurePixGift(pool, uid) {
 }
 
 function mapGiftRow(row) {
-  if (!isPixGift(row)) return { ...row, category: row.category || "Presentes" };
-  return { ...row, category: "Pix", gift_type: "pix" };
+  return { ...row, category: row.category || "Presentes" };
 }
 
 function findMeta(html, property) {
@@ -95,7 +94,7 @@ giftRoutes.get("/", async (c) => {
   const pool = await getDbClient(c);
   await ensurePixGift(pool, uid);
   const result = await pool.query(
-    `SELECT id, url, name, image_url, price, price_cents, category, is_received, sort_order
+    `SELECT id, url, name, image_url, pix_qr_image_url, price, price_cents, category, is_received, sort_order
        FROM gift_products
       WHERE invitation_uid = $1 AND is_active = true
       ORDER BY is_received ASC, sort_order ASC, created_at DESC`,
@@ -108,7 +107,7 @@ giftRoutes.get("/", async (c) => {
 export async function listAdminGifts(pool, uid) {
   await ensurePixGift(pool, uid);
   const result = await pool.query(
-    `SELECT id, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order, created_at
+    `SELECT id, url, name, image_url, pix_qr_image_url, price, price_cents, category, is_active, is_received, sort_order, created_at
        FROM gift_products
       WHERE invitation_uid = $1
       ORDER BY sort_order ASC, created_at DESC`,
@@ -143,6 +142,7 @@ export async function upsertGift(pool, uid, body) {
   const payload = {
     name: cleanText(body.name) || extracted.name || "Presente",
     imageUrl: cleanText(body.imageUrl || body.image_url) || extracted.imageUrl || "",
+    pixQrImageUrl: cleanText(body.pixQrImageUrl || body.pix_qr_image_url) || "",
     price: cleanText(body.price) || extracted.price || "",
     priceCents:
       body.priceCents ?? body.price_cents ?? null,
@@ -157,15 +157,16 @@ export async function upsertGift(pool, uid, body) {
   if (body.id) {
     const result = await pool.query(
       `UPDATE gift_products
-          SET url = $1, name = $2, image_url = $3, price = $4, price_cents = $5,
-              category = $6, is_active = $7, is_received = $8, sort_order = $9,
+          SET url = $1, name = $2, image_url = $3, pix_qr_image_url = $4, price = $5, price_cents = $6,
+              category = $7, is_active = $8, is_received = $9, sort_order = $10,
               updated_at = CURRENT_TIMESTAMP
-        WHERE id = $10 AND invitation_uid = $11
-        RETURNING id, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order`,
+        WHERE id = $11 AND invitation_uid = $12
+        RETURNING id, url, name, image_url, pix_qr_image_url, price, price_cents, category, is_active, is_received, sort_order`,
       [
         url,
         payload.name,
         payload.imageUrl,
+        payload.pixQrImageUrl,
         payload.price,
         payload.priceCents,
         payload.category,
@@ -192,14 +193,15 @@ export async function upsertGift(pool, uid, body) {
 
   const result = await pool.query(
     `INSERT INTO gift_products
-      (invitation_uid, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     RETURNING id, url, name, image_url, price, price_cents, category, is_active, is_received, sort_order`,
+      (invitation_uid, url, name, image_url, pix_qr_image_url, price, price_cents, category, is_active, is_received, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     RETURNING id, url, name, image_url, pix_qr_image_url, price, price_cents, category, is_active, is_received, sort_order`,
     [
       uid,
       url,
       payload.name,
       payload.imageUrl,
+      payload.pixQrImageUrl,
       payload.price,
       payload.priceCents,
       payload.category,

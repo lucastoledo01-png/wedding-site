@@ -78,6 +78,7 @@ function EmptyState({ children }) {
 export default function AdminPanel() {
   const queryClient = useQueryClient();
   const giftImageInputRef = useRef(null);
+  const pixQrImageInputRef = useRef(null);
   const [activePage, setActivePage] = useState(
     getPageFromPath() || localStorage.getItem("wedding_admin_page") || "presencas",
   );
@@ -111,6 +112,8 @@ export default function AdminPanel() {
     url: "",
     name: "",
     imageUrl: "",
+    pixKey: "",
+    pixQrImageUrl: "",
     price: "",
     priceReais: "",
     category: "",
@@ -198,6 +201,8 @@ export default function AdminPanel() {
       url: "",
       name: "",
       imageUrl: "",
+      pixKey: "",
+      pixQrImageUrl: "",
       price: "",
       priceReais: "",
       category: "",
@@ -207,10 +212,13 @@ export default function AdminPanel() {
 
   function editGift(gift) {
     setEditingGiftId(gift.id);
+    const isPix = String(gift.url || "").startsWith("pix://");
     setGiftForm({
-      url: gift.url || "",
+      url: isPix ? "" : gift.url || "",
       name: gift.name || "",
       imageUrl: gift.image_url || "",
+      pixKey: isPix ? gift.url.replace("pix://", "") : "",
+      pixQrImageUrl: gift.pix_qr_image_url || "",
       price: gift.price || "",
       priceReais: gift.price_cents ? String(gift.price_cents / 100) : "",
       category: gift.category || "",
@@ -366,9 +374,10 @@ export default function AdminPanel() {
 
   const saveGift = useMutation({
     mutationFn: () => {
-      const { priceReais, ...rest } = giftForm;
+      const { priceReais, pixKey, ...rest } = giftForm;
       const payload = {
         ...rest,
+        url: pixKey.trim() ? `pix://${pixKey.trim()}` : giftForm.url,
         sortOrder:
           giftForm.sortOrder === "" || giftForm.sortOrder === null
             ? undefined
@@ -409,6 +418,23 @@ export default function AdminPanel() {
       setGiftForm((current) => ({
         ...current,
         imageUrl: response.data.imageUrl,
+      }));
+    },
+  });
+
+  const uploadPixQrImage = useMutation({
+    mutationFn: (file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      return adminRequest(`/api/admin/${uid}/gifts/upload`, token, {
+        method: "POST",
+        body: formData,
+      });
+    },
+    onSuccess: (response) => {
+      setGiftForm((current) => ({
+        ...current,
+        pixQrImageUrl: response.data.imageUrl,
       }));
     },
   });
@@ -1089,6 +1115,66 @@ export default function AdminPanel() {
                 </div>
                 <input value={giftForm.imageUrl} onChange={(event) => setGiftForm({ ...giftForm, imageUrl: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="URL da foto, opcional" />
                 <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preço, opcional (texto exibido na lista)" />
+                <div className={cn("grid gap-1")}>
+                  <input
+                    value={giftForm.pixKey}
+                    onChange={(event) => setGiftForm({ ...giftForm, pixKey: event.target.value })}
+                    className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                    placeholder="Chave Pix deste presente, opcional"
+                  />
+                  <p className={cn("px-1 text-xs text-black/45")}>
+                    Preenchendo isso, o card abre uma janela com essa chave e o QR Code abaixo, em vez de link ou pagamento automático.
+                  </p>
+                </div>
+                {giftForm.pixKey ? (
+                  <div className={cn("rounded-2xl border border-dashed border-black/10 bg-[#fdf8f3] p-3")}>
+                    {giftForm.pixQrImageUrl ? (
+                      <div className={cn("mb-3 grid grid-cols-[72px_1fr] gap-3")}>
+                        <div className={cn("relative aspect-square overflow-hidden rounded-2xl bg-white")}>
+                          <img
+                            src={giftForm.pixQrImageUrl}
+                            alt=""
+                            className={cn("relative h-full w-full object-contain")}
+                          />
+                        </div>
+                        <div className={cn("min-w-0 self-center")}>
+                          <p className={cn("text-xs font-bold uppercase tracking-[0.18em] text-[#ff4582]")}>
+                            QR Code selecionado
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                    <input
+                      ref={pixQrImageInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className={cn("hidden")}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) uploadPixQrImage.mutate(file);
+                        event.target.value = "";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => pixQrImageInputRef.current?.click()}
+                      disabled={uploadPixQrImage.isPending}
+                      className={cn("inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-black/60 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-50")}
+                    >
+                      {uploadPixQrImage.isPending ? (
+                        <Loader2 className={cn("h-4 w-4 animate-spin")} />
+                      ) : (
+                        <Upload className={cn("h-4 w-4")} />
+                      )}
+                      {uploadPixQrImage.isPending ? "Enviando QR Code..." : "Fazer upload do QR Code Pix"}
+                    </button>
+                    {uploadPixQrImage.isError ? (
+                      <p className={cn("mt-3 rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                        {uploadPixQrImage.error.message}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className={cn("grid gap-1")}>
                   <input
                     value={giftForm.priceReais}
