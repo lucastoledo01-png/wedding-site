@@ -110,7 +110,7 @@ giftRoutes.get("/", async (c) => {
     `SELECT id, url, name, image_url, pix_qr_image_url, pix_payload, price, price_cents, category, is_received, sort_order
        FROM gift_products
       WHERE invitation_uid = $1 AND is_active = true
-      ORDER BY is_received ASC, sort_order ASC, created_at DESC`,
+      ORDER BY is_received ASC, price_cents ASC NULLS LAST, sort_order ASC, created_at DESC`,
     [uid],
   );
 
