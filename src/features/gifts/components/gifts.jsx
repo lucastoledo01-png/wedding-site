@@ -34,20 +34,26 @@ function getGiftCategory(gift) {
 }
 
 function PixModal({ gift, onClose }) {
-  const [copied, setCopied] = useState(false);
+  // Tracks which field was just copied ("code" | "key" | null) so each button
+  // shows its own feedback.
+  const [copiedField, setCopiedField] = useState(null);
 
   if (!gift || typeof document === "undefined") return null;
 
   const pixKey = getPixKey(gift);
   const qrImage = gift.pix_qr_image_url || gift.image_url;
+  // The full Pix payload already carries the exact amount, so copying it
+  // spares the guest from typing the value by hand. Fall back to the bare
+  // key for gifts that don't have a payload yet.
+  const pixPayload = gift.pix_payload || "";
 
-  async function copyPixKey() {
+  async function copyToClipboard(value, field) {
     try {
-      await navigator.clipboard.writeText(pixKey);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2200);
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      window.setTimeout(() => setCopiedField(null), 2200);
     } catch {
-      setCopied(false);
+      setCopiedField(null);
     }
   }
 
@@ -111,18 +117,31 @@ function PixModal({ gift, onClose }) {
 
           <button
             type="button"
-            onClick={copyPixKey}
+            onClick={() => copyToClipboard(pixPayload || pixKey, "code")}
             className={cn(
               "mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-[#ff4582] transition hover:bg-[#fdf8f3]",
             )}
           >
-            {copied ? (
+            {copiedField === "code" ? (
               <Check className={cn("h-4 w-4")} />
             ) : (
               <Copy className={cn("h-4 w-4")} />
             )}
-            {copied ? "Chave copiada" : "Copiar chave Pix"}
+            {copiedField === "code"
+              ? "Código copiado"
+              : pixPayload
+                ? "Copiar código Pix"
+                : "Copiar chave Pix"}
           </button>
+          {pixPayload && (
+            <p
+              className={cn(
+                "mt-3 text-[11px] font-medium leading-relaxed text-white/85",
+              )}
+            >
+              O código já vem com o valor preenchido.
+            </p>
+          )}
         </div>
 
         <div className={cn("px-5 py-4 text-[#262626]")}>
@@ -142,13 +161,13 @@ function PixModal({ gift, onClose }) {
               </span>
               <button
                 type="button"
-                onClick={copyPixKey}
+                onClick={() => copyToClipboard(pixKey, "key")}
                 className={cn(
                   "grid h-9 w-9 place-items-center rounded-full border border-[#262626]/10 text-[#ff4582]",
                 )}
                 aria-label="Copiar chave Pix"
               >
-                {copied ? (
+                {copiedField === "key" ? (
                   <Check className={cn("h-4 w-4")} />
                 ) : (
                   <Copy className={cn("h-4 w-4")} />

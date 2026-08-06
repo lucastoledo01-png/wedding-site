@@ -127,6 +127,7 @@ export default function AdminPanel() {
     imageUrl: "",
     pixKey: "",
     pixQrImageUrl: "",
+    pixPayload: "",
     price: "",
     priceReais: "",
     category: "",
@@ -216,6 +217,7 @@ export default function AdminPanel() {
       imageUrl: "",
       pixKey: "",
       pixQrImageUrl: "",
+      pixPayload: "",
       price: "",
       priceReais: "",
       category: "",
@@ -232,6 +234,7 @@ export default function AdminPanel() {
       imageUrl: gift.image_url || "",
       pixKey: isPix ? gift.url.replace("pix://", "") : "",
       pixQrImageUrl: gift.pix_qr_image_url || "",
+      pixPayload: gift.pix_payload || "",
       price: gift.price || "",
       priceReais: gift.price_cents ? String(gift.price_cents / 100) : "",
       category: gift.category || "",
@@ -1538,6 +1541,28 @@ export default function AdminPanel() {
                         {uploadPixQrImage.error.message}
                       </p>
                     ) : null}
+                  </div>
+                ) : null}
+                {giftForm.pixKey ? (
+                  <div className={cn("grid gap-1")}>
+                    <textarea
+                      value={giftForm.pixPayload}
+                      onChange={(event) =>
+                        setGiftForm({
+                          ...giftForm,
+                          pixPayload: event.target.value,
+                        })
+                      }
+                      rows={3}
+                      className={cn(
+                        "rounded-2xl border border-black/10 px-4 py-3 font-mono text-xs outline-none focus:border-[#ff4582]",
+                      )}
+                      placeholder="Código Pix copia e cola (00020126...), opcional"
+                    />
+                    <p className={cn("px-1 text-xs text-black/45")}>
+                      É o mesmo código do QR Code. Preenchendo, o convidado
+                      copia o código já com o valor deste presente.
+                    </p>
                   </div>
                 ) : null}
                 <div className={cn("grid gap-1")}>
