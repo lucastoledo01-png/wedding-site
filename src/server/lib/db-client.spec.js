@@ -9,7 +9,7 @@
  * to avoid cross-test cache pollution.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock pg with a constructor spy so we can count Pool instantiations.
 const poolInstances = [];
@@ -84,15 +84,51 @@ describe("getDbClient", () => {
     expect(second).toBe(third);
   });
 
-  it("throws a clear error when no connection source is configured", async () => {
-    await expect(getDbClient(ctx({}))).rejects.toThrow(
-      /Hyperdrive binding.*DATABASE_URL/i,
-    );
-    expect(PoolMock).not.toHaveBeenCalled();
-  });
+  describe("with no connection string configured", () => {
+    // bun (and any setup that auto-loads .env) populates process.env for the
+    // whole process, so unset the vars rather than relying on a clean ambient
+    // environment.
+    let savedDatabaseUrl;
+    let savedSupabaseUrl;
+    let savedNodeEnv;
 
-  it("throws when context has no env at all", async () => {
-    await expect(getDbClient({})).rejects.toThrow(/DATABASE_URL/i);
-    expect(PoolMock).not.toHaveBeenCalled();
+    beforeEach(() => {
+      savedDatabaseUrl = process.env.DATABASE_URL;
+      savedSupabaseUrl = process.env.SUPABASE_DATABASE_URL;
+      savedNodeEnv = process.env.NODE_ENV;
+      delete process.env.DATABASE_URL;
+      delete process.env.SUPABASE_DATABASE_URL;
+    });
+
+    afterEach(() => {
+      if (savedDatabaseUrl !== undefined)
+        process.env.DATABASE_URL = savedDatabaseUrl;
+      if (savedSupabaseUrl !== undefined)
+        process.env.SUPABASE_DATABASE_URL = savedSupabaseUrl;
+      process.env.NODE_ENV = savedNodeEnv;
+    });
+
+    it("falls back to the local file DB outside production", async () => {
+      process.env.NODE_ENV = "development";
+
+      const client = await getDbClient(ctx({}));
+
+      expect(typeof client.query).toBe("function");
+      expect(PoolMock).not.toHaveBeenCalled();
+    });
+
+    it("throws in production when no connection source is configured", async () => {
+      process.env.NODE_ENV = "production";
+
+      await expect(getDbClient(ctx({}))).rejects.toThrow(/DATABASE_URL/i);
+      expect(PoolMock).not.toHaveBeenCalled();
+    });
+
+    it("throws in production when context has no env at all", async () => {
+      process.env.NODE_ENV = "production";
+
+      await expect(getDbClient({})).rejects.toThrow(/DATABASE_URL/i);
+      expect(PoolMock).not.toHaveBeenCalled();
+    });
   });
 });

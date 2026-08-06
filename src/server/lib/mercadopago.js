@@ -15,14 +15,18 @@ async function mpRequest(c, path, options = {}) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
-      ...(options.idempotencyKey ? { "X-Idempotency-Key": options.idempotencyKey } : {}),
+      ...(options.idempotencyKey
+        ? { "X-Idempotency-Key": options.idempotencyKey }
+        : {}),
       ...options.headers,
     },
   });
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const error = new Error(data.message || "Falha ao comunicar com o Mercado Pago");
+    const error = new Error(
+      data.message || "Falha ao comunicar com o Mercado Pago",
+    );
     error.mpResponse = data;
     error.status = response.status;
     throw error;
@@ -36,13 +40,10 @@ async function mpRequest(c, path, options = {}) {
  * init_point (or sandbox_init_point, when using test credentials) to complete
  * the payment on Mercado Pago's own hosted page.
  */
-export async function createPreference(c, {
-  title,
-  unitPrice,
-  externalReference,
-  notificationUrl,
-  backUrls,
-}) {
+export async function createPreference(
+  c,
+  { title, unitPrice, externalReference, notificationUrl, backUrls },
+) {
   const preference = await mpRequest(c, "/checkout/preferences", {
     method: "POST",
     idempotencyKey: externalReference,
@@ -82,7 +83,12 @@ export async function getPayment(c, paymentId) {
  * "Notificações webhooks" / signature docs in your MP Developers panel
  * before relying on this in production.
  */
-export function verifyWebhookSignature({ xSignature, xRequestId, dataId, secret }) {
+export function verifyWebhookSignature({
+  xSignature,
+  xRequestId,
+  dataId,
+  secret,
+}) {
   if (!xSignature || !secret) return false;
 
   const parts = Object.fromEntries(
@@ -93,7 +99,10 @@ export function verifyWebhookSignature({ xSignature, xRequestId, dataId, secret 
   if (!ts || !v1) return false;
 
   const manifest = `id:${String(dataId).toLowerCase()};request-id:${xRequestId};ts:${ts};`;
-  const expected = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(manifest)
+    .digest("hex");
 
   try {
     return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(v1));

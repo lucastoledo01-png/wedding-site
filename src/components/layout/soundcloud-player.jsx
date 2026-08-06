@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 
 const WIDGET_API = "https://w.soundcloud.com/player/api.js";
 
-const isIOS = typeof window !== "undefined" && (
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-);
+const isIOS =
+  typeof window !== "undefined" &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 
 function loadSoundCloudApi() {
   if (window.SC?.Widget) {
@@ -46,7 +46,7 @@ export default function SoundCloudPlayer({
   const iframeRef = useRef(null);
   const widgetRef = useRef(null);
   const localAudioRef = useRef(null);
-  
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [promptChoiceMade, setPromptChoiceMade] = useState(false);
@@ -67,7 +67,10 @@ export default function SoundCloudPlayer({
   const urls = useMemo(() => {
     if (!url) return [];
     if (Array.isArray(url)) return url;
-    return url.split(",").map((s) => s.trim()).filter(Boolean);
+    return url
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }, [url]);
 
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -89,13 +92,20 @@ export default function SoundCloudPlayer({
   // Auto-detect local MP3 files vs SoundCloud links
   const isLocal = useMemo(() => {
     const firstUrl = initialTrackUrl.toLowerCase();
-    return firstUrl.endsWith(".mp3") || firstUrl.includes("/audio/") || firstUrl.includes(".mp3?");
+    return (
+      firstUrl.endsWith(".mp3") ||
+      firstUrl.includes("/audio/") ||
+      firstUrl.includes(".mp3?")
+    );
   }, [initialTrackUrl]);
 
   // Encode a local file path so spaces and special chars are valid in src URLs
   const encodeAudioSrc = useCallback((rawPath) => {
     // Only encode each path segment, preserving slashes
-    return rawPath.split("/").map((seg) => encodeURIComponent(seg)).join("/");
+    return rawPath
+      .split("/")
+      .map((seg) => encodeURIComponent(seg))
+      .join("/");
   }, []);
 
   const iframeSrc = useMemo(() => {
@@ -336,7 +346,7 @@ export default function SoundCloudPlayer({
         <div
           className={cn(
             "fixed right-[4.25rem] top-4 z-50 w-[190px] rounded-2xl border border-white/55 bg-[#fdf8f3]/90 px-3 py-3 text-[#262626] shadow-[0_18px_50px_rgba(38,38,38,0.16)] backdrop-blur-xl transition-all duration-300",
-            (promptChoiceMade || isPlaying)
+            promptChoiceMade || isPlaying
               ? "pointer-events-none scale-95 opacity-0"
               : "scale-100 opacity-100",
           )}

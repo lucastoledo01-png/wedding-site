@@ -118,7 +118,11 @@ export default function TransitionHearts({ onComplete }) {
   }, [onComplete]);
 
   return (
-    <div className={cn("pointer-events-none fixed inset-0 z-[10000] overflow-hidden")}>
+    <div
+      className={cn(
+        "pointer-events-none fixed inset-0 z-[10000] overflow-hidden",
+      )}
+    >
       {/* Background Hearts */}
       {backgroundHearts.map((heart) => (
         <motion.div

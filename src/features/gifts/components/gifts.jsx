@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, CheckCircle, Copy, ExternalLink, Gift, Heart, Loader2, X } from "lucide-react";
+import {
+  Check,
+  CheckCircle,
+  Copy,
+  ExternalLink,
+  Gift,
+  Heart,
+  Loader2,
+  X,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchGiftProducts, createGiftCheckout } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
@@ -58,7 +67,11 @@ function PixModal({ gift, onClose }) {
           "max-h-[92svh] w-full max-w-md overflow-y-auto rounded-[30px] border border-white/70 bg-[#fdf8f3] shadow-[0_24px_90px_rgba(38,38,38,0.24)]",
         )}
       >
-        <div className={cn("relative bg-[#ff4582] px-5 pb-5 pt-5 text-center text-[#fdf8f3]")}>
+        <div
+          className={cn(
+            "relative bg-[#ff4582] px-5 pb-5 pt-5 text-center text-[#fdf8f3]",
+          )}
+        >
           <button
             type="button"
             onClick={onClose}
@@ -73,12 +86,21 @@ function PixModal({ gift, onClose }) {
           <h3 className={cn("mt-3 text-2xl font-semibold leading-none")}>
             {gift.name}
           </h3>
-          <p className={cn("mx-auto mt-3 max-w-xs text-[13px] font-medium leading-relaxed text-white/90")}>
-            {gift.price || "Presenteie via Pix — qualquer contribuição será recebida com muito carinho."}
+          <p
+            className={cn(
+              "mx-auto mt-3 max-w-xs text-[13px] font-medium leading-relaxed text-white/90",
+            )}
+          >
+            {gift.price ||
+              "Presenteie via Pix — qualquer contribuição será recebida com muito carinho."}
           </p>
 
           {qrImage && (
-            <div className={cn("mx-auto mt-5 w-40 rounded-2xl bg-white p-3 shadow-lg")}>
+            <div
+              className={cn(
+                "mx-auto mt-5 w-40 rounded-2xl bg-white p-3 shadow-lg",
+              )}
+            >
               <img
                 src={qrImage}
                 alt={`QR Code Pix — ${gift.name}`}
@@ -94,23 +116,43 @@ function PixModal({ gift, onClose }) {
               "mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-[#ff4582] transition hover:bg-[#fdf8f3]",
             )}
           >
-            {copied ? <Check className={cn("h-4 w-4")} /> : <Copy className={cn("h-4 w-4")} />}
+            {copied ? (
+              <Check className={cn("h-4 w-4")} />
+            ) : (
+              <Copy className={cn("h-4 w-4")} />
+            )}
             {copied ? "Chave copiada" : "Copiar chave Pix"}
           </button>
         </div>
 
         <div className={cn("px-5 py-4 text-[#262626]")}>
-          <div className={cn("grid gap-3 border-t border-[#262626]/10 pt-4 text-sm")}>
-            <div className={cn("grid grid-cols-[92px_1fr_auto] items-center gap-3")}>
+          <div
+            className={cn(
+              "grid gap-3 border-t border-[#262626]/10 pt-4 text-sm",
+            )}
+          >
+            <div
+              className={cn(
+                "grid grid-cols-[92px_1fr_auto] items-center gap-3",
+              )}
+            >
               <span className={cn("font-semibold")}>Chave Pix</span>
-              <span className={cn("break-all font-semibold text-[#ff4582]")}>{pixKey}</span>
+              <span className={cn("break-all font-semibold text-[#ff4582]")}>
+                {pixKey}
+              </span>
               <button
                 type="button"
                 onClick={copyPixKey}
-                className={cn("grid h-9 w-9 place-items-center rounded-full border border-[#262626]/10 text-[#ff4582]")}
+                className={cn(
+                  "grid h-9 w-9 place-items-center rounded-full border border-[#262626]/10 text-[#ff4582]",
+                )}
                 aria-label="Copiar chave Pix"
               >
-                {copied ? <Check className={cn("h-4 w-4")} /> : <Copy className={cn("h-4 w-4")} />}
+                {copied ? (
+                  <Check className={cn("h-4 w-4")} />
+                ) : (
+                  <Copy className={cn("h-4 w-4")} />
+                )}
               </button>
             </div>
             <div className={cn("grid grid-cols-[92px_1fr] gap-3")}>
@@ -161,7 +203,13 @@ function GiftCardVisual({ gift, isLoading }) {
           isLoading && "!scale-100 !opacity-100",
         )}
       >
-        {isLoading ? <Loader2 className={cn("h-5 w-5 animate-spin")} /> : gift.price_cents ? "Presentear" : "Ver"}
+        {isLoading ? (
+          <Loader2 className={cn("h-5 w-5 animate-spin")} />
+        ) : gift.price_cents ? (
+          "Presentear"
+        ) : (
+          "Ver"
+        )}
       </div>
 
       {gift.is_received && (
@@ -192,7 +240,11 @@ export default function Gifts() {
   const [returnStatus, setReturnStatus] = useState(null);
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [visibleCount, setVisibleCount] = useState(8);
-  const { data: gifts = [], isLoading, refetch: refetchGifts } = useQuery({
+  const {
+    data: gifts = [],
+    isLoading,
+    refetch: refetchGifts,
+  } = useQuery({
     queryKey: ["gift-products", uid],
     queryFn: async () => (await fetchGiftProducts(uid)).data,
     enabled: !!uid,
@@ -205,7 +257,11 @@ export default function Gifts() {
     if (!status) return;
 
     setReturnStatus(status);
-    window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+    window.history.replaceState(
+      {},
+      "",
+      window.location.pathname + window.location.hash,
+    );
 
     if (status === "success" || status === "pending") {
       // The webhook may take a moment to confirm the payment; give it a beat.
@@ -258,13 +314,20 @@ export default function Gifts() {
                 : "border-[#ff4582]/20 bg-[#fff1f6] text-[#b91853]",
           )}
         >
-          {returnStatus === "success" && "Presente confirmado! Muito obrigado pelo carinho."}
-          {returnStatus === "pending" && "Recebemos seu pagamento e estamos aguardando a confirmação."}
-          {returnStatus === "failure" && "Não foi possível concluir o pagamento. Tente novamente."}
+          {returnStatus === "success" &&
+            "Presente confirmado! Muito obrigado pelo carinho."}
+          {returnStatus === "pending" &&
+            "Recebemos seu pagamento e estamos aguardando a confirmação."}
+          {returnStatus === "failure" &&
+            "Não foi possível concluir o pagamento. Tente novamente."}
         </div>
       )}
       {checkoutError && (
-        <div className={cn("mx-auto mb-6 max-w-md rounded-2xl border border-[#ff4582]/20 bg-[#fff1f6] px-5 py-4 text-center text-sm font-medium text-[#b91853]")}>
+        <div
+          className={cn(
+            "mx-auto mb-6 max-w-md rounded-2xl border border-[#ff4582]/20 bg-[#fff1f6] px-5 py-4 text-center text-sm font-medium text-[#b91853]",
+          )}
+        >
           {checkoutError}
         </div>
       )}
@@ -282,8 +345,8 @@ export default function Gifts() {
             Nosso próximo capítulo
           </h2>
           <p className={cn("super-copy max-w-sm text-[1.125rem] font-medium")}>
-            Se desejar nos presentear, reunimos algumas sugestões que farão parte
-            da nossa nova etapa.
+            Se desejar nos presentear, reunimos algumas sugestões que farão
+            parte da nossa nova etapa.
           </p>
         </div>
 
@@ -292,7 +355,11 @@ export default function Gifts() {
             <div>
               <div className={cn("mb-3 flex items-center gap-3")}>
                 <span className={cn("h-px flex-1 bg-[#262626]/10")} />
-                <span className={cn("text-[9px] font-black uppercase tracking-[0.32em] text-[#ff4582]")}>
+                <span
+                  className={cn(
+                    "text-[9px] font-black uppercase tracking-[0.32em] text-[#ff4582]",
+                  )}
+                >
                   Categorias
                 </span>
                 <span className={cn("h-px flex-1 bg-[#262626]/10")} />
@@ -354,7 +421,11 @@ export default function Gifts() {
                       alt="Pix"
                       className={cn("h-full w-full object-cover")}
                     />
-                    <div className={cn("absolute inset-x-3 bottom-3 flex justify-center")}>
+                    <div
+                      className={cn(
+                        "absolute inset-x-3 bottom-3 flex justify-center",
+                      )}
+                    >
                       <span
                         className={cn(
                           "rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582] shadow-lg",
@@ -372,7 +443,10 @@ export default function Gifts() {
                   disabled={checkoutLoadingId === gift.id}
                   className={cn("block w-full text-left disabled:opacity-60")}
                 >
-                  <GiftCardVisual gift={gift} isLoading={checkoutLoadingId === gift.id} />
+                  <GiftCardVisual
+                    gift={gift}
+                    isLoading={checkoutLoadingId === gift.id}
+                  />
                 </button>
               ) : (
                 <a
@@ -386,8 +460,14 @@ export default function Gifts() {
               )}
 
               <div className={cn("mt-3")}>
-                <p className={cn("text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]")}>
-                  {isPixGift(gift) ? "Presenteie com Pix" : getGiftCategory(gift)}
+                <p
+                  className={cn(
+                    "text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]",
+                  )}
+                >
+                  {isPixGift(gift)
+                    ? "Presenteie com Pix"
+                    : getGiftCategory(gift)}
                 </p>
                 <h3
                   className={cn(

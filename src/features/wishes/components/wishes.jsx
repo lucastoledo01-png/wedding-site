@@ -310,8 +310,8 @@ export default function Wishes() {
             <p className={cn("super-label")}>Mensagens</p>
             <h2 className={cn("super-heading text-5xl")}>Deixe sua mensagem</h2>
             <p className={cn("super-copy max-w-sm text-[1.125rem]")}>
-              Deixe um recado para nós. Será uma alegria guardar cada mensagem como
-              uma lembrança deste dia.
+              Deixe um recado para nós. Será uma alegria guardar cada mensagem
+              como uma lembrança deste dia.
             </p>
           </div>
 
@@ -337,12 +337,18 @@ export default function Wishes() {
                     "rounded-[24px] border border-[#262626]/10 bg-[#f5f0eb] p-5",
                   )}
                 >
-                  <div className={cn("flex flex-wrap items-baseline gap-x-2 gap-y-1")}>
+                  <div
+                    className={cn(
+                      "flex flex-wrap items-baseline gap-x-2 gap-y-1",
+                    )}
+                  >
                     <p className={cn("text-lg font-medium text-[#262626]")}>
                       {wish.name}
                     </p>
                     {formatWishDate(wish.created_at) ? (
-                      <span className={cn("text-xs font-normal text-[#262626]/38")}>
+                      <span
+                        className={cn("text-xs font-normal text-[#262626]/38")}
+                      >
                         {formatWishDate(wish.created_at)}
                       </span>
                     ) : null}

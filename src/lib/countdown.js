@@ -13,8 +13,12 @@ function normalizeTimePart(time) {
 }
 
 export function getCountdownTimeLeft(date, time = "20:00") {
-  const target = new Date(`${normalizeDatePart(date)}T${normalizeTimePart(time)}-03:00`).getTime();
-  const difference = Number.isFinite(target) ? Math.max(target - Date.now(), 0) : 0;
+  const target = new Date(
+    `${normalizeDatePart(date)}T${normalizeTimePart(time)}-03:00`,
+  ).getTime();
+  const difference = Number.isFinite(target)
+    ? Math.max(target - Date.now(), 0)
+    : 0;
 
   return {
     dias: Math.floor(difference / (1000 * 60 * 60 * 24)),

@@ -43,10 +43,10 @@ function getSessionSecret(c) {
 function hasDatabaseConfig(c) {
   return Boolean(
     c.env?.DB ||
-      c.env?.DATABASE_URL ||
-      c.env?.SUPABASE_DATABASE_URL ||
-      process.env.DATABASE_URL ||
-      process.env.SUPABASE_DATABASE_URL,
+    c.env?.DATABASE_URL ||
+    c.env?.SUPABASE_DATABASE_URL ||
+    process.env.DATABASE_URL ||
+    process.env.SUPABASE_DATABASE_URL,
   );
 }
 
@@ -85,7 +85,8 @@ function generateBase32Secret() {
 
   for (const byte of bytes) bits += byte.toString(2).padStart(8, "0");
   for (let index = 0; index < bits.length; index += 5) {
-    secret += BASE32_ALPHABET[parseInt(bits.slice(index, index + 5).padEnd(5, "0"), 2)];
+    secret +=
+      BASE32_ALPHABET[parseInt(bits.slice(index, index + 5).padEnd(5, "0"), 2)];
   }
 
   return secret;
@@ -117,7 +118,10 @@ function verifyTotp(secret, code) {
 }
 
 function signPayload(payload, secret) {
-  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  return crypto
+    .createHmac("sha256", secret)
+    .update(payload)
+    .digest("base64url");
 }
 
 function createSignedToken(c, data, durationSeconds) {
@@ -240,7 +244,9 @@ async function updateAdminTotpSecret(c, username, totpSecret) {
 function verifyPassword(password, passwordHash) {
   const [salt, expectedHash] = String(passwordHash || "").split(":");
   if (!salt || !expectedHash) return false;
-  const actualHash = crypto.scryptSync(String(password || ""), salt, 64).toString("hex");
+  const actualHash = crypto
+    .scryptSync(String(password || ""), salt, 64)
+    .toString("hex");
   return safeCompare(actualHash, expectedHash);
 }
 
@@ -251,7 +257,11 @@ function createOtpAuthUrl(username, secret) {
 }
 
 export function createAdminSession(c, username) {
-  return createSignedToken(c, { type: "admin_session", sub: username }, SESSION_DURATION_SECONDS);
+  return createSignedToken(
+    c,
+    { type: "admin_session", sub: username },
+    SESSION_DURATION_SECONDS,
+  );
 }
 
 export function verifyAdminSession(c, token) {

@@ -74,9 +74,7 @@ export default function Hero() {
           <img
             src="/images/hero-logo.webp"
             alt="Lucas & Andressa"
-            className={cn(
-              "mx-auto block w-full max-w-[310px] object-contain",
-            )}
+            className={cn("mx-auto block w-full max-w-[310px] object-contain")}
           />
           <p
             className={cn(
@@ -162,15 +160,17 @@ export default function Hero() {
               >
                 Save the Date
               </span>
-              <span className={cn("mt-1 text-[10px] font-semibold tracking-[0.08em]")}>
+              <span
+                className={cn(
+                  "mt-1 text-[10px] font-semibold tracking-[0.08em]",
+                )}
+              >
                 14/11/26
               </span>
             </div>
           </div>
           <div
-            className={cn(
-              "mt-4 flex items-center justify-center gap-1.5",
-            )}
+            className={cn("mt-4 flex items-center justify-center gap-1.5")}
             aria-hidden="true"
           >
             {heroSlides.map((slide, index) => (

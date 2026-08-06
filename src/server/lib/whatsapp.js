@@ -11,11 +11,17 @@ import { getDbClient } from "./db-client.js";
  * @param {string} payload.phone - Phone number of the guest
  * @param {string} payload.attendance - Attendance status ('ATTENDING' or 'NOT_ATTENDING')
  */
-export async function triggerWhatsAppNotification(c, { invitationUid, guestName, phone, attendance, existingLogId = null }) {
-  const webhookUrl = c.env?.N8N_WHATSAPP_WEBHOOK_URL || process.env.N8N_WHATSAPP_WEBHOOK_URL;
+export async function triggerWhatsAppNotification(
+  c,
+  { invitationUid, guestName, phone, attendance, existingLogId = null },
+) {
+  const webhookUrl =
+    c.env?.N8N_WHATSAPP_WEBHOOK_URL || process.env.N8N_WHATSAPP_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    console.warn("[WhatsApp] Webhook URL (N8N_WHATSAPP_WEBHOOK_URL) is not defined in environment variables. Skipping dispatch.");
+    console.warn(
+      "[WhatsApp] Webhook URL (N8N_WHATSAPP_WEBHOOK_URL) is not defined in environment variables. Skipping dispatch.",
+    );
     return;
   }
 
@@ -31,19 +37,29 @@ export async function triggerWhatsAppNotification(c, { invitationUid, guestName,
                 response_body = $2,
                 updated_at = CURRENT_TIMESTAMP
           WHERE id = $3`,
-        ["triggered", "Webhook retry initiated", logId]
+        ["triggered", "Webhook retry initiated", logId],
       );
     } else {
       const logResult = await pool.query(
         `INSERT INTO whatsapp_logs (invitation_uid, guest_name, phone, attendance, status, response_body)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id`,
-        [invitationUid, guestName, phone, attendance, "triggered", "Webhook request initiated"]
+        [
+          invitationUid,
+          guestName,
+          phone,
+          attendance,
+          "triggered",
+          "Webhook request initiated",
+        ],
       );
       logId = logResult.rows[0]?.id;
     }
   } catch (dbError) {
-    console.error("[WhatsApp] Failed to write/update initial log entry:", dbError.message);
+    console.error(
+      "[WhatsApp] Failed to write/update initial log entry:",
+      dbError.message,
+    );
   }
 
   // 2. Perform the fetch request to the n8n Webhook URL
@@ -74,7 +90,7 @@ export async function triggerWhatsAppNotification(c, { invitationUid, guestName,
                 response_body = $2,
                 updated_at = CURRENT_TIMESTAMP
           WHERE id = $3`,
-        [status, responseDetails, logId]
+        [status, responseDetails, logId],
       );
     }
   } catch (fetchError) {
@@ -89,10 +105,13 @@ export async function triggerWhatsAppNotification(c, { invitationUid, guestName,
                   response_body = $2,
                   updated_at = CURRENT_TIMESTAMP
             WHERE id = $3`,
-          ["failed", `Fetch Error: ${fetchError.message}`, logId]
+          ["failed", `Fetch Error: ${fetchError.message}`, logId],
         );
       } catch (dbError) {
-        console.error("[WhatsApp] Failed to update failed log status:", dbError.message);
+        console.error(
+          "[WhatsApp] Failed to update failed log status:",
+          dbError.message,
+        );
       }
     }
   }

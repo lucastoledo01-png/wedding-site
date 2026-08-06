@@ -21,7 +21,12 @@ const baseMenuItems = [
     href: "#gifts",
     id: "gifts",
   },
-  { icon: MessageCircleHeart, label: "Mensagens", href: "#wishes", id: "wishes" },
+  {
+    icon: MessageCircleHeart,
+    label: "Mensagens",
+    href: "#wishes",
+    id: "wishes",
+  },
 ];
 
 /**

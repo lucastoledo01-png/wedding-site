@@ -2,15 +2,14 @@ import { useConfig } from "@/features/invitation/hooks/use-config";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Heart } from "lucide-react";
-import {
-  useMotionPreset,
-  staggerContainer,
-} from "@/lib/motion";
+import { useMotionPreset, staggerContainer } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { getCountdownTimeLeft } from "@/lib/countdown";
 
 function Countdown({ date, time }) {
-  const [timeLeft, setTimeLeft] = useState(() => getCountdownTimeLeft(date, time));
+  const [timeLeft, setTimeLeft] = useState(() =>
+    getCountdownTimeLeft(date, time),
+  );
   const isFinished = Object.values(timeLeft).every((value) => value === 0);
 
   useEffect(() => {
@@ -22,17 +21,23 @@ function Countdown({ date, time }) {
   }, [date, time]);
 
   return (
-    <div className={cn("w-full max-w-[350px] rounded-[30px] border border-white/35 bg-white/15 px-4 py-3 shadow-[0_14px_48px_rgba(80,45,55,0.09)] backdrop-blur-[22px]")}>
-      <div className={cn("mx-auto mb-3 flex w-28 items-center justify-center gap-3")}>
+    <div
+      className={cn(
+        "w-full max-w-[350px] rounded-[30px] border border-white/35 bg-white/15 px-4 py-3 shadow-[0_14px_48px_rgba(80,45,55,0.09)] backdrop-blur-[22px]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto mb-3 flex w-28 items-center justify-center gap-3",
+        )}
+      >
         <span className={cn("h-px flex-1 bg-[#262626]/10")} />
         <Heart className={cn("h-4 w-4 fill-[#ff4582] text-[#ff4582]")} />
         <span className={cn("h-px flex-1 bg-[#262626]/10")} />
       </div>
       {isFinished ? (
         <p
-          className={cn(
-            "pb-2 text-center text-xl font-medium text-[#ff4582]",
-          )}
+          className={cn("pb-2 text-center text-xl font-medium text-[#ff4582]")}
         >
           Chegou a hora! 🎉
         </p>
@@ -45,7 +50,11 @@ function Countdown({ date, time }) {
                 "relative text-center after:absolute after:right-0 after:top-1/2 after:h-7 after:w-px after:-translate-y-1/2 after:bg-[#262626]/10 last:after:hidden",
               )}
             >
-              <p className={cn("text-2xl font-light leading-none tabular-nums text-[#ff4582]")}>
+              <p
+                className={cn(
+                  "text-2xl font-light leading-none tabular-nums text-[#ff4582]",
+                )}
+              >
                 {String(value).padStart(2, "0")}
               </p>
               <p
@@ -130,11 +139,7 @@ const LandingPage = ({ onOpenInvitation }) => {
                 "group mx-auto flex cursor-pointer items-center rounded-full border border-transparent bg-[#ff4582] px-6 py-2 text-[14px] font-medium text-white transition-colors duration-200 hover:bg-[#f73576] active:scale-95",
               )}
             >
-              <span
-                className={cn(
-                  "flex items-center justify-center",
-                )}
-              >
+              <span className={cn("flex items-center justify-center")}>
                 <span>Abrir convite</span>
                 <ArrowRight
                   className={cn(

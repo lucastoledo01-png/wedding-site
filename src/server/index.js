@@ -98,31 +98,35 @@ api.get("/temp-update-music", async (c) => {
     const pool = await getDbClient(c);
     const audioData = JSON.stringify({
       src: "",
-      soundcloudUrl: "/audio/a_hora_e_agora.MP3, /audio/os_anjos_cantam_nosso_amor.MP3",
+      soundcloudUrl:
+        "/audio/a_hora_e_agora.MP3, /audio/os_anjos_cantam_nosso_amor.MP3",
       title: "A Hora é Agora, Os Anjos Cantam Nosso Amor",
       autoplay: true,
-      loop: true
+      loop: true,
     });
-    
+
     const result = await pool.query(
       `UPDATE invitations 
           SET audio = $1::jsonb 
         WHERE uid = 'lucas-andressa' 
     RETURNING uid, audio`,
-      [audioData]
+      [audioData],
     );
 
     return c.json({
       success: true,
       message: "Database audio configurations updated successfully!",
-      rows: result.rows
+      rows: result.rows,
     });
   } catch (error) {
     console.error("Temp update error:", error);
-    return c.json({
-      success: false,
-      error: error.message
-    }, 500);
+    return c.json(
+      {
+        success: false,
+        error: error.message,
+      },
+      500,
+    );
   }
 });
 

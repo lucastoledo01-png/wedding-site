@@ -29,10 +29,14 @@ const Layout = ({ children, audioControls, currentTrackIndex = 0 }) => {
 
   const trackTitles = useMemo(() => {
     const titleStr = config.audio?.title || "Background Music";
-    return titleStr.split(",").map((s) => s.trim()).filter(Boolean);
+    return titleStr
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }, [config.audio?.title]);
 
-  const currentTitle = trackTitles[currentTrackIndex] || trackTitles[0] || "Background Music";
+  const currentTitle =
+    trackTitles[currentTrackIndex] || trackTitles[0] || "Background Music";
 
   // Show toast when audio starts playing
   useEffect(() => {
@@ -69,8 +73,6 @@ const Layout = ({ children, audioControls, currentTrackIndex = 0 }) => {
         initial="hidden"
         animate="visible"
       >
-
-
         {!soundCloudUrl && toggle && (
           <motion.button
             variants={scaleIn}

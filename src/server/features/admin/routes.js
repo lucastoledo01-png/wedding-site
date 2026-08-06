@@ -88,19 +88,24 @@ adminRoutes.post("/auth/activate-2fa", async (c) => {
 });
 
 adminRoutes.get("/auth/session", async (c) => {
-  const token = c.req.header("x-admin-session") || c.req.header("x-admin-token");
+  const token =
+    c.req.header("x-admin-session") || c.req.header("x-admin-token");
   return c.json({ success: true, authenticated: verifyAdminSession(c, token) });
 });
 
 adminRoutes.use("*", async (c, next) => {
-  const sessionToken = c.req.header("x-admin-session") || c.req.header("x-admin-token");
+  const sessionToken =
+    c.req.header("x-admin-session") || c.req.header("x-admin-token");
 
   if (verifyAdminSession(c, sessionToken)) {
     await next();
     return;
   }
 
-  return c.json({ success: false, error: "Sessao administrativa expirada." }, 401);
+  return c.json(
+    { success: false, error: "Sessao administrativa expirada." },
+    401,
+  );
 });
 
 adminRoutes.get("/:uid/guests", async (c) => {
@@ -181,7 +186,10 @@ adminRoutes.post("/:uid/guests/import", async (c) => {
   const pool = await getDbClient(c);
   const imported = [];
   for (const name of names) {
-    const guest = await createGuest(pool, uid, { fullName: name, partySize: 1 });
+    const guest = await createGuest(pool, uid, {
+      fullName: name,
+      partySize: 1,
+    });
     imported.push(guest);
 
     try {
@@ -234,7 +242,10 @@ adminRoutes.delete("/:uid/guests/:id", async (c) => {
   const uid = c.req.param("uid");
   const id = c.req.param("id");
   const pool = await getDbClient(c);
-  await pool.query("DELETE FROM guests WHERE id = $1 AND invitation_uid = $2", [id, uid]);
+  await pool.query("DELETE FROM guests WHERE id = $1 AND invitation_uid = $2", [
+    id,
+    uid,
+  ]);
   return c.json({ success: true });
 });
 
@@ -247,7 +258,10 @@ adminRoutes.get("/:uid/gifts", async (c) => {
 adminRoutes.post("/:uid/gifts", async (c) => {
   const uid = c.req.param("uid");
   const pool = await getDbClient(c);
-  return c.json({ success: true, data: await upsertGift(pool, uid, await c.req.json()) }, 201);
+  return c.json(
+    { success: true, data: await upsertGift(pool, uid, await c.req.json()) },
+    201,
+  );
 });
 
 adminRoutes.post("/:uid/gifts/reorder", async (c) => {
@@ -265,7 +279,10 @@ adminRoutes.patch("/:uid/gifts/:id", async (c) => {
   const pool = await getDbClient(c);
   return c.json({
     success: true,
-    data: await upsertGift(pool, uid, { ...(await c.req.json()), id: c.req.param("id") }),
+    data: await upsertGift(pool, uid, {
+      ...(await c.req.json()),
+      id: c.req.param("id"),
+    }),
   });
 });
 
@@ -279,11 +296,17 @@ adminRoutes.delete("/:uid/gifts/:id", async (c) => {
   );
   if (gift.rows[0]?.url === PIX_GIFT_URL) {
     return c.json(
-      { success: false, error: "O presente Pix pode ser ocultado, mas não removido." },
+      {
+        success: false,
+        error: "O presente Pix pode ser ocultado, mas não removido.",
+      },
       400,
     );
   }
-  await pool.query("DELETE FROM gift_products WHERE id = $1 AND invitation_uid = $2", [id, uid]);
+  await pool.query(
+    "DELETE FROM gift_products WHERE id = $1 AND invitation_uid = $2",
+    [id, uid],
+  );
   return c.json({ success: true });
 });
 
@@ -292,7 +315,10 @@ adminRoutes.post("/:uid/gifts/upload", async (c) => {
   const file = body.image;
 
   if (!(file instanceof File)) {
-    return c.json({ success: false, error: "Envie uma imagem do produto." }, 400);
+    return c.json(
+      { success: false, error: "Envie uma imagem do produto." },
+      400,
+    );
   }
 
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
@@ -366,7 +392,10 @@ adminRoutes.post("/:uid/blocked-ips", async (c) => {
   const reason = String(body.reason || "Bloqueado pelo painel").trim();
 
   if (!ipAddress) {
-    return c.json({ success: false, error: "Informe o IP para bloquear." }, 400);
+    return c.json(
+      { success: false, error: "Informe o IP para bloquear." },
+      400,
+    );
   }
 
   const pool = await getDbClient(c);
@@ -418,7 +447,7 @@ adminRoutes.post("/:uid/whatsapp-logs/retry/:id", async (c) => {
     `SELECT id, guest_name, phone, attendance
        FROM whatsapp_logs
       WHERE id = $1 AND invitation_uid = $2`,
-    [id, uid]
+    [id, uid],
   );
 
   const logEntry = logResult.rows[0];

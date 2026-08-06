@@ -8,4 +8,3 @@ const contents = `import "../src/server/server.js";
 
 await mkdir(dirname(entryPath), { recursive: true });
 await writeFile(entryPath, contents, "utf8");
-

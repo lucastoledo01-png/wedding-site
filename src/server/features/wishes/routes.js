@@ -8,17 +8,24 @@ import { zValidator } from "@hono/zod-validator";
 import { createWishSchema, wishesQuerySchema } from "./wishes.schema.js";
 import { getDbClient } from "../../lib/db-client.js";
 import { NotFoundError, ConflictError } from "../../lib/errors.js";
-import { ensureIpAllowed, getClientIp, getDevice } from "../../lib/request-metadata.js";
+import {
+  ensureIpAllowed,
+  getClientIp,
+  getDevice,
+} from "../../lib/request-metadata.js";
 
 const wishesRoutes = new Hono();
 
 async function verifyEnterpriseRecaptcha(c, token, action) {
   const apiKey =
-    c.env?.RECAPTCHA_ENTERPRISE_API_KEY || process.env.RECAPTCHA_ENTERPRISE_API_KEY;
+    c.env?.RECAPTCHA_ENTERPRISE_API_KEY ||
+    process.env.RECAPTCHA_ENTERPRISE_API_KEY;
   const projectId =
-    c.env?.RECAPTCHA_ENTERPRISE_PROJECT_ID || process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID;
+    c.env?.RECAPTCHA_ENTERPRISE_PROJECT_ID ||
+    process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID;
   const siteKey =
-    c.env?.RECAPTCHA_ENTERPRISE_SITE_KEY || process.env.RECAPTCHA_ENTERPRISE_SITE_KEY;
+    c.env?.RECAPTCHA_ENTERPRISE_SITE_KEY ||
+    process.env.RECAPTCHA_ENTERPRISE_SITE_KEY;
   const expectedAction =
     c.env?.RECAPTCHA_ENTERPRISE_ACTION ||
     process.env.RECAPTCHA_ENTERPRISE_ACTION ||
@@ -71,7 +78,8 @@ async function verifyRecaptcha(c, token, action) {
     return enterpriseResult;
   }
 
-  const secret = c.env?.RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY;
+  const secret =
+    c.env?.RECAPTCHA_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY;
 
   if (!secret) {
     return true;
@@ -81,14 +89,17 @@ async function verifyRecaptcha(c, token, action) {
     return false;
   }
 
-  const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      secret,
-      response: token,
-    }),
-  });
+  const response = await fetch(
+    "https://www.google.com/recaptcha/api/siteverify",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret,
+        response: token,
+      }),
+    },
+  );
   const data = await response.json();
 
   return Boolean(data.success);

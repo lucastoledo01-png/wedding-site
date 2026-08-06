@@ -137,7 +137,8 @@ export async function searchGuest(uid, name) {
   url.searchParams.set("name", name);
   const response = await fetch(url);
   const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "Não foi possível buscar o convidado");
+  if (!response.ok)
+    throw new Error(data.error || "Não foi possível buscar o convidado");
   return data;
 }
 
@@ -149,7 +150,9 @@ export async function confirmPresence(uid, payload) {
   });
   const data = await readJsonResponse(response);
   if (!response.ok) {
-    const error = new Error(data.error || "Não foi possível confirmar presença");
+    const error = new Error(
+      data.error || "Não foi possível confirmar presença",
+    );
     error.suggestions = data.suggestions || [];
     throw error;
   }
@@ -159,7 +162,8 @@ export async function confirmPresence(uid, payload) {
 export async function fetchGiftProducts(uid) {
   const response = await fetch(apiUrl(`/api/${uid}/gifts`));
   const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "Não foi possível carregar presentes");
+  if (!response.ok)
+    throw new Error(data.error || "Não foi possível carregar presentes");
   return data;
 }
 
@@ -169,7 +173,8 @@ export async function createGiftCheckout(uid, giftId) {
     headers: { "Content-Type": "application/json" },
   });
   const data = await readJsonResponse(response);
-  if (!response.ok) throw new Error(data.error || "Não foi possível iniciar o pagamento");
+  if (!response.ok)
+    throw new Error(data.error || "Não foi possível iniciar o pagamento");
   return data;
 }
 
@@ -187,7 +192,8 @@ export async function adminLogin(payload) {
     body: JSON.stringify(payload),
   });
   const data = await readJsonResponse(response);
-  if (!response.ok || !data.success) throw new Error(data.error || "Não foi possível entrar no painel");
+  if (!response.ok || !data.success)
+    throw new Error(data.error || "Não foi possível entrar no painel");
   return data;
 }
 
@@ -198,7 +204,8 @@ export async function adminActivateTwoFactor(payload) {
     body: JSON.stringify(payload),
   });
   const data = await readJsonResponse(response);
-  if (!response.ok || !data.success) throw new Error(data.error || "Não foi possível ativar o 2FA");
+  if (!response.ok || !data.success)
+    throw new Error(data.error || "Não foi possível ativar o 2FA");
   return data;
 }
 
@@ -213,6 +220,7 @@ export async function adminRequest(path, token, options = {}) {
     },
   });
   const data = await readJsonResponse(response);
-  if (!response.ok || !data.success) throw new Error(data.error || "Erro administrativo");
+  if (!response.ok || !data.success)
+    throw new Error(data.error || "Erro administrativo");
   return data;
 }

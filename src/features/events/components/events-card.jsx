@@ -56,9 +56,7 @@ const Modal = ({ isOpen, onClose, children }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={cn(
-              "relative z-10 w-full max-w-sm",
-            )}
+            className={cn("relative z-10 w-full max-w-sm")}
           >
             <div
               className={cn(

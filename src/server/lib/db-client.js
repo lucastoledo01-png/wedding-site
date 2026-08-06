@@ -29,7 +29,7 @@ function shouldUseFileDb(connectionString) {
 
   return (
     (!connectionString && !isProduction) ||
-    connectionString.includes("username:password@localhost") ||
+    Boolean(connectionString?.includes("username:password@localhost")) ||
     process.env.USE_FILE_DB === "true"
   );
 }
@@ -167,7 +167,9 @@ function createFileDbClient() {
           };
         }
 
-        if (compactSql.startsWith("SELECT uid FROM invitations WHERE uid = $1")) {
+        if (
+          compactSql.startsWith("SELECT uid FROM invitations WHERE uid = $1")
+        ) {
           return {
             rows: store.invitations
               .filter((item) => item.uid === uid)
@@ -180,15 +182,25 @@ function createFileDbClient() {
             rows: store.agenda
               .filter((item) => item.invitation_uid === uid)
               .sort((a, b) => a.order_index - b.order_index)
-              .map(({ id, title, date, start_time, end_time, location, address }) => ({
-                id,
-                title,
-                date,
-                start_time,
-                end_time,
-                location,
-                address,
-              })),
+              .map(
+                ({
+                  id,
+                  title,
+                  date,
+                  start_time,
+                  end_time,
+                  location,
+                  address,
+                }) => ({
+                  id,
+                  title,
+                  date,
+                  start_time,
+                  end_time,
+                  location,
+                  address,
+                }),
+              ),
           };
         }
 
@@ -209,7 +221,10 @@ function createFileDbClient() {
         if (compactSql.includes("FROM hero_slides WHERE invitation_uid = $1")) {
           return {
             rows: (store.hero_slides || [])
-              .filter((item) => item.invitation_uid === uid && item.is_active !== false)
+              .filter(
+                (item) =>
+                  item.invitation_uid === uid && item.is_active !== false,
+              )
               .sort((a, b) => a.sort_order - b.sort_order)
               .map(({ id, image_url, alt_text, sort_order }) => ({
                 id,
@@ -220,7 +235,10 @@ function createFileDbClient() {
           };
         }
 
-        if (compactSql.includes("FROM guests") && compactSql.includes("WHERE invitation_uid = $1")) {
+        if (
+          compactSql.includes("FROM guests") &&
+          compactSql.includes("WHERE invitation_uid = $1")
+        ) {
           let rows = store.guests.filter((item) => item.invitation_uid === uid);
           let nextParamIndex = 1;
 
@@ -243,14 +261,18 @@ function createFileDbClient() {
           if (compactSql.includes("confirmed_at >=")) {
             const from = new Date(params[nextParamIndex++]).getTime();
             rows = rows.filter(
-              (item) => item.confirmed_at && new Date(item.confirmed_at).getTime() >= from,
+              (item) =>
+                item.confirmed_at &&
+                new Date(item.confirmed_at).getTime() >= from,
             );
           }
 
           if (compactSql.includes("confirmed_at <=")) {
             const to = new Date(params[nextParamIndex++]).getTime();
             rows = rows.filter(
-              (item) => item.confirmed_at && new Date(item.confirmed_at).getTime() <= to,
+              (item) =>
+                item.confirmed_at &&
+                new Date(item.confirmed_at).getTime() <= to,
             );
           }
 
@@ -304,22 +326,32 @@ function createFileDbClient() {
           const guestId = Number(isAdminPatch ? params[5] : params[3]);
           const invitationUid = isAdminPatch ? params[6] : params[4];
           const guest = store.guests.find(
-            (item) => item.id === guestId && item.invitation_uid === invitationUid,
+            (item) =>
+              item.id === guestId && item.invitation_uid === invitationUid,
           );
 
           if (!guest) return { rows: [] };
 
           if (isAdminPatch) {
-            const [fullName, normalizedName, partySize, attendance, message] = params;
+            const [fullName, normalizedName, partySize, attendance, message] =
+              params;
             if (fullName) guest.full_name = fullName;
             if (normalizedName) guest.normalized_name = normalizedName;
             if (partySize !== null && partySize !== undefined) {
               guest.party_size = Number(partySize);
             }
             if (attendance) guest.attendance = attendance;
-            if (message !== null && message !== undefined) guest.message = message;
+            if (message !== null && message !== undefined)
+              guest.message = message;
           } else {
-            const [attendance, partySize, message, confirmedPhone, confirmedIp, confirmedDevice] = params;
+            const [
+              attendance,
+              partySize,
+              message,
+              confirmedPhone,
+              confirmedIp,
+              confirmedDevice,
+            ] = params;
             guest.attendance = attendance;
             if (partySize !== null && partySize !== undefined) {
               guest.party_size = Number(partySize);
@@ -338,29 +370,48 @@ function createFileDbClient() {
         if (compactSql.startsWith("DELETE FROM guests")) {
           const [id, invitationUid] = params;
           store.guests = store.guests.filter(
-            (item) => !(item.id === Number(id) && item.invitation_uid === invitationUid),
+            (item) =>
+              !(
+                item.id === Number(id) && item.invitation_uid === invitationUid
+              ),
           );
           return { rows: [] };
         }
 
-        if (compactSql.includes("COUNT(*) FILTER") && compactSql.includes("FROM guests")) {
-          const guests = store.guests.filter((item) => item.invitation_uid === uid);
+        if (
+          compactSql.includes("COUNT(*) FILTER") &&
+          compactSql.includes("FROM guests")
+        ) {
+          const guests = store.guests.filter(
+            (item) => item.invitation_uid === uid,
+          );
           return {
             rows: [
               {
                 total: guests.length,
-                attending: guests.filter((item) => item.attendance === "ATTENDING").length,
-                not_attending: guests.filter((item) => item.attendance === "NOT_ATTENDING").length,
-                pending: guests.filter((item) => item.attendance === "PENDING").length,
+                attending: guests.filter(
+                  (item) => item.attendance === "ATTENDING",
+                ).length,
+                not_attending: guests.filter(
+                  (item) => item.attendance === "NOT_ATTENDING",
+                ).length,
+                pending: guests.filter((item) => item.attendance === "PENDING")
+                  .length,
                 people_confirmed: guests
                   .filter((item) => item.attendance === "ATTENDING")
-                  .reduce((total, item) => total + Number(item.party_size || 1), 0),
+                  .reduce(
+                    (total, item) => total + Number(item.party_size || 1),
+                    0,
+                  ),
               },
             ],
           };
         }
 
-        if (compactSql.includes("FROM wishes") && compactSql.includes("ORDER BY created_at DESC")) {
+        if (
+          compactSql.includes("FROM wishes") &&
+          compactSql.includes("ORDER BY created_at DESC")
+        ) {
           const [invitationUid, limit = 50, offset = 0] = params;
           return {
             rows: store.wishes
@@ -376,7 +427,8 @@ function createFileDbClient() {
             rows: [
               {
                 count: String(
-                  store.wishes.filter((item) => item.invitation_uid === uid).length,
+                  store.wishes.filter((item) => item.invitation_uid === uid)
+                    .length,
                 ),
               },
             ],
@@ -388,7 +440,8 @@ function createFileDbClient() {
           return {
             rows: store.wishes
               .filter(
-                (item) => item.invitation_uid === invitationUid && item.name === name,
+                (item) =>
+                  item.invitation_uid === invitationUid && item.name === name,
               )
               .map((item) => ({ id: item.id })),
           };
@@ -405,25 +458,48 @@ function createFileDbClient() {
             created_at: nowIso(),
           };
           store.wishes.push(wish);
-          return { rows: [{ id: wish.id, name, message, attendance, created_at: wish.created_at }] };
+          return {
+            rows: [
+              {
+                id: wish.id,
+                name,
+                message,
+                attendance,
+                created_at: wish.created_at,
+              },
+            ],
+          };
         }
 
         if (compactSql.startsWith("DELETE FROM wishes")) {
           const [id, invitationUid] = params;
           store.wishes = store.wishes.filter(
-            (item) => !(item.id === Number(id) && item.invitation_uid === invitationUid),
+            (item) =>
+              !(
+                item.id === Number(id) && item.invitation_uid === invitationUid
+              ),
           );
           return { rows: [] };
         }
 
-        if (compactSql.includes("COUNT(*) FILTER") && compactSql.includes("FROM wishes")) {
-          const wishes = store.wishes.filter((item) => item.invitation_uid === uid);
+        if (
+          compactSql.includes("COUNT(*) FILTER") &&
+          compactSql.includes("FROM wishes")
+        ) {
+          const wishes = store.wishes.filter(
+            (item) => item.invitation_uid === uid,
+          );
           return {
             rows: [
               {
-                attending: wishes.filter((item) => item.attendance === "ATTENDING").length,
-                not_attending: wishes.filter((item) => item.attendance === "NOT_ATTENDING").length,
-                maybe: wishes.filter((item) => item.attendance === "MAYBE").length,
+                attending: wishes.filter(
+                  (item) => item.attendance === "ATTENDING",
+                ).length,
+                not_attending: wishes.filter(
+                  (item) => item.attendance === "NOT_ATTENDING",
+                ).length,
+                maybe: wishes.filter((item) => item.attendance === "MAYBE")
+                  .length,
                 total: wishes.length,
               },
             ],
@@ -435,7 +511,8 @@ function createFileDbClient() {
           return {
             rows: store.gift_products
               .filter(
-                (item) => item.invitation_uid === invitationUid && item.url === url,
+                (item) =>
+                  item.invitation_uid === invitationUid && item.url === url,
               )
               .slice(0, 1)
               .map((item) => ({ id: item.id })),
@@ -446,13 +523,22 @@ function createFileDbClient() {
           const [id, invitationUid] = params;
           return {
             rows: store.gift_products
-              .filter((item) => item.id === Number(id) && item.invitation_uid === invitationUid)
+              .filter(
+                (item) =>
+                  item.id === Number(id) &&
+                  item.invitation_uid === invitationUid,
+              )
               .map((item) => ({ url: item.url })),
           };
         }
 
-        if (compactSql.includes("COALESCE(MAX(sort_order)") && compactSql.includes("FROM gift_products")) {
-          const gifts = store.gift_products.filter((item) => item.invitation_uid === uid);
+        if (
+          compactSql.includes("COALESCE(MAX(sort_order)") &&
+          compactSql.includes("FROM gift_products")
+        ) {
+          const gifts = store.gift_products.filter(
+            (item) => item.invitation_uid === uid,
+          );
           const maxOrder = gifts.reduce(
             (max, item) => Math.max(max, Number(item.sort_order ?? -1)),
             -1,
@@ -469,10 +555,14 @@ function createFileDbClient() {
                   item.invitation_uid === uid &&
                   (includeInactive || item.is_active !== false),
               )
-              .map((item) => ({ ...item, category: item.category || "Presentes" }))
+              .map((item) => ({
+                ...item,
+                category: item.category || "Presentes",
+              }))
               .sort(
                 (a, b) =>
-                  Number(a.is_received || false) - Number(b.is_received || false) ||
+                  Number(a.is_received || false) -
+                    Number(b.is_received || false) ||
                   Number(a.sort_order || 0) - Number(b.sort_order || 0) ||
                   new Date(b.created_at) - new Date(a.created_at),
               ),
@@ -499,7 +589,9 @@ function createFileDbClient() {
             name,
             image_url: imageUrl,
             price,
-            category: isEnsurePixInsert ? categoryOrIsActive : categoryOrIsActive || "Presentes",
+            category: isEnsurePixInsert
+              ? categoryOrIsActive
+              : categoryOrIsActive || "Presentes",
             is_active: isEnsurePixInsert ? true : isActiveOrSortOrder,
             is_received: isEnsurePixInsert ? false : isReceived,
             sort_order: isEnsurePixInsert ? isActiveOrSortOrder : sortOrder,
@@ -510,7 +602,10 @@ function createFileDbClient() {
           return { rows: [gift] };
         }
 
-        if (compactSql.startsWith("UPDATE gift_products") && compactSql.includes("CASE id")) {
+        if (
+          compactSql.startsWith("UPDATE gift_products") &&
+          compactSql.includes("CASE id")
+        ) {
           const giftIds = params.slice(1).map(Number);
           for (const gift of store.gift_products) {
             if (gift.invitation_uid === uid) {
@@ -522,9 +617,21 @@ function createFileDbClient() {
         }
 
         if (compactSql.startsWith("UPDATE gift_products")) {
-          const [url, name, imageUrl, price, category, isActive, isReceived, sortOrder, id, invitationUid] = params;
+          const [
+            url,
+            name,
+            imageUrl,
+            price,
+            category,
+            isActive,
+            isReceived,
+            sortOrder,
+            id,
+            invitationUid,
+          ] = params;
           const gift = store.gift_products.find(
-            (item) => item.id === Number(id) && item.invitation_uid === invitationUid,
+            (item) =>
+              item.id === Number(id) && item.invitation_uid === invitationUid,
           );
           if (!gift) return { rows: [] };
           gift.url = url;
@@ -542,7 +649,10 @@ function createFileDbClient() {
         if (compactSql.startsWith("DELETE FROM gift_products")) {
           const [id, invitationUid] = params;
           store.gift_products = store.gift_products.filter(
-            (item) => !(item.id === Number(id) && item.invitation_uid === invitationUid),
+            (item) =>
+              !(
+                item.id === Number(id) && item.invitation_uid === invitationUid
+              ),
           );
           return { rows: [] };
         }
@@ -661,7 +771,9 @@ async function ensureRuntimeSchema(pool, connectionString) {
   await pool.query(
     "CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(invitation_uid, ip_address)",
   );
-  await pool.query("CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username)");
+  await pool.query(
+    "CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username)",
+  );
 
   schemaReady.add(connectionString);
 }
@@ -705,7 +817,9 @@ export async function getDbClient(c) {
 
   const pool = new Pool({
     connectionString,
-    ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : undefined,
+    ssl: shouldUseSsl(connectionString)
+      ? { rejectUnauthorized: false }
+      : undefined,
   });
   poolCache.set(connectionString, pool);
   await ensureRuntimeSchema(pool, connectionString);

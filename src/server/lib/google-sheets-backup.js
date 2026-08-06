@@ -71,7 +71,9 @@ async function getAccessToken(serviceAccount) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error_description || data.error || "Google auth failed");
+    throw new Error(
+      data.error_description || data.error || "Google auth failed",
+    );
   }
 
   return data.access_token;
@@ -91,7 +93,8 @@ function nowSaoPaulo() {
 
 async function appendSheetRow(c, range, row) {
   const spreadsheetId = getEnv(c, "GOOGLE_SHEETS_SPREADSHEET_ID");
-  if (!spreadsheetId) return { skipped: true, reason: "missing_spreadsheet_id" };
+  if (!spreadsheetId)
+    return { skipped: true, reason: "missing_spreadsheet_id" };
 
   const serviceAccount = await loadServiceAccount(c);
   if (!serviceAccount?.client_email || !serviceAccount?.private_key) {
@@ -123,7 +126,10 @@ async function appendSheetRow(c, range, row) {
   return { success: true, data };
 }
 
-export async function appendRsvpBackup(c, { name, attendance, phone, device, ipAddress }) {
+export async function appendRsvpBackup(
+  c,
+  { name, attendance, phone, device, ipAddress },
+) {
   const range =
     getEnv(c, "GOOGLE_SHEETS_CONFIRMED_RANGE") || "'Presença Confirmada'!A:F";
 
@@ -137,7 +143,10 @@ export async function appendRsvpBackup(c, { name, attendance, phone, device, ipA
   ]);
 }
 
-export async function appendGuestListBackup(c, { name, attendance, device, ipAddress }) {
+export async function appendGuestListBackup(
+  c,
+  { name, attendance, device, ipAddress },
+) {
   const range = getEnv(c, "GOOGLE_SHEETS_TOTAL_RANGE") || "'Lista Total'!A:F";
 
   return appendSheetRow(c, range, [

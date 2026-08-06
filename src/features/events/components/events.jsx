@@ -54,8 +54,8 @@ export default function Events() {
               variants={fadeUp}
               className={cn("super-copy max-w-sm text-[1.125rem] font-medium")}
             >
-              Cada detalhe foi preparado com muito carinho para que possamos viver
-              juntos este momento tão especial.
+              Cada detalhe foi preparado com muito carinho para que possamos
+              viver juntos este momento tão especial.
             </motion.p>
           </motion.div>
 
