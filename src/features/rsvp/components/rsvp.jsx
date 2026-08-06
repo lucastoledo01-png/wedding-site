@@ -6,10 +6,10 @@ import { confirmPresence, searchGuest } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
 
-
-
 function formatPhone(value) {
-  const digits = String(value || "").replace(/\D/g, "").slice(0, 11);
+  const digits = String(value || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
   if (digits.length <= 2) return digits;
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
@@ -137,7 +137,9 @@ function ConfirmDecisionModal({
                 : "bg-emerald-500 hover:bg-emerald-600",
             )}
           >
-            {isPending ? <Loader2 className={cn("h-4 w-4 animate-spin")} /> : null}
+            {isPending ? (
+              <Loader2 className={cn("h-4 w-4 animate-spin")} />
+            ) : null}
             {isAbsence ? "Confirmar ausência" : "Sim, confirmar presença"}
           </button>
           <button
@@ -173,23 +175,37 @@ export default function Rsvp() {
   const mutation = useMutation({
     mutationFn: async () => {
       const digits = phoneDigits(phone);
-      const normalizedPhone = digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+      const normalizedPhone = digits.startsWith("55")
+        ? `+${digits}`
+        : `+55${digits}`;
 
       const searchResult = await searchGuest(uid, name);
       const match = searchResult.data?.match;
 
       if (!match) {
         throw Object.assign(
-          new Error("Este nome não está na nossa lista de convidados. Verifique se está exatamente como no convite."),
+          new Error(
+            "Este nome não está na nossa lista de convidados. Verifique se está exatamente como no convite.",
+          ),
           { type: "NOT_FOUND" },
         );
       }
 
-      if (match.attendance === "ATTENDING" || match.attendance === "NOT_ATTENDING") {
-        const label = match.attendance === "ATTENDING" ? "presença" : "ausência";
+      if (
+        match.attendance === "ATTENDING" ||
+        match.attendance === "NOT_ATTENDING"
+      ) {
+        const label =
+          match.attendance === "ATTENDING" ? "presença" : "ausência";
         throw Object.assign(
-          new Error(`${match.full_name} já confirmou ${label} no nosso casamento!`),
-          { type: "ALREADY_CONFIRMED", attendance: match.attendance, guestName: match.full_name },
+          new Error(
+            `${match.full_name} já confirmou ${label} no nosso casamento!`,
+          ),
+          {
+            type: "ALREADY_CONFIRMED",
+            attendance: match.attendance,
+            guestName: match.full_name,
+          },
         );
       }
 
@@ -219,7 +235,14 @@ export default function Rsvp() {
             particleCount: 140,
             spread: 80,
             origin: { x: 0.5, y: 0.8 },
-            colors: ["#ff4582", "#ff85a2", "#ffb3c1", "#10b981", "#34d399", "#fbbf24"],
+            colors: [
+              "#ff4582",
+              "#ff85a2",
+              "#ffb3c1",
+              "#10b981",
+              "#34d399",
+              "#fbbf24",
+            ],
             gravity: 0.9,
             ticks: 200,
           });
@@ -262,7 +285,7 @@ export default function Rsvp() {
             ? "Registramos que você não poderá ir. Obrigado por avisar."
             : "Sua presença foi confirmada com sucesso. Esperamos você!",
         });
-      } catch (err) {
+      } catch {
         setFeedback({
           type: "success",
           isAbsence: false,
@@ -287,9 +310,10 @@ export default function Rsvp() {
       if (error.type === "ALREADY_CONFIRMED") {
         setFeedback({
           type: "error",
-          title: error.attendance === "ATTENDING"
-            ? "Presença já confirmada! ✓"
-            : "Ausência já registrada",
+          title:
+            error.attendance === "ATTENDING"
+              ? "Presença já confirmada! ✓"
+              : "Ausência já registrada",
           message: error.message,
         });
         return;
@@ -314,7 +338,8 @@ export default function Rsvp() {
             if (!feedback.isAbsence) {
               setTimeout(() => {
                 const giftsSection = document.getElementById("gifts");
-                if (giftsSection) giftsSection.scrollIntoView({ behavior: "smooth" });
+                if (giftsSection)
+                  giftsSection.scrollIntoView({ behavior: "smooth" });
               }, 100);
             }
           }
@@ -333,23 +358,43 @@ export default function Rsvp() {
           mutation.mutate();
         }}
       />
-      <img src="/images/flowers.png" alt="" className={cn("pointer-events-none absolute -left-24 top-14 w-52 -rotate-12 opacity-25")} />
+      <img
+        src="/images/flowers.png"
+        alt=""
+        className={cn(
+          "pointer-events-none absolute -left-24 top-14 w-52 -rotate-12 opacity-25",
+        )}
+      />
       <div className={cn("relative z-10 mx-auto px-5 py-20")}>
         <div className={cn("space-y-5 text-center")}>
           <p className={cn("super-label")}>Confirmação</p>
-          <h2 className={cn("super-heading text-5xl")}>Confirmação de Presença</h2>
+          <h2 className={cn("super-heading text-5xl")}>
+            Confirmação de Presença
+          </h2>
         </div>
         <form
           onSubmit={(event) => {
             event.preventDefault();
             if (canOpen) setConfirmDecisionOpen(true);
           }}
-          className={cn("mt-12 grid gap-5 rounded-[24px] border border-[#262626]/10 bg-[#fdf8f3] p-5 shadow-[0_24px_70px_rgba(38,38,38,0.10)]")}
+          className={cn(
+            "mt-12 grid gap-5 rounded-[24px] border border-[#262626]/10 bg-[#fdf8f3] p-5 shadow-[0_24px_70px_rgba(38,38,38,0.10)]",
+          )}
         >
-          <label className={cn("grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]")}>
+          <label
+            className={cn(
+              "grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]",
+            )}
+          >
             <span>
               Digite abaixo o nome completo{" "}
-              <em className={cn("font-light normal-case tracking-normal text-[#262626]/55")}>(conforme está no convite)</em>
+              <em
+                className={cn(
+                  "font-light normal-case tracking-normal text-[#262626]/55",
+                )}
+              >
+                (conforme está no convite)
+              </em>
             </span>
             <div className={cn("relative")}>
               <input
@@ -359,14 +404,20 @@ export default function Rsvp() {
                   setConfirmDecisionOpen(false);
                   mutation.reset();
                 }}
-                className={cn("super-transition w-full rounded-full border border-[#262626]/10 bg-white py-4 px-5 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]")}
+                className={cn(
+                  "super-transition w-full rounded-full border border-[#262626]/10 bg-white py-4 px-5 text-base normal-case tracking-normal outline-none focus:border-[#ff4582]",
+                )}
                 placeholder="Ex.: Lucas Toledo"
                 required
               />
             </div>
           </label>
           {nameEntered && (
-            <label className={cn("grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]")}>
+            <label
+              className={cn(
+                "grid gap-2 text-sm font-medium uppercase tracking-[0.16em] text-[#262626]",
+              )}
+            >
               <span>WhatsApp</span>
               <div
                 className={cn(
@@ -391,25 +442,77 @@ export default function Rsvp() {
                   placeholder="(35) 99999-0000"
                   inputMode="tel"
                   autoComplete="tel-national"
-                  className={cn("min-w-0 bg-white py-4 px-5 text-base normal-case tracking-normal outline-none")}
+                  className={cn(
+                    "min-w-0 bg-white py-4 px-5 text-base normal-case tracking-normal outline-none",
+                  )}
                 />
               </div>
             </label>
           )}
           {phoneValid && (
-            <div className={cn("rounded-2xl border border-[#262626]/10 bg-white px-4 py-4")}>
-              <div className={cn("flex flex-wrap items-center justify-between gap-4")}>
-                <p className={cn("text-base font-medium text-[#262626]")}>Você irá ao evento?</p>
+            <div
+              className={cn(
+                "rounded-2xl border border-[#262626]/10 bg-white px-4 py-4",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex flex-wrap items-center justify-between gap-4",
+                )}
+              >
+                <p className={cn("text-base font-medium text-[#262626]")}>
+                  Você irá ao evento?
+                </p>
                 <div className={cn("flex items-center gap-5")}>
-                  <button type="button" aria-pressed={attendance === "ATTENDING"} onClick={() => setAttendance("ATTENDING")} className={cn("super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]")}>
-                    <span className={cn("grid h-7 w-7 place-items-center rounded-full border", attendance === "ATTENDING" ? "border-emerald-500 bg-emerald-50" : "border-[#262626]/35 bg-white")}>
-                      {attendance === "ATTENDING" && <span className={cn("h-2.5 w-2.5 rounded-full bg-emerald-500")} />}
+                  <button
+                    type="button"
+                    aria-pressed={attendance === "ATTENDING"}
+                    onClick={() => setAttendance("ATTENDING")}
+                    className={cn(
+                      "super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "grid h-7 w-7 place-items-center rounded-full border",
+                        attendance === "ATTENDING"
+                          ? "border-emerald-500 bg-emerald-50"
+                          : "border-[#262626]/35 bg-white",
+                      )}
+                    >
+                      {attendance === "ATTENDING" && (
+                        <span
+                          className={cn(
+                            "h-2.5 w-2.5 rounded-full bg-emerald-500",
+                          )}
+                        />
+                      )}
                     </span>
                     Sim
                   </button>
-                  <button type="button" aria-pressed={attendance === "NOT_ATTENDING"} onClick={() => setAttendance("NOT_ATTENDING")} className={cn("super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]")}>
-                    <span className={cn("grid h-7 w-7 place-items-center rounded-full border", attendance === "NOT_ATTENDING" ? "border-[#ff4582] bg-[#fff1f6]" : "border-[#262626]/35 bg-white")}>
-                      {attendance === "NOT_ATTENDING" && <span className={cn("h-2.5 w-2.5 rounded-full bg-[#ff4582]")} />}
+                  <button
+                    type="button"
+                    aria-pressed={attendance === "NOT_ATTENDING"}
+                    onClick={() => setAttendance("NOT_ATTENDING")}
+                    className={cn(
+                      "super-transition inline-flex items-center gap-2 text-base font-medium text-[#262626]",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "grid h-7 w-7 place-items-center rounded-full border",
+                        attendance === "NOT_ATTENDING"
+                          ? "border-[#ff4582] bg-[#fff1f6]"
+                          : "border-[#262626]/35 bg-white",
+                      )}
+                    >
+                      {attendance === "NOT_ATTENDING" && (
+                        <span
+                          className={cn(
+                            "h-2.5 w-2.5 rounded-full bg-[#ff4582]",
+                          )}
+                        />
+                      )}
                     </span>
                     Não
                   </button>
@@ -424,14 +527,25 @@ export default function Rsvp() {
               event.preventDefault();
               if (canOpen) setConfirmDecisionOpen(true);
             }}
-            className={cn("super-transition flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 font-medium uppercase tracking-[0.18em] text-white shadow-lg hover:bg-[#ff4582] hover:text-[#262626] disabled:cursor-not-allowed disabled:opacity-60")}
+            className={cn(
+              "super-transition flex items-center justify-center gap-2 rounded-full bg-[#262626] px-5 py-4 font-medium uppercase tracking-[0.18em] text-white shadow-lg hover:bg-[#ff4582] hover:text-[#262626] disabled:cursor-not-allowed disabled:opacity-60",
+            )}
           >
-            {mutation.isPending ? <Loader2 className={cn("h-4 w-4 animate-spin")} /> : <UserCheck className={cn("h-4 w-4")} />}
+            {mutation.isPending ? (
+              <Loader2 className={cn("h-4 w-4 animate-spin")} />
+            ) : (
+              <UserCheck className={cn("h-4 w-4")} />
+            )}
             Confirmar!
           </button>
         </form>
       </div>
-      <canvas ref={canvasRef} className={cn("pointer-events-none fixed inset-0 z-[100000] h-full w-full")} />
+      <canvas
+        ref={canvasRef}
+        className={cn(
+          "pointer-events-none fixed inset-0 z-[100000] h-full w-full",
+        )}
+      />
     </section>
   );
 }

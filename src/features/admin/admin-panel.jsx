@@ -18,7 +18,11 @@ import {
   X,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { adminActivateTwoFactor, adminLogin, adminRequest } from "@/services/api";
+import {
+  adminActivateTwoFactor,
+  adminLogin,
+  adminRequest,
+} from "@/services/api";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_UID = import.meta.env.VITE_INVITATION_UID || "lucas-andressa";
@@ -69,7 +73,11 @@ function isPixGift(gift) {
 
 function EmptyState({ children }) {
   return (
-    <div className={cn("rounded-2xl border border-dashed border-gray-200 bg-white/70 p-8 text-center text-sm text-gray-500")}>
+    <div
+      className={cn(
+        "rounded-2xl border border-dashed border-gray-200 bg-white/70 p-8 text-center text-sm text-gray-500",
+      )}
+    >
       {children}
     </div>
   );
@@ -80,12 +88,17 @@ export default function AdminPanel() {
   const giftImageInputRef = useRef(null);
   const pixQrImageInputRef = useRef(null);
   const [activePage, setActivePage] = useState(
-    getPageFromPath() || localStorage.getItem("wedding_admin_page") || "presencas",
+    getPageFromPath() ||
+      localStorage.getItem("wedding_admin_page") ||
+      "presencas",
   );
   const [session, setSession] = useState(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "null");
-      if (stored?.token && new Date(stored.expiresAt).getTime() > Date.now()) return stored;
+      const stored = JSON.parse(
+        localStorage.getItem(SESSION_STORAGE_KEY) || "null",
+      );
+      if (stored?.token && new Date(stored.expiresAt).getTime() > Date.now())
+        return stored;
     } catch {
       return null;
     }
@@ -245,11 +258,15 @@ export default function AdminPanel() {
     queryKey: ["admin-guests", uid, token, guestFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (guestFilters.search.trim()) params.set("q", guestFilters.search.trim());
-      if (guestFilters.status !== "all") params.set("status", guestFilters.status);
-      if (guestFilters.period !== "all") params.set("period", guestFilters.period);
+      if (guestFilters.search.trim())
+        params.set("q", guestFilters.search.trim());
+      if (guestFilters.status !== "all")
+        params.set("status", guestFilters.status);
+      if (guestFilters.period !== "all")
+        params.set("period", guestFilters.period);
       if (guestFilters.period === "custom") {
-        if (guestFilters.dateFrom) params.set("dateFrom", guestFilters.dateFrom);
+        if (guestFilters.dateFrom)
+          params.set("dateFrom", guestFilters.dateFrom);
         if (guestFilters.dateTo) params.set("dateTo", guestFilters.dateTo);
       }
       const query = params.toString();
@@ -261,25 +278,29 @@ export default function AdminPanel() {
 
   const giftsQuery = useQuery({
     queryKey: ["admin-gifts", uid, token],
-    queryFn: async () => (await adminRequest(`/api/admin/${uid}/gifts`, token)).data,
+    queryFn: async () =>
+      (await adminRequest(`/api/admin/${uid}/gifts`, token)).data,
     enabled: enabled && activePage === "presentes",
   });
 
   const commentsQuery = useQuery({
     queryKey: ["admin-comments", uid, token],
-    queryFn: async () => (await adminRequest(`/api/admin/${uid}/comments`, token)).data,
+    queryFn: async () =>
+      (await adminRequest(`/api/admin/${uid}/comments`, token)).data,
     enabled: enabled && activePage === "comentarios",
   });
 
   const blockedIpsQuery = useQuery({
     queryKey: ["admin-blocked-ips", uid, token],
-    queryFn: async () => (await adminRequest(`/api/admin/${uid}/blocked-ips`, token)).data,
+    queryFn: async () =>
+      (await adminRequest(`/api/admin/${uid}/blocked-ips`, token)).data,
     enabled: enabled && activePage === "comentarios",
   });
 
   const whatsappLogsQuery = useQuery({
     queryKey: ["admin-whatsapp-logs", uid, token],
-    queryFn: async () => (await adminRequest(`/api/admin/${uid}/whatsapp-logs`, token)).data,
+    queryFn: async () =>
+      (await adminRequest(`/api/admin/${uid}/whatsapp-logs`, token)).data,
     enabled: enabled && activePage === "whatsapp",
   });
 
@@ -287,8 +308,11 @@ export default function AdminPanel() {
     const guests = guestsQuery.data || [];
     return {
       total: guests.length,
-      attending: guests.filter((guest) => guest.attendance === "ATTENDING").length,
-      notAttending: guests.filter((guest) => guest.attendance === "NOT_ATTENDING").length,
+      attending: guests.filter((guest) => guest.attendance === "ATTENDING")
+        .length,
+      notAttending: guests.filter(
+        (guest) => guest.attendance === "NOT_ATTENDING",
+      ).length,
       pending: guests.filter((guest) => guest.attendance === "PENDING").length,
       people: guests
         .filter((guest) => guest.attendance === "ATTENDING")
@@ -306,13 +330,17 @@ export default function AdminPanel() {
       "Presença",
       "Data da Confirmação",
       "IP",
-      "Dispositivo"
+      "Dispositivo",
     ];
 
     const escapeCSV = (val) => {
       if (val === null || val === undefined) return "";
       const stringVal = String(val);
-      if (stringVal.includes(",") || stringVal.includes('"') || stringVal.includes("\n")) {
+      if (
+        stringVal.includes(",") ||
+        stringVal.includes('"') ||
+        stringVal.includes("\n")
+      ) {
         return `"${stringVal.replace(/"/g, '""')}"`;
       }
       return stringVal;
@@ -322,38 +350,43 @@ export default function AdminPanel() {
       const attendanceMap = {
         ATTENDING: "Confirmou presença",
         NOT_ATTENDING: "Não vai",
-        PENDING: "Pendente"
+        PENDING: "Pendente",
       };
-      
+
       return [
         guest.full_name,
         guest.confirmed_phone || "-",
         attendanceMap[guest.attendance] || guest.attendance || "Pendente",
         guest.confirmed_at ? formatDate(guest.confirmed_at) : "-",
         guest.ip_address || "-",
-        guest.device || "-"
+        guest.device || "-",
       ];
     });
 
     const csvContent = [
       headers.join(","),
-      ...rows.map((row) => row.map(escapeCSV).join(","))
+      ...rows.map((row) => row.map(escapeCSV).join(",")),
     ].join("\n");
 
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    
+
     const statusMap = {
       all: "Todos",
       yes: "Confirmados",
       no: "Ausentes",
-      pending: "Pendentes"
+      pending: "Pendentes",
     };
     const filterName = statusMap[guestFilters.status] || "Filtro";
-    
+
     link.setAttribute("href", url);
-    link.setAttribute("download", `lista_convidados_${filterName.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `lista_convidados_${filterName.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`,
+    );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -445,7 +478,8 @@ export default function AdminPanel() {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
   });
 
   const reorderGiftsMutation = useMutation({
@@ -454,25 +488,35 @@ export default function AdminPanel() {
         method: "POST",
         body: JSON.stringify({ giftIds }),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
   });
 
   const deleteGift = useMutation({
     mutationFn: (id) =>
-      adminRequest(`/api/admin/${uid}/gifts/${id}`, token, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
+      adminRequest(`/api/admin/${uid}/gifts/${id}`, token, {
+        method: "DELETE",
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin-gifts"] }),
   });
 
   const deleteGuest = useMutation({
     mutationFn: (id) =>
-      adminRequest(`/api/admin/${uid}/guests/${id}`, token, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-guests"] }),
+      adminRequest(`/api/admin/${uid}/guests/${id}`, token, {
+        method: "DELETE",
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin-guests"] }),
   });
 
   const deleteComment = useMutation({
     mutationFn: (id) =>
-      adminRequest(`/api/admin/${uid}/comments/${id}`, token, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-comments"] }),
+      adminRequest(`/api/admin/${uid}/comments/${id}`, token, {
+        method: "DELETE",
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin-comments"] }),
   });
 
   const blockIp = useMutation({
@@ -508,9 +552,21 @@ export default function AdminPanel() {
 
   if (!enabled) {
     return (
-      <main className={cn("grid min-h-screen place-items-center bg-[#fdf8f3] px-4 py-10 text-[#262626]")}>
-        <section className={cn("w-full max-w-md rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(38,38,38,0.12)]")}>
-          <p className={cn("text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4582]")}>
+      <main
+        className={cn(
+          "grid min-h-screen place-items-center bg-[#fdf8f3] px-4 py-10 text-[#262626]",
+        )}
+      >
+        <section
+          className={cn(
+            "w-full max-w-md rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(38,38,38,0.12)]",
+          )}
+        >
+          <p
+            className={cn(
+              "text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4582]",
+            )}
+          >
             Acesso seguro
           </p>
           <h1 className={cn("mt-2 text-3xl font-semibold tracking-tight")}>
@@ -521,7 +577,9 @@ export default function AdminPanel() {
             <>
               {loginStep === "credentials" ? (
                 <>
-                  <p className={cn("mt-2 text-sm leading-relaxed text-black/50")}>
+                  <p
+                    className={cn("mt-2 text-sm leading-relaxed text-black/50")}
+                  >
                     Use seu usuário e senha. Se for seu primeiro acesso, vamos
                     ativar o app autenticador antes de abrir o painel.
                   </p>
@@ -541,7 +599,9 @@ export default function AdminPanel() {
                           username: event.target.value,
                         }))
                       }
-                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                      className={cn(
+                        "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                      )}
                       placeholder="Usuário"
                       autoComplete="username"
                     />
@@ -553,13 +613,19 @@ export default function AdminPanel() {
                           password: event.target.value,
                         }))
                       }
-                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                      className={cn(
+                        "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                      )}
                       placeholder="Senha"
                       type="password"
                       autoComplete="current-password"
                     />
                     {loginMutation.isError ? (
-                      <p className={cn("rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                      <p
+                        className={cn(
+                          "rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]",
+                        )}
+                      >
                         {loginMutation.error.message}
                       </p>
                     ) : null}
@@ -570,7 +636,9 @@ export default function AdminPanel() {
                         !loginForm.username.trim() ||
                         !loginForm.password
                       }
-                      className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50")}
+                      className={cn(
+                        "inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50",
+                      )}
                     >
                       {loginMutation.isPending ? (
                         <Loader2 className={cn("h-4 w-4 animate-spin")} />
@@ -581,7 +649,9 @@ export default function AdminPanel() {
                 </>
               ) : (
                 <>
-                  <p className={cn("mt-2 text-sm leading-relaxed text-black/50")}>
+                  <p
+                    className={cn("mt-2 text-sm leading-relaxed text-black/50")}
+                  >
                     Agora informe o código de 6 dígitos do seu app autenticador.
                   </p>
 
@@ -597,24 +667,36 @@ export default function AdminPanel() {
                       onChange={(event) =>
                         setLoginForm((current) => ({
                           ...current,
-                          code: event.target.value.replace(/\D/g, "").slice(0, 6),
+                          code: event.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 6),
                         }))
                       }
-                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                      className={cn(
+                        "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                      )}
                       placeholder="Código 2FA"
                       inputMode="numeric"
                       autoComplete="one-time-code"
                       autoFocus
                     />
                     {loginMutation.isError ? (
-                      <p className={cn("rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                      <p
+                        className={cn(
+                          "rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]",
+                        )}
+                      >
                         {loginMutation.error.message}
                       </p>
                     ) : null}
                     <button
                       type="submit"
-                      disabled={loginMutation.isPending || loginForm.code.length !== 6}
-                      className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50")}
+                      disabled={
+                        loginMutation.isPending || loginForm.code.length !== 6
+                      }
+                      className={cn(
+                        "inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50",
+                      )}
                     >
                       {loginMutation.isPending ? (
                         <Loader2 className={cn("h-4 w-4 animate-spin")} />
@@ -628,7 +710,9 @@ export default function AdminPanel() {
                         setLoginForm((current) => ({ ...current, code: "" }));
                         loginMutation.reset();
                       }}
-                      className={cn("rounded-full px-5 py-3 text-sm font-semibold text-black/45 transition hover:text-[#ff4582]")}
+                      className={cn(
+                        "rounded-full px-5 py-3 text-sm font-semibold text-black/45 transition hover:text-[#ff4582]",
+                      )}
                     >
                       Voltar
                     </button>
@@ -643,16 +727,30 @@ export default function AdminPanel() {
                 Authenticator, 1Password, Authy ou iCloud Passwords e informe o
                 código de 6 dígitos gerado.
               </p>
-              <div className={cn("mt-5 rounded-3xl border border-dashed border-[#ff4582]/35 bg-[#ff4582]/5 p-4")}>
-                <p className={cn("text-[10px] font-black uppercase tracking-[0.28em] text-[#ff4582]")}>
+              <div
+                className={cn(
+                  "mt-5 rounded-3xl border border-dashed border-[#ff4582]/35 bg-[#ff4582]/5 p-4",
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-[10px] font-black uppercase tracking-[0.28em] text-[#ff4582]",
+                  )}
+                >
                   Segredo 2FA
                 </p>
-                <p className={cn("mt-2 break-all font-mono text-sm font-semibold text-[#262626]")}>
+                <p
+                  className={cn(
+                    "mt-2 break-all font-mono text-sm font-semibold text-[#262626]",
+                  )}
+                >
                   {setup.secret}
                 </p>
                 <a
                   href={setup.otpauthUrl}
-                  className={cn("mt-3 inline-flex rounded-full bg-white px-4 py-2 text-xs font-semibold text-[#ff4582]")}
+                  className={cn(
+                    "mt-3 inline-flex rounded-full bg-white px-4 py-2 text-xs font-semibold text-[#ff4582]",
+                  )}
                 >
                   Abrir no app autenticador
                 </a>
@@ -668,22 +766,34 @@ export default function AdminPanel() {
                 <input
                   value={setupCode}
                   onChange={(event) =>
-                    setSetupCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                    setSetupCode(
+                      event.target.value.replace(/\D/g, "").slice(0, 6),
+                    )
                   }
-                  className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                  className={cn(
+                    "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
                   placeholder="Código 2FA"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                 />
                 {activateTwoFactor.isError ? (
-                  <p className={cn("rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                  <p
+                    className={cn(
+                      "rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]",
+                    )}
+                  >
                     {activateTwoFactor.error.message}
                   </p>
                 ) : null}
                 <button
                   type="submit"
-                  disabled={activateTwoFactor.isPending || setupCode.length !== 6}
-                  className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50")}
+                  disabled={
+                    activateTwoFactor.isPending || setupCode.length !== 6
+                  }
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50",
+                  )}
                 >
                   {activateTwoFactor.isPending ? (
                     <Loader2 className={cn("h-4 w-4 animate-spin")} />
@@ -696,7 +806,9 @@ export default function AdminPanel() {
                     setSetup(null);
                     setSetupCode("");
                   }}
-                  className={cn("rounded-full px-5 py-3 text-sm font-semibold text-black/45 transition hover:text-[#ff4582]")}
+                  className={cn(
+                    "rounded-full px-5 py-3 text-sm font-semibold text-black/45 transition hover:text-[#ff4582]",
+                  )}
                 >
                   Voltar
                 </button>
@@ -709,15 +821,29 @@ export default function AdminPanel() {
   }
 
   return (
-    <main className={cn("min-h-screen bg-[#fdf8f3] pb-28 text-[#262626] md:pb-0")}>
+    <main
+      className={cn("min-h-screen bg-[#fdf8f3] pb-28 text-[#262626] md:pb-0")}
+    >
       <div className={cn("mx-auto max-w-7xl px-4 pb-4 pt-4 md:py-8")}>
-        <header className={cn("rounded-[24px] border border-black/5 bg-white/85 p-4 shadow-sm backdrop-blur md:rounded-[28px] md:p-6")}>
+        <header
+          className={cn(
+            "rounded-[24px] border border-black/5 bg-white/85 p-4 shadow-sm backdrop-blur md:rounded-[28px] md:p-6",
+          )}
+        >
           <div className={cn("flex items-end justify-between gap-4")}>
             <div>
-              <p className={cn("text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4582]")}>
+              <p
+                className={cn(
+                  "text-[10px] font-black uppercase tracking-[0.4em] text-[#ff4582]",
+                )}
+              >
                 Lucas & Andressa
               </p>
-              <h1 className={cn("mt-2 text-2xl font-semibold tracking-tight md:text-4xl")}>
+              <h1
+                className={cn(
+                  "mt-2 text-2xl font-semibold tracking-tight md:text-4xl",
+                )}
+              >
                 Painel do casamento
               </h1>
             </div>
@@ -725,14 +851,20 @@ export default function AdminPanel() {
               <button
                 type="button"
                 onClick={logout}
-                className={cn("rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-black/55 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] md:px-5 md:py-3")}
+                className={cn(
+                  "rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-black/55 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] md:px-5 md:py-3",
+                )}
               >
                 Sair
               </button>
             ) : null}
           </div>
 
-          <nav className={cn("mt-5 hidden gap-2 rounded-full border border-black/5 bg-[#f5f0eb] p-1 md:grid md:grid-cols-4")}>
+          <nav
+            className={cn(
+              "mt-5 hidden gap-2 rounded-full border border-black/5 bg-[#f5f0eb] p-1 md:grid md:grid-cols-4",
+            )}
+          >
             {ADMIN_PAGES.map((page) => {
               const Icon = page.icon;
               const active = activePage === page.id;
@@ -757,7 +889,11 @@ export default function AdminPanel() {
         </header>
 
         {enabled && activePage === "presencas" && (
-          <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.95fr_1.05fr]")}>
+          <section
+            className={cn(
+              "mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.95fr_1.05fr]",
+            )}
+          >
             <div className={cn("space-y-4 min-w-0")}>
               <div className={cn("grid grid-cols-2 gap-3")}>
                 {[
@@ -767,30 +903,61 @@ export default function AdminPanel() {
                   ["Não vão", stats.notAttending],
                   ["Pendentes", stats.pending],
                 ].map(([label, value]) => (
-                  <div key={label} className={cn("rounded-2xl border border-black/5 bg-white p-4 shadow-sm md:p-5")}>
-                    <p className={cn("text-[10px] font-bold uppercase tracking-[0.2em] text-black/35 md:text-xs md:tracking-[0.24em]")}>{label}</p>
-                    <p className={cn("mt-2 text-2xl font-semibold text-[#ff4582] md:text-3xl")}>{value}</p>
+                  <div
+                    key={label}
+                    className={cn(
+                      "rounded-2xl border border-black/5 bg-white p-4 shadow-sm md:p-5",
+                    )}
+                  >
+                    <p
+                      className={cn(
+                        "text-[10px] font-bold uppercase tracking-[0.2em] text-black/35 md:text-xs md:tracking-[0.24em]",
+                      )}
+                    >
+                      {label}
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-2 text-2xl font-semibold text-[#ff4582] md:text-3xl",
+                      )}
+                    >
+                      {value}
+                    </p>
                   </div>
                 ))}
               </div>
 
-              <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm")}>
+              <div
+                className={cn(
+                  "rounded-3xl border border-black/5 bg-white p-5 shadow-sm",
+                )}
+              >
                 <div className={cn("flex items-center gap-2")}>
                   <Plus className={cn("h-5 w-5 text-[#ff4582]")} />
-                  <h2 className={cn("text-xl font-semibold")}>Importar convidados</h2>
+                  <h2 className={cn("text-xl font-semibold")}>
+                    Importar convidados
+                  </h2>
                 </div>
                 <textarea
                   value={guestNames}
                   onChange={(event) => setGuestNames(event.target.value)}
                   rows={8}
-                  className={cn("mt-4 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
-                  placeholder={"Cole os nomes aqui, um por linha\nLucas Toledo\nAndressa Silva"}
+                  className={cn(
+                    "mt-4 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
+                  placeholder={
+                    "Cole os nomes aqui, um por linha\nLucas Toledo\nAndressa Silva"
+                  }
                 />
                 <button
                   type="button"
                   onClick={() => importGuests.mutate()}
-                  disabled={!enabled || importGuests.isPending || !guestNames.trim()}
-                  className={cn("mt-3 inline-flex items-center gap-2 rounded-full bg-[#262626] px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50")}
+                  disabled={
+                    !enabled || importGuests.isPending || !guestNames.trim()
+                  }
+                  className={cn(
+                    "mt-3 inline-flex items-center gap-2 rounded-full bg-[#262626] px-5 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50",
+                  )}
                 >
                   {importGuests.isPending ? (
                     <Loader2 className={cn("h-4 w-4 animate-spin")} />
@@ -802,16 +969,30 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
+            <div
+              className={cn(
+                "rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0",
+              )}
+            >
               <div className={cn("flex items-center gap-2")}>
                 <Users className={cn("h-5 w-5 text-[#ff4582]")} />
-                <h2 className={cn("text-xl font-semibold")}>Lista de presenças</h2>
+                <h2 className={cn("text-xl font-semibold")}>
+                  Lista de presenças
+                </h2>
               </div>
 
-              <div className={cn("mt-5 rounded-2xl border border-black/5 bg-[#f5f0eb] p-4")}>
+              <div
+                className={cn(
+                  "mt-5 rounded-2xl border border-black/5 bg-[#f5f0eb] p-4",
+                )}
+              >
                 <div className={cn("grid gap-3 md:grid-cols-[1.4fr_1fr_1fr]")}>
                   <label className={cn("grid gap-1.5")}>
-                    <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                    <span
+                      className={cn(
+                        "text-[10px] font-black uppercase tracking-[0.18em] text-black/40",
+                      )}
+                    >
                       Buscar
                     </span>
                     <input
@@ -824,12 +1005,18 @@ export default function AdminPanel() {
                         }))
                       }
                       placeholder="Nome ou WhatsApp"
-                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                      className={cn(
+                        "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]",
+                      )}
                     />
                   </label>
 
                   <label className={cn("grid gap-1.5")}>
-                    <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                    <span
+                      className={cn(
+                        "text-[10px] font-black uppercase tracking-[0.18em] text-black/40",
+                      )}
+                    >
                       Status
                     </span>
                     <select
@@ -840,7 +1027,9 @@ export default function AdminPanel() {
                           status: event.target.value,
                         }))
                       }
-                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                      className={cn(
+                        "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]",
+                      )}
                     >
                       <option value="all">Todos</option>
                       <option value="ATTENDING">Confirmou presença</option>
@@ -850,7 +1039,11 @@ export default function AdminPanel() {
                   </label>
 
                   <label className={cn("grid gap-1.5")}>
-                    <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                    <span
+                      className={cn(
+                        "text-[10px] font-black uppercase tracking-[0.18em] text-black/40",
+                      )}
+                    >
                       Período
                     </span>
                     <select
@@ -859,11 +1052,19 @@ export default function AdminPanel() {
                         setGuestFilters((current) => ({
                           ...current,
                           period: event.target.value,
-                          dateFrom: event.target.value === "custom" ? current.dateFrom : "",
-                          dateTo: event.target.value === "custom" ? current.dateTo : "",
+                          dateFrom:
+                            event.target.value === "custom"
+                              ? current.dateFrom
+                              : "",
+                          dateTo:
+                            event.target.value === "custom"
+                              ? current.dateTo
+                              : "",
                         }))
                       }
-                      className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                      className={cn(
+                        "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]",
+                      )}
                     >
                       <option value="all">Todo período</option>
                       <option value="7">Últimos 7 dias</option>
@@ -877,7 +1078,11 @@ export default function AdminPanel() {
                 {guestFilters.period === "custom" ? (
                   <div className={cn("mt-3 grid gap-3 md:grid-cols-2")}>
                     <label className={cn("grid gap-1.5")}>
-                      <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                      <span
+                        className={cn(
+                          "text-[10px] font-black uppercase tracking-[0.18em] text-black/40",
+                        )}
+                      >
                         Data inicial
                       </span>
                       <input
@@ -889,11 +1094,17 @@ export default function AdminPanel() {
                             dateFrom: event.target.value,
                           }))
                         }
-                        className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                        className={cn(
+                          "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]",
+                        )}
                       />
                     </label>
                     <label className={cn("grid gap-1.5")}>
-                      <span className={cn("text-[10px] font-black uppercase tracking-[0.18em] text-black/40")}>
+                      <span
+                        className={cn(
+                          "text-[10px] font-black uppercase tracking-[0.18em] text-black/40",
+                        )}
+                      >
                         Data final
                       </span>
                       <input
@@ -905,13 +1116,19 @@ export default function AdminPanel() {
                             dateTo: event.target.value,
                           }))
                         }
-                        className={cn("rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]")}
+                        className={cn(
+                          "rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ff4582]",
+                        )}
                       />
                     </label>
                   </div>
                 ) : null}
 
-                <div className={cn("mt-3 flex flex-wrap items-center justify-between gap-3")}>
+                <div
+                  className={cn(
+                    "mt-3 flex flex-wrap items-center justify-between gap-3",
+                  )}
+                >
                   <p className={cn("text-xs font-medium text-black/45")}>
                     {guestsQuery.isFetching
                       ? "Atualizando filtros..."
@@ -929,15 +1146,22 @@ export default function AdminPanel() {
                           dateTo: "",
                         })
                       }
-                      className={cn("rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                      className={cn(
+                        "rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]",
+                      )}
                     >
                       Limpar filtros
                     </button>
                     <button
                       type="button"
                       onClick={exportToCSV}
-                      disabled={guestsQuery.isLoading || !(guestsQuery.data || []).length}
-                      className={cn("inline-flex items-center gap-1.5 rounded-full bg-[#262626] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-black disabled:opacity-50")}
+                      disabled={
+                        guestsQuery.isLoading ||
+                        !(guestsQuery.data || []).length
+                      }
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full bg-[#262626] px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-black disabled:opacity-50",
+                      )}
                     >
                       <Download className={cn("h-3.5 w-3.5")} />
                       Exportar CSV
@@ -946,25 +1170,33 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              <div className={cn("mt-5 overflow-hidden rounded-2xl border border-black/5 md:max-h-[680px] md:overflow-auto")}>
-                {guestsQuery.isLoading && <EmptyState>Carregando convidados...</EmptyState>}
-                {!guestsQuery.isLoading && (guestsQuery.data || []).length === 0 && (
-                  <EmptyState>Nenhum convidado cadastrado ainda.</EmptyState>
+              <div
+                className={cn(
+                  "mt-5 overflow-hidden rounded-2xl border border-black/5 md:max-h-[680px] md:overflow-auto",
                 )}
-                {!guestsQuery.isLoading && (guestsQuery.data || []).length > 0 && (
-                  <div
-                    className={cn(
-                      "hidden border-b border-black/5 bg-[#f5f0eb] px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black/40 md:grid md:grid-cols-[minmax(180px,1.25fr)_150px_150px_170px_minmax(120px,1fr)_44px] md:gap-3",
-                    )}
-                  >
-                    <span>Nome</span>
-                    <span>WhatsApp</span>
-                    <span>Status</span>
-                    <span>Data da confirmação</span>
-                    <span>IP</span>
-                    <span />
-                  </div>
+              >
+                {guestsQuery.isLoading && (
+                  <EmptyState>Carregando convidados...</EmptyState>
                 )}
+                {!guestsQuery.isLoading &&
+                  (guestsQuery.data || []).length === 0 && (
+                    <EmptyState>Nenhum convidado cadastrado ainda.</EmptyState>
+                  )}
+                {!guestsQuery.isLoading &&
+                  (guestsQuery.data || []).length > 0 && (
+                    <div
+                      className={cn(
+                        "hidden border-b border-black/5 bg-[#f5f0eb] px-4 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-black/40 md:grid md:grid-cols-[minmax(180px,1.25fr)_150px_150px_170px_minmax(120px,1fr)_44px] md:gap-3",
+                      )}
+                    >
+                      <span>Nome</span>
+                      <span>WhatsApp</span>
+                      <span>Status</span>
+                      <span>Data da confirmação</span>
+                      <span>IP</span>
+                      <span />
+                    </div>
+                  )}
                 {(guestsQuery.data || []).map((guest) => (
                   <div
                     key={guest.id}
@@ -973,15 +1205,27 @@ export default function AdminPanel() {
                     )}
                   >
                     <div className={cn("min-w-0")}>
-                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                      <span
+                        className={cn(
+                          "mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden",
+                        )}
+                      >
                         Nome
                       </span>
-                      <p className={cn("break-words font-semibold text-[#262626]")}>
+                      <p
+                        className={cn(
+                          "break-words font-semibold text-[#262626]",
+                        )}
+                      >
                         {guest.full_name}
                       </p>
                     </div>
                     <div className={cn("min-w-0")}>
-                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                      <span
+                        className={cn(
+                          "mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden",
+                        )}
+                      >
                         WhatsApp
                       </span>
                       <p className={cn("break-all text-black/60")}>
@@ -989,7 +1233,11 @@ export default function AdminPanel() {
                       </p>
                     </div>
                     <div>
-                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                      <span
+                        className={cn(
+                          "mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden",
+                        )}
+                      >
                         Status
                       </span>
                       <span
@@ -1002,22 +1250,34 @@ export default function AdminPanel() {
                       </span>
                     </div>
                     <div>
-                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                      <span
+                        className={cn(
+                          "mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden",
+                        )}
+                      >
                         Data da confirmação
                       </span>
                       <p className={cn("text-black/60")}>
-                        {guest.confirmed_at ? formatDate(guest.confirmed_at) : "-"}
+                        {guest.confirmed_at
+                          ? formatDate(guest.confirmed_at)
+                          : "-"}
                       </p>
                     </div>
                     <div className={cn("min-w-0")}>
-                      <span className={cn("mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden")}>
+                      <span
+                        className={cn(
+                          "mb-1 block text-[10px] font-black uppercase tracking-[0.16em] text-black/35 md:hidden",
+                        )}
+                      >
                         IP
                       </span>
                       <p className={cn("break-all text-black/60")}>
                         {guest.confirmed_ip || "-"}
                       </p>
                       {guest.confirmed_device ? (
-                        <p className={cn("mt-1 truncate text-xs text-black/35")}>
+                        <p
+                          className={cn("mt-1 truncate text-xs text-black/35")}
+                        >
                           {guest.confirmed_device}
                         </p>
                       ) : null}
@@ -1025,7 +1285,9 @@ export default function AdminPanel() {
                     <button
                       type="button"
                       onClick={() => setGuestToDelete(guest)}
-                      className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-rose-50 hover:text-[#ff4582]")}
+                      className={cn(
+                        "h-10 w-10 rounded-full text-black/35 transition hover:bg-rose-50 hover:text-[#ff4582]",
+                      )}
                       aria-label="Remover convidado"
                     >
                       <Trash2 className={cn("mx-auto h-4 w-4")} />
@@ -1038,8 +1300,16 @@ export default function AdminPanel() {
         )}
 
         {enabled && activePage === "presentes" && (
-          <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.85fr_1.15fr]")}>
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
+          <section
+            className={cn(
+              "mt-5 grid gap-5 md:mt-8 md:gap-8 lg:grid-cols-[0.85fr_1.15fr]",
+            )}
+          >
+            <div
+              className={cn(
+                "rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0",
+              )}
+            >
               <div className={cn("flex items-center justify-between gap-3")}>
                 <div className={cn("flex items-center gap-2")}>
                   <Gift className={cn("h-5 w-5 text-[#ff4582]")} />
@@ -1051,7 +1321,9 @@ export default function AdminPanel() {
                   <button
                     type="button"
                     onClick={resetGiftForm}
-                    className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                    className={cn(
+                      "inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-black/45 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]",
+                    )}
                     aria-label="Cancelar edição"
                   >
                     <X className={cn("h-4 w-4")} />
@@ -1059,13 +1331,43 @@ export default function AdminPanel() {
                 ) : null}
               </div>
               <div className={cn("mt-4 grid gap-3")}>
-                <input value={giftForm.url} onChange={(event) => setGiftForm({ ...giftForm, url: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Link do produto" />
-                <input value={giftForm.name} onChange={(event) => setGiftForm({ ...giftForm, name: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Nome do presente" />
-                <div className={cn("rounded-2xl border border-dashed border-black/10 bg-[#fdf8f3] p-3")}>
+                <input
+                  value={giftForm.url}
+                  onChange={(event) =>
+                    setGiftForm({ ...giftForm, url: event.target.value })
+                  }
+                  className={cn(
+                    "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
+                  placeholder="Link do produto"
+                />
+                <input
+                  value={giftForm.name}
+                  onChange={(event) =>
+                    setGiftForm({ ...giftForm, name: event.target.value })
+                  }
+                  className={cn(
+                    "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
+                  placeholder="Nome do presente"
+                />
+                <div
+                  className={cn(
+                    "rounded-2xl border border-dashed border-black/10 bg-[#fdf8f3] p-3",
+                  )}
+                >
                   {giftForm.imageUrl ? (
                     <div className={cn("mb-3 grid grid-cols-[72px_1fr] gap-3")}>
-                      <div className={cn("relative aspect-square overflow-hidden rounded-2xl bg-white")}>
-                        <Gift className={cn("absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-[#ff4582]/50")} />
+                      <div
+                        className={cn(
+                          "relative aspect-square overflow-hidden rounded-2xl bg-white",
+                        )}
+                      >
+                        <Gift
+                          className={cn(
+                            "absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-[#ff4582]/50",
+                          )}
+                        />
                         <img
                           src={giftForm.imageUrl}
                           alt=""
@@ -1076,10 +1378,18 @@ export default function AdminPanel() {
                         />
                       </div>
                       <div className={cn("min-w-0 self-center")}>
-                        <p className={cn("text-xs font-bold uppercase tracking-[0.18em] text-[#ff4582]")}>
+                        <p
+                          className={cn(
+                            "text-xs font-bold uppercase tracking-[0.18em] text-[#ff4582]",
+                          )}
+                        >
                           Imagem selecionada
                         </p>
-                        <p className={cn("mt-1 truncate text-sm text-black/45")}>{giftForm.imageUrl}</p>
+                        <p
+                          className={cn("mt-1 truncate text-sm text-black/45")}
+                        >
+                          {giftForm.imageUrl}
+                        </p>
                       </div>
                     </div>
                   ) : null}
@@ -1098,47 +1408,94 @@ export default function AdminPanel() {
                     type="button"
                     onClick={() => giftImageInputRef.current?.click()}
                     disabled={uploadGiftImage.isPending}
-                    className={cn("inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-black/60 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-50")}
+                    className={cn(
+                      "inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-black/60 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-50",
+                    )}
                   >
                     {uploadGiftImage.isPending ? (
                       <Loader2 className={cn("h-4 w-4 animate-spin")} />
                     ) : (
                       <Upload className={cn("h-4 w-4")} />
                     )}
-                    {uploadGiftImage.isPending ? "Enviando imagem..." : "Fazer upload da imagem"}
+                    {uploadGiftImage.isPending
+                      ? "Enviando imagem..."
+                      : "Fazer upload da imagem"}
                   </button>
                   {uploadGiftImage.isError ? (
-                    <p className={cn("mt-3 rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                    <p
+                      className={cn(
+                        "mt-3 rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]",
+                      )}
+                    >
                       {uploadGiftImage.error.message}
                     </p>
                   ) : null}
                 </div>
-                <input value={giftForm.imageUrl} onChange={(event) => setGiftForm({ ...giftForm, imageUrl: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="URL da foto, opcional" />
-                <input value={giftForm.price} onChange={(event) => setGiftForm({ ...giftForm, price: event.target.value })} className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")} placeholder="Preço, opcional (texto exibido na lista)" />
+                <input
+                  value={giftForm.imageUrl}
+                  onChange={(event) =>
+                    setGiftForm({ ...giftForm, imageUrl: event.target.value })
+                  }
+                  className={cn(
+                    "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
+                  placeholder="URL da foto, opcional"
+                />
+                <input
+                  value={giftForm.price}
+                  onChange={(event) =>
+                    setGiftForm({ ...giftForm, price: event.target.value })
+                  }
+                  className={cn(
+                    "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
+                  placeholder="Preço, opcional (texto exibido na lista)"
+                />
                 <div className={cn("grid gap-1")}>
                   <input
                     value={giftForm.pixKey}
-                    onChange={(event) => setGiftForm({ ...giftForm, pixKey: event.target.value })}
-                    className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                    onChange={(event) =>
+                      setGiftForm({ ...giftForm, pixKey: event.target.value })
+                    }
+                    className={cn(
+                      "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                    )}
                     placeholder="Chave Pix deste presente, opcional"
                   />
                   <p className={cn("px-1 text-xs text-black/45")}>
-                    Preenchendo isso, o card abre uma janela com essa chave e o QR Code abaixo, em vez de link ou pagamento automático.
+                    Preenchendo isso, o card abre uma janela com essa chave e o
+                    QR Code abaixo, em vez de link ou pagamento automático.
                   </p>
                 </div>
                 {giftForm.pixKey ? (
-                  <div className={cn("rounded-2xl border border-dashed border-black/10 bg-[#fdf8f3] p-3")}>
+                  <div
+                    className={cn(
+                      "rounded-2xl border border-dashed border-black/10 bg-[#fdf8f3] p-3",
+                    )}
+                  >
                     {giftForm.pixQrImageUrl ? (
-                      <div className={cn("mb-3 grid grid-cols-[72px_1fr] gap-3")}>
-                        <div className={cn("relative aspect-square overflow-hidden rounded-2xl bg-white")}>
+                      <div
+                        className={cn("mb-3 grid grid-cols-[72px_1fr] gap-3")}
+                      >
+                        <div
+                          className={cn(
+                            "relative aspect-square overflow-hidden rounded-2xl bg-white",
+                          )}
+                        >
                           <img
                             src={giftForm.pixQrImageUrl}
                             alt=""
-                            className={cn("relative h-full w-full object-contain")}
+                            className={cn(
+                              "relative h-full w-full object-contain",
+                            )}
                           />
                         </div>
                         <div className={cn("min-w-0 self-center")}>
-                          <p className={cn("text-xs font-bold uppercase tracking-[0.18em] text-[#ff4582]")}>
+                          <p
+                            className={cn(
+                              "text-xs font-bold uppercase tracking-[0.18em] text-[#ff4582]",
+                            )}
+                          >
                             QR Code selecionado
                           </p>
                         </div>
@@ -1159,17 +1516,25 @@ export default function AdminPanel() {
                       type="button"
                       onClick={() => pixQrImageInputRef.current?.click()}
                       disabled={uploadPixQrImage.isPending}
-                      className={cn("inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-black/60 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-50")}
+                      className={cn(
+                        "inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-black/60 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-50",
+                      )}
                     >
                       {uploadPixQrImage.isPending ? (
                         <Loader2 className={cn("h-4 w-4 animate-spin")} />
                       ) : (
                         <Upload className={cn("h-4 w-4")} />
                       )}
-                      {uploadPixQrImage.isPending ? "Enviando QR Code..." : "Fazer upload do QR Code Pix"}
+                      {uploadPixQrImage.isPending
+                        ? "Enviando QR Code..."
+                        : "Fazer upload do QR Code Pix"}
                     </button>
                     {uploadPixQrImage.isError ? (
-                      <p className={cn("mt-3 rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]")}>
+                      <p
+                        className={cn(
+                          "mt-3 rounded-2xl bg-[#ff4582]/10 px-4 py-3 text-sm font-medium text-[#b91853]",
+                        )}
+                      >
                         {uploadPixQrImage.error.message}
                       </p>
                     ) : null}
@@ -1178,34 +1543,59 @@ export default function AdminPanel() {
                 <div className={cn("grid gap-1")}>
                   <input
                     value={giftForm.priceReais}
-                    onChange={(event) => setGiftForm({ ...giftForm, priceReais: event.target.value })}
-                    className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                    onChange={(event) =>
+                      setGiftForm({
+                        ...giftForm,
+                        priceReais: event.target.value,
+                      })
+                    }
+                    className={cn(
+                      "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                    )}
                     placeholder="Valor para pagamento automático (R$), ex.: 199.90"
                     inputMode="decimal"
                   />
                   <p className={cn("px-1 text-xs text-black/45")}>
-                    Preenchendo isso, o convidado paga direto no site (cartão ou Pix) e o presente é marcado como "Ganhamos" automaticamente.
+                    Preenchendo isso, o convidado paga direto no site (cartão ou
+                    Pix) e o presente é marcado como &quot;Ganhamos&quot;
+                    automaticamente.
                   </p>
                 </div>
                 <input
                   value={giftForm.category}
-                  onChange={(event) => setGiftForm({ ...giftForm, category: event.target.value })}
-                  className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                  onChange={(event) =>
+                    setGiftForm({ ...giftForm, category: event.target.value })
+                  }
+                  className={cn(
+                    "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
                   placeholder="Categoria, ex.: Cozinha, Quarto, Sala"
-                  disabled={editingGiftId && giftForm.url === "pix://lucas-andressa"}
+                  disabled={
+                    editingGiftId && giftForm.url === "pix://lucas-andressa"
+                  }
                 />
                 <input
                   value={giftForm.sortOrder}
-                  onChange={(event) => setGiftForm({ ...giftForm, sortOrder: event.target.value })}
-                  className={cn("rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]")}
+                  onChange={(event) =>
+                    setGiftForm({ ...giftForm, sortOrder: event.target.value })
+                  }
+                  className={cn(
+                    "rounded-2xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#ff4582]",
+                  )}
                   placeholder="Ordem na lista, opcional"
                   inputMode="numeric"
                 />
                 <button
                   type="button"
                   onClick={() => saveGift.mutate()}
-                  disabled={!enabled || saveGift.isPending || (!giftForm.url && !giftForm.name)}
-                  className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50")}
+                  disabled={
+                    !enabled ||
+                    saveGift.isPending ||
+                    (!giftForm.url && !giftForm.name)
+                  }
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f62b71] disabled:opacity-50",
+                  )}
                 >
                   {saveGift.isPending ? (
                     <Loader2 className={cn("h-4 w-4 animate-spin")} />
@@ -1218,7 +1608,9 @@ export default function AdminPanel() {
                   <button
                     type="button"
                     onClick={resetGiftForm}
-                    className={cn("inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-black/55 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]")}
+                    className={cn(
+                      "inline-flex items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-black/55 transition hover:border-[#ff4582]/40 hover:text-[#ff4582]",
+                    )}
                   >
                     Cancelar edição
                   </button>
@@ -1226,17 +1618,39 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
-              <h2 className={cn("text-xl font-semibold")}>Lista de presentes</h2>
+            <div
+              className={cn(
+                "rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0",
+              )}
+            >
+              <h2 className={cn("text-xl font-semibold")}>
+                Lista de presentes
+              </h2>
               <div className={cn("mt-5 grid gap-3")}>
-                {giftsQuery.isLoading && <EmptyState>Carregando presentes...</EmptyState>}
-                {!giftsQuery.isLoading && (giftsQuery.data || []).length === 0 && (
-                  <EmptyState>Nenhum presente cadastrado ainda.</EmptyState>
+                {giftsQuery.isLoading && (
+                  <EmptyState>Carregando presentes...</EmptyState>
                 )}
+                {!giftsQuery.isLoading &&
+                  (giftsQuery.data || []).length === 0 && (
+                    <EmptyState>Nenhum presente cadastrado ainda.</EmptyState>
+                  )}
                 {(giftsQuery.data || []).map((gift, index) => (
-                  <div key={gift.id} className={cn("grid grid-cols-[84px_1fr] gap-3 rounded-2xl border border-black/5 p-3 sm:grid-cols-[92px_1fr]")}>
-                    <div className={cn("relative aspect-square overflow-hidden rounded-2xl bg-[#f5f0eb]")}>
-                      <Gift className={cn("absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-[#ff4582]/50")} />
+                  <div
+                    key={gift.id}
+                    className={cn(
+                      "grid grid-cols-[84px_1fr] gap-3 rounded-2xl border border-black/5 p-3 sm:grid-cols-[92px_1fr]",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "relative aspect-square overflow-hidden rounded-2xl bg-[#f5f0eb]",
+                      )}
+                    >
+                      <Gift
+                        className={cn(
+                          "absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 text-[#ff4582]/50",
+                        )}
+                      />
                       {gift.image_url && (
                         <img
                           src={gift.image_url}
@@ -1251,54 +1665,129 @@ export default function AdminPanel() {
                     <div className={cn("min-w-0")}>
                       <div className={cn("grid gap-3")}>
                         <div className={cn("min-w-0")}>
-                          <p className={cn("text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff4582]")}>
-                            {isPixGift(gift) ? "Pix dos noivos" : `Ordem ${index + 1}`}
+                          <p
+                            className={cn(
+                              "text-[10px] font-bold uppercase tracking-[0.22em] text-[#ff4582]",
+                            )}
+                          >
+                            {isPixGift(gift)
+                              ? "Pix dos noivos"
+                              : `Ordem ${index + 1}`}
                           </p>
-                          <p className={cn("mt-1 font-semibold")}>{gift.name}</p>
+                          <p className={cn("mt-1 font-semibold")}>
+                            {gift.name}
+                          </p>
                         </div>
                         <div className={cn("grid grid-cols-2 gap-2")}>
                           <button
                             type="button"
                             onClick={() => moveGift(gift.id, -1)}
-                            disabled={index === 0 || reorderGiftsMutation.isPending}
-                            className={cn("inline-flex h-10 items-center justify-center gap-1 rounded-full border border-black/10 text-xs font-semibold text-black/50 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-30")}
+                            disabled={
+                              index === 0 || reorderGiftsMutation.isPending
+                            }
+                            className={cn(
+                              "inline-flex h-10 items-center justify-center gap-1 rounded-full border border-black/10 text-xs font-semibold text-black/50 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-30",
+                            )}
                             aria-label="Mover presente para cima"
                           >
                             <ArrowUp className={cn("h-4 w-4")} />
-                            <span className={cn("hidden min-[380px]:inline")}>Subir</span>
+                            <span className={cn("hidden min-[380px]:inline")}>
+                              Subir
+                            </span>
                           </button>
                           <button
                             type="button"
                             onClick={() => moveGift(gift.id, 1)}
-                            disabled={index === (giftsQuery.data || []).length - 1 || reorderGiftsMutation.isPending}
-                            className={cn("inline-flex h-10 items-center justify-center gap-1 rounded-full border border-black/10 text-xs font-semibold text-black/50 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-30")}
+                            disabled={
+                              index === (giftsQuery.data || []).length - 1 ||
+                              reorderGiftsMutation.isPending
+                            }
+                            className={cn(
+                              "inline-flex h-10 items-center justify-center gap-1 rounded-full border border-black/10 text-xs font-semibold text-black/50 transition hover:border-[#ff4582]/40 hover:text-[#ff4582] disabled:opacity-30",
+                            )}
                             aria-label="Mover presente para baixo"
                           >
                             <ArrowDown className={cn("h-4 w-4")} />
-                            <span className={cn("hidden min-[380px]:inline")}>Descer</span>
+                            <span className={cn("hidden min-[380px]:inline")}>
+                              Descer
+                            </span>
                           </button>
                         </div>
                       </div>
-                      <p className={cn("mt-1 text-sm text-black/50")}>{gift.price || "Sem preço"}</p>
-                      <p className={cn("mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#ff4582]/80")}>
-                        {gift.category || (isPixGift(gift) ? "Pix" : "Presentes")}
+                      <p className={cn("mt-1 text-sm text-black/50")}>
+                        {gift.price || "Sem preço"}
+                      </p>
+                      <p
+                        className={cn(
+                          "mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#ff4582]/80",
+                        )}
+                      >
+                        {gift.category ||
+                          (isPixGift(gift) ? "Pix" : "Presentes")}
                       </p>
                       {gift.url ? (
-                        <p className={cn("mt-1 truncate text-xs text-black/35")}>{gift.url}</p>
+                        <p
+                          className={cn("mt-1 truncate text-xs text-black/35")}
+                        >
+                          {gift.url}
+                        </p>
                       ) : null}
-                      <div className={cn("mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap")}>
-                        <button type="button" onClick={() => editGift(gift)} className={cn("inline-flex min-h-10 items-center justify-center gap-1 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
+                      <div
+                        className={cn(
+                          "mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap",
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => editGift(gift)}
+                          className={cn(
+                            "inline-flex min-h-10 items-center justify-center gap-1 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold",
+                          )}
+                        >
                           <Pencil className={cn("h-3.5 w-3.5")} />
                           Editar
                         </button>
-                        <button type="button" onClick={() => patchGift.mutate({ id: gift.id, payload: { ...gift, isReceived: !gift.is_received } })} className={cn("min-h-10 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
-                          {gift.is_received ? "Desmarcar ganho" : "Marcar ganho"}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            patchGift.mutate({
+                              id: gift.id,
+                              payload: {
+                                ...gift,
+                                isReceived: !gift.is_received,
+                              },
+                            })
+                          }
+                          className={cn(
+                            "min-h-10 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold",
+                          )}
+                        >
+                          {gift.is_received
+                            ? "Desmarcar ganho"
+                            : "Marcar ganho"}
                         </button>
-                        <button type="button" onClick={() => patchGift.mutate({ id: gift.id, payload: { ...gift, isActive: !gift.is_active } })} className={cn("min-h-10 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold")}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            patchGift.mutate({
+                              id: gift.id,
+                              payload: { ...gift, isActive: !gift.is_active },
+                            })
+                          }
+                          className={cn(
+                            "min-h-10 rounded-full border border-black/10 px-3 py-2 text-xs font-semibold",
+                          )}
+                        >
                           {gift.is_active ? "Ocultar" : "Mostrar"}
                         </button>
                         {!isPixGift(gift) ? (
-                          <button type="button" onClick={() => deleteGift.mutate(gift.id)} className={cn("min-h-10 rounded-full border border-rose-100 px-3 py-2 text-xs font-semibold text-[#ff4582]")}>
+                          <button
+                            type="button"
+                            onClick={() => deleteGift.mutate(gift.id)}
+                            className={cn(
+                              "min-h-10 rounded-full border border-rose-100 px-3 py-2 text-xs font-semibold text-[#ff4582]",
+                            )}
+                          >
                             Remover
                           </button>
                         ) : null}
@@ -1312,34 +1801,71 @@ export default function AdminPanel() {
         )}
 
         {enabled && activePage === "comentarios" && (
-          <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-6 lg:grid-cols-[1fr_0.45fr]")}>
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
+          <section
+            className={cn(
+              "mt-5 grid gap-5 md:mt-8 md:gap-6 lg:grid-cols-[1fr_0.45fr]",
+            )}
+          >
+            <div
+              className={cn(
+                "rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0",
+              )}
+            >
               <div className={cn("flex items-center gap-2")}>
                 <MessageCircleHeart className={cn("h-5 w-5 text-[#ff4582]")} />
-                <h2 className={cn("text-xl font-semibold")}>Comentários publicados</h2>
+                <h2 className={cn("text-xl font-semibold")}>
+                  Comentários publicados
+                </h2>
               </div>
               <p className={cn("mt-2 max-w-2xl text-sm text-black/55")}>
-                As mensagens entram automaticamente no site. Use esta página quando precisar remover algo do mural ou bloquear o IP de origem.
+                As mensagens entram automaticamente no site. Use esta página
+                quando precisar remover algo do mural ou bloquear o IP de
+                origem.
               </p>
 
               <div className={cn("mt-5 grid gap-3")}>
-                {commentsQuery.isLoading && <EmptyState>Carregando comentarios...</EmptyState>}
-                {!commentsQuery.isLoading && (commentsQuery.data || []).length === 0 && (
-                  <EmptyState>Nenhuma mensagem publicada ainda.</EmptyState>
+                {commentsQuery.isLoading && (
+                  <EmptyState>Carregando comentarios...</EmptyState>
                 )}
+                {!commentsQuery.isLoading &&
+                  (commentsQuery.data || []).length === 0 && (
+                    <EmptyState>Nenhuma mensagem publicada ainda.</EmptyState>
+                  )}
                 {(commentsQuery.data || []).map((comment) => (
-                  <article key={comment.id} className={cn("rounded-2xl border border-black/5 bg-[#fdf8f3] p-4")}>
-                    <div className={cn("flex items-start justify-between gap-4")}>
+                  <article
+                    key={comment.id}
+                    className={cn(
+                      "rounded-2xl border border-black/5 bg-[#fdf8f3] p-4",
+                    )}
+                  >
+                    <div
+                      className={cn("flex items-start justify-between gap-4")}
+                    >
                       <div>
                         <p className={cn("font-semibold")}>{comment.name}</p>
-                        <p className={cn("mt-1 text-xs font-bold uppercase tracking-[0.22em] text-[#ff4582]")}>
-                          {comment.attendance || "Mensagem"} {comment.created_at ? `· ${formatDate(comment.created_at)}` : ""}
+                        <p
+                          className={cn(
+                            "mt-1 text-xs font-bold uppercase tracking-[0.22em] text-[#ff4582]",
+                          )}
+                        >
+                          {comment.attendance || "Mensagem"}{" "}
+                          {comment.created_at
+                            ? `· ${formatDate(comment.created_at)}`
+                            : ""}
                         </p>
                         {comment.ip_address || comment.device ? (
-                          <p className={cn("mt-2 break-all text-xs text-black/35")}>
-                            {comment.ip_address ? `IP: ${comment.ip_address}` : ""}
+                          <p
+                            className={cn(
+                              "mt-2 break-all text-xs text-black/35",
+                            )}
+                          >
+                            {comment.ip_address
+                              ? `IP: ${comment.ip_address}`
+                              : ""}
                             {comment.ip_address && comment.device ? " · " : ""}
-                            {comment.device ? `Dispositivo: ${comment.device}` : ""}
+                            {comment.device
+                              ? `Dispositivo: ${comment.device}`
+                              : ""}
                           </p>
                         ) : null}
                       </div>
@@ -1354,7 +1880,9 @@ export default function AdminPanel() {
                               })
                             }
                             disabled={blockIp.isPending}
-                            className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50")}
+                            className={cn(
+                              "h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50",
+                            )}
                             aria-label="Bloquear IP"
                           >
                             <Ban className={cn("mx-auto h-4 w-4")} />
@@ -1364,47 +1892,78 @@ export default function AdminPanel() {
                           type="button"
                           onClick={() => deleteComment.mutate(comment.id)}
                           disabled={deleteComment.isPending}
-                          className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50")}
+                          className={cn(
+                            "h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50",
+                          )}
                           aria-label="Apagar comentario"
                         >
                           <Trash2 className={cn("mx-auto h-4 w-4")} />
                         </button>
                       </div>
                     </div>
-                    <p className={cn("mt-3 text-sm leading-relaxed text-black/70")}>{comment.message}</p>
+                    <p
+                      className={cn(
+                        "mt-3 text-sm leading-relaxed text-black/70",
+                      )}
+                    >
+                      {comment.message}
+                    </p>
                   </article>
                 ))}
               </div>
             </div>
 
-            <aside className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
+            <aside
+              className={cn(
+                "rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0",
+              )}
+            >
               <div className={cn("flex items-center gap-2")}>
                 <ShieldOff className={cn("h-5 w-5 text-[#ff4582]")} />
                 <h2 className={cn("text-xl font-semibold")}>IPs bloqueados</h2>
               </div>
               <p className={cn("mt-2 text-sm text-black/55")}>
-                IPs nesta lista não conseguem enviar novos recados. A confirmação de presença continua liberada.
+                IPs nesta lista não conseguem enviar novos recados. A
+                confirmação de presença continua liberada.
               </p>
               <div className={cn("mt-5 grid gap-3")}>
-                {blockedIpsQuery.isLoading && <EmptyState>Carregando bloqueios...</EmptyState>}
-                {!blockedIpsQuery.isLoading && (blockedIpsQuery.data || []).length === 0 && (
-                  <EmptyState>Nenhum IP bloqueado.</EmptyState>
+                {blockedIpsQuery.isLoading && (
+                  <EmptyState>Carregando bloqueios...</EmptyState>
                 )}
+                {!blockedIpsQuery.isLoading &&
+                  (blockedIpsQuery.data || []).length === 0 && (
+                    <EmptyState>Nenhum IP bloqueado.</EmptyState>
+                  )}
                 {(blockedIpsQuery.data || []).map((blocked) => (
-                  <div key={blocked.id} className={cn("rounded-2xl border border-black/5 bg-[#fdf8f3] p-4")}>
-                    <div className={cn("flex items-start justify-between gap-3")}>
+                  <div
+                    key={blocked.id}
+                    className={cn(
+                      "rounded-2xl border border-black/5 bg-[#fdf8f3] p-4",
+                    )}
+                  >
+                    <div
+                      className={cn("flex items-start justify-between gap-3")}
+                    >
                       <div className={cn("min-w-0")}>
-                        <p className={cn("break-all font-semibold")}>{blocked.ip_address}</p>
+                        <p className={cn("break-all font-semibold")}>
+                          {blocked.ip_address}
+                        </p>
                         {blocked.reason ? (
-                          <p className={cn("mt-1 text-xs text-black/45")}>{blocked.reason}</p>
+                          <p className={cn("mt-1 text-xs text-black/45")}>
+                            {blocked.reason}
+                          </p>
                         ) : null}
-                        <p className={cn("mt-1 text-xs text-black/35")}>{formatDate(blocked.created_at)}</p>
+                        <p className={cn("mt-1 text-xs text-black/35")}>
+                          {formatDate(blocked.created_at)}
+                        </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => unblockIp.mutate(blocked.id)}
                         disabled={unblockIp.isPending}
-                        className={cn("h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50")}
+                        className={cn(
+                          "h-10 w-10 rounded-full text-black/35 transition hover:bg-white hover:text-[#ff4582] disabled:opacity-50",
+                        )}
                         aria-label="Desbloquear IP"
                       >
                         <Trash2 className={cn("mx-auto h-4 w-4")} />
@@ -1419,87 +1978,143 @@ export default function AdminPanel() {
 
         {enabled && activePage === "whatsapp" && (
           <section className={cn("mt-5 grid gap-5 md:mt-8 md:gap-8")}>
-            <div className={cn("rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0")}>
+            <div
+              className={cn(
+                "rounded-3xl border border-black/5 bg-white p-5 shadow-sm min-w-0",
+              )}
+            >
               <div className={cn("flex items-center gap-2")}>
                 <MessageSquare className={cn("h-5 w-5 text-[#ff4582]")} />
-                <h2 className={cn("text-xl font-semibold")}>Mensagens WhatsApp</h2>
+                <h2 className={cn("text-xl font-semibold")}>
+                  Mensagens WhatsApp
+                </h2>
               </div>
               <p className={cn("mt-2 max-w-2xl text-sm text-black/55")}>
-                Logs de envios automáticos para os convidados que confirmaram presença ou ausência. Os disparos são feitos via webhook n8n em segundo plano.
+                Logs de envios automáticos para os convidados que confirmaram
+                presença ou ausência. Os disparos são feitos via webhook n8n em
+                segundo plano.
               </p>
 
-              <div className={cn("mt-5 overflow-x-auto rounded-2xl border border-black/5 bg-[#fdf8f3]")}>
-                <table className={cn("w-full border-collapse text-left text-sm text-[#262626]")}>
+              <div
+                className={cn(
+                  "mt-5 overflow-x-auto rounded-2xl border border-black/5 bg-[#fdf8f3]",
+                )}
+              >
+                <table
+                  className={cn(
+                    "w-full border-collapse text-left text-sm text-[#262626]",
+                  )}
+                >
                   <thead>
-                    <tr className={cn("border-b border-black/5 bg-[#f5f0eb] font-semibold text-black/55")}>
+                    <tr
+                      className={cn(
+                        "border-b border-black/5 bg-[#f5f0eb] font-semibold text-black/55",
+                      )}
+                    >
                       <th className={cn("px-4 py-3 md:px-6")}>Data/Hora</th>
                       <th className={cn("px-4 py-3 md:px-6")}>Convidado</th>
                       <th className={cn("px-4 py-3 md:px-6")}>Telefone</th>
                       <th className={cn("px-4 py-3 md:px-6")}>Presença</th>
                       <th className={cn("px-4 py-3 md:px-6")}>Status</th>
-                      <th className={cn("px-4 py-3 md:px-6")}>Resposta / Log</th>
-                      <th className={cn("px-4 py-3 md:px-6 text-right")}>Ações</th>
+                      <th className={cn("px-4 py-3 md:px-6")}>
+                        Resposta / Log
+                      </th>
+                      <th className={cn("px-4 py-3 md:px-6 text-right")}>
+                        Ações
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {whatsappLogsQuery.isLoading && (
                       <tr>
-                        <td colSpan={7} className={cn("p-6 text-center text-black/35")}>
+                        <td
+                          colSpan={7}
+                          className={cn("p-6 text-center text-black/35")}
+                        >
                           Carregando logs do WhatsApp...
                         </td>
                       </tr>
                     )}
-                    {!whatsappLogsQuery.isLoading && (whatsappLogsQuery.data || []).length === 0 && (
-                      <tr>
-                        <td colSpan={7} className={cn("p-6 text-center text-black/35")}>
-                          Nenhuma mensagem disparada ainda.
-                        </td>
-                      </tr>
-                    )}
+                    {!whatsappLogsQuery.isLoading &&
+                      (whatsappLogsQuery.data || []).length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className={cn("p-6 text-center text-black/35")}
+                          >
+                            Nenhuma mensagem disparada ainda.
+                          </td>
+                        </tr>
+                      )}
                     {!whatsappLogsQuery.isLoading &&
                       (whatsappLogsQuery.data || []).map((log) => (
-                        <tr key={log.id} className={cn("border-b border-black/5 last:border-0 hover:bg-white/40 transition-colors")}>
-                          <td className={cn("px-4 py-4 md:px-6 whitespace-nowrap text-xs font-medium text-black/45")}>
+                        <tr
+                          key={log.id}
+                          className={cn(
+                            "border-b border-black/5 last:border-0 hover:bg-white/40 transition-colors",
+                          )}
+                        >
+                          <td
+                            className={cn(
+                              "px-4 py-4 md:px-6 whitespace-nowrap text-xs font-medium text-black/45",
+                            )}
+                          >
                             {formatDate(log.created_at)}
                           </td>
                           <td className={cn("px-4 py-4 md:px-6 font-semibold")}>
                             {log.guest_name}
                           </td>
-                          <td className={cn("px-4 py-4 md:px-6 whitespace-nowrap")}>
+                          <td
+                            className={cn(
+                              "px-4 py-4 md:px-6 whitespace-nowrap",
+                            )}
+                          >
                             {log.phone}
                           </td>
                           <td className={cn("px-4 py-4 md:px-6")}>
-                            <span className={cn(
-                              "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                              log.attendance === "ATTENDING"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-rose-50 text-[#b91853]"
-                            )}>
-                              {log.attendance === "ATTENDING" ? "Presença" : "Ausência"}
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                                log.attendance === "ATTENDING"
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : "bg-rose-50 text-[#b91853]",
+                              )}
+                            >
+                              {log.attendance === "ATTENDING"
+                                ? "Presença"
+                                : "Ausência"}
                             </span>
                           </td>
                           <td className={cn("px-4 py-4 md:px-6")}>
-                            <span className={cn(
-                              "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                              log.status === "sent"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : log.status === "failed"
-                                ? "bg-rose-100 text-rose-800"
-                                : "bg-gray-100 text-gray-800"
-                            )}>
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                                log.status === "sent"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : log.status === "failed"
+                                    ? "bg-rose-100 text-rose-800"
+                                    : "bg-gray-100 text-gray-800",
+                              )}
+                            >
                               {log.status === "sent"
                                 ? "Enviado"
                                 : log.status === "failed"
-                                ? "Falhou"
-                                : "Disparado"}
+                                  ? "Falhou"
+                                  : "Disparado"}
                             </span>
                           </td>
-                          <td className={cn("px-4 py-4 md:px-6 max-w-[180px] md:max-w-xs truncate text-xs text-black/55")}>
+                          <td
+                            className={cn(
+                              "px-4 py-4 md:px-6 max-w-[180px] md:max-w-xs truncate text-xs text-black/55",
+                            )}
+                          >
                             {log.response_body ? (
                               <button
                                 type="button"
                                 onClick={() => setViewingLog(log)}
-                                className={cn("text-left font-mono underline hover:text-[#ff4582] transition-colors truncate block w-full")}
+                                className={cn(
+                                  "text-left font-mono underline hover:text-[#ff4582] transition-colors truncate block w-full",
+                                )}
                               >
                                 {log.response_body}
                               </button>
@@ -1507,16 +2122,23 @@ export default function AdminPanel() {
                               "-"
                             )}
                           </td>
-                          <td className={cn("px-4 py-4 md:px-6 text-right whitespace-nowrap")}>
+                          <td
+                            className={cn(
+                              "px-4 py-4 md:px-6 text-right whitespace-nowrap",
+                            )}
+                          >
                             <button
                               type="button"
                               onClick={() => retryWhatsAppLog.mutate(log.id)}
                               disabled={retryWhatsAppLog.isPending}
                               className={cn(
-                                "rounded-full bg-white border border-black/10 px-3 py-1.5 text-xs font-semibold text-black/55 transition hover:border-[#ff4582] hover:text-[#ff4582] disabled:opacity-50"
+                                "rounded-full bg-white border border-black/10 px-3 py-1.5 text-xs font-semibold text-black/55 transition hover:border-[#ff4582] hover:text-[#ff4582] disabled:opacity-50",
                               )}
                             >
-                              {retryWhatsAppLog.isPending && retryWhatsAppLog.variables === log.id ? "Reenviando..." : "Reenviar"}
+                              {retryWhatsAppLog.isPending &&
+                              retryWhatsAppLog.variables === log.id
+                                ? "Reenviando..."
+                                : "Reenviar"}
                             </button>
                           </td>
                         </tr>
@@ -1584,8 +2206,12 @@ export default function AdminPanel() {
             <h3 className={cn("mt-5 text-2xl font-medium text-[#262626]")}>
               Excluir convidado?
             </h3>
-            <p className={cn("mt-3 text-base leading-relaxed text-[#262626]/65")}>
-              Tem certeza que deseja remover <strong>{guestToDelete.full_name}</strong> da lista? Essa ação não pode ser desfeita.
+            <p
+              className={cn("mt-3 text-base leading-relaxed text-[#262626]/65")}
+            >
+              Tem certeza que deseja remover{" "}
+              <strong>{guestToDelete.full_name}</strong> da lista? Essa ação não
+              pode ser desfeita.
             </p>
             <div className={cn("mt-6 flex flex-col gap-2")}>
               <button
@@ -1630,7 +2256,11 @@ export default function AdminPanel() {
               "w-full max-w-lg rounded-[28px] border border-white/70 bg-[#fdf8f3] p-6 shadow-[0_24px_80px_rgba(38,38,38,0.22)]",
             )}
           >
-            <div className={cn("flex items-center justify-between border-b border-black/5 pb-4")}>
+            <div
+              className={cn(
+                "flex items-center justify-between border-b border-black/5 pb-4",
+              )}
+            >
               <div>
                 <h3 className={cn("text-xl font-semibold text-[#262626]")}>
                   Detalhes do Log
@@ -1642,7 +2272,9 @@ export default function AdminPanel() {
               <button
                 type="button"
                 onClick={() => setViewingLog(null)}
-                className={cn("h-8 w-8 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center transition-colors")}
+                className={cn(
+                  "h-8 w-8 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center transition-colors",
+                )}
               >
                 <X className={cn("h-4 w-4")} />
               </button>
@@ -1651,7 +2283,11 @@ export default function AdminPanel() {
             <div className={cn("mt-4 space-y-4")}>
               <div className={cn("grid grid-cols-2 gap-4")}>
                 <div>
-                  <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block")}>
+                  <span
+                    className={cn(
+                      "text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block",
+                    )}
+                  >
                     Convidado
                   </span>
                   <span className={cn("text-sm font-semibold text-[#262626]")}>
@@ -1659,7 +2295,11 @@ export default function AdminPanel() {
                   </span>
                 </div>
                 <div>
-                  <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block block")}>
+                  <span
+                    className={cn(
+                      "text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block block",
+                    )}
+                  >
                     Telefone
                   </span>
                   <span className={cn("text-sm font-semibold text-[#262626]")}>
@@ -1669,20 +2309,33 @@ export default function AdminPanel() {
               </div>
 
               <div>
-                <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block mb-1")}>
+                <span
+                  className={cn(
+                    "text-[10px] font-black uppercase tracking-[0.2em] text-black/45 block mb-1",
+                  )}
+                >
                   Resposta completa da API / Webhook
                 </span>
                 <div className={cn("relative group")}>
-                  <pre className={cn("bg-[#f5f0eb] p-4 rounded-2xl text-[11px] font-mono overflow-auto max-h-60 text-black/75 whitespace-pre-wrap break-all border border-black/5")}>
-                    {viewingLog.response_body || "Nenhuma resposta de log disponível."}
+                  <pre
+                    className={cn(
+                      "bg-[#f5f0eb] p-4 rounded-2xl text-[11px] font-mono overflow-auto max-h-60 text-black/75 whitespace-pre-wrap break-all border border-black/5",
+                    )}
+                  >
+                    {viewingLog.response_body ||
+                      "Nenhuma resposta de log disponível."}
                   </pre>
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText(viewingLog.response_body || "");
+                      navigator.clipboard.writeText(
+                        viewingLog.response_body || "",
+                      );
                       alert("Log copiado com sucesso!");
                     }}
-                    className={cn("absolute right-2 top-2 rounded-lg bg-white/85 px-2 py-1 text-[10px] font-semibold text-black/55 hover:bg-white transition opacity-0 group-hover:opacity-100 shadow-sm border border-black/5")}
+                    className={cn(
+                      "absolute right-2 top-2 rounded-lg bg-white/85 px-2 py-1 text-[10px] font-semibold text-black/55 hover:bg-white transition opacity-0 group-hover:opacity-100 shadow-sm border border-black/5",
+                    )}
                   >
                     Copiar
                   </button>
@@ -1702,7 +2355,9 @@ export default function AdminPanel() {
                   "flex-1 rounded-full bg-[#ff4582] px-5 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#f73576] active:scale-95 disabled:opacity-50",
                 )}
               >
-                {retryWhatsAppLog.isPending ? "Reenviando..." : "Reenviar Disparo"}
+                {retryWhatsAppLog.isPending
+                  ? "Reenviando..."
+                  : "Reenviar Disparo"}
               </button>
               <button
                 type="button"

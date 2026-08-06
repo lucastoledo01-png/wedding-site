@@ -1,17 +1,19 @@
 import { Hono } from "hono";
 import { getDbClient } from "../../lib/db-client.js";
 import { NotFoundError } from "../../lib/errors.js";
-import { createPreference, getPayment, verifyWebhookSignature } from "../../lib/mercadopago.js";
+import {
+  createPreference,
+  getPayment,
+  verifyWebhookSignature,
+} from "../../lib/mercadopago.js";
 
 const giftRoutes = new Hono();
 const PIX_GIFT_URL = "pix://lucas-andressa";
 
 function cleanText(value) {
-  return String(value || "").replace(/\s+/g, " ").trim();
-}
-
-function isPixGift(gift) {
-  return String(gift?.url || "").startsWith("pix://");
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function ensurePixGift(pool, uid) {
@@ -54,9 +56,18 @@ function mapGiftRow(row) {
 
 function findMeta(html, property) {
   const patterns = [
-    new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"),
-    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`, "i"),
-    new RegExp(`<meta[^>]+name=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"),
+    new RegExp(
+      `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
+      "i",
+    ),
+    new RegExp(
+      `<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`,
+      "i",
+    ),
+    new RegExp(
+      `<meta[^>]+name=["']${property}["'][^>]+content=["']([^"']+)["']`,
+      "i",
+    ),
   ];
 
   for (const pattern of patterns) {
@@ -75,7 +86,9 @@ async function extractProductFromUrl(url) {
     },
   });
   const html = await response.text();
-  const title = findMeta(html, "og:title") || html.match(/<title[^>]*>(.*?)<\/title>/i)?.[1];
+  const title =
+    findMeta(html, "og:title") ||
+    html.match(/<title[^>]*>(.*?)<\/title>/i)?.[1];
   const image = findMeta(html, "og:image");
   const price =
     findMeta(html, "product:price:amount") ||
@@ -129,26 +142,29 @@ export async function upsertGift(pool, uid, body) {
   const url =
     existingGift?.url === PIX_GIFT_URL ? PIX_GIFT_URL : cleanText(body.url);
   let extracted = {};
-  const hasSortOrder = body.sortOrder !== undefined || body.sort_order !== undefined;
+  const hasSortOrder =
+    body.sortOrder !== undefined || body.sort_order !== undefined;
 
   if (/^https?:\/\//i.test(url) && body.extract !== false) {
     try {
       extracted = await extractProductFromUrl(url);
     } catch (error) {
-      console.warn(`Could not extract product metadata from ${url}:`, error.message);
+      console.warn(
+        `Could not extract product metadata from ${url}:`,
+        error.message,
+      );
     }
   }
 
   const payload = {
     name: cleanText(body.name) || extracted.name || "Presente",
-    imageUrl: cleanText(body.imageUrl || body.image_url) || extracted.imageUrl || "",
+    imageUrl:
+      cleanText(body.imageUrl || body.image_url) || extracted.imageUrl || "",
     pixQrImageUrl: cleanText(body.pixQrImageUrl || body.pix_qr_image_url) || "",
     price: cleanText(body.price) || extracted.price || "",
-    priceCents:
-      body.priceCents ?? body.price_cents ?? null,
-    category: url === PIX_GIFT_URL
-      ? "Pix"
-      : cleanText(body.category) || "Presentes",
+    priceCents: body.priceCents ?? body.price_cents ?? null,
+    category:
+      url === PIX_GIFT_URL ? "Pix" : cleanText(body.category) || "Presentes",
     isActive: body.isActive ?? body.is_active ?? true,
     isReceived: body.isReceived ?? body.is_received ?? false,
     sortOrder: Number(body.sortOrder ?? body.sort_order ?? 0),
@@ -246,17 +262,29 @@ giftRoutes.post("/:id/checkout", async (c) => {
   );
   const gift = giftResult.rows[0];
 
-  if (!gift) return c.json({ success: false, error: "Presente não encontrado." }, 404);
+  if (!gift)
+    return c.json({ success: false, error: "Presente não encontrado." }, 404);
   if (!gift.price_cents) {
-    return c.json({ success: false, error: "Este presente não aceita pagamento direto." }, 400);
+    return c.json(
+      { success: false, error: "Este presente não aceita pagamento direto." },
+      400,
+    );
   }
   if (gift.is_received) {
-    return c.json({ success: false, error: "Este presente já foi conquistado por outra pessoa." }, 400);
+    return c.json(
+      {
+        success: false,
+        error: "Este presente já foi conquistado por outra pessoa.",
+      },
+      400,
+    );
   }
 
   const externalReference = `gift-${giftId}-${Date.now()}`;
   const baseUrl =
-    c.env?.PUBLIC_API_URL || process.env.PUBLIC_API_URL || "https://casamento.olucastoledo.com.br";
+    c.env?.PUBLIC_API_URL ||
+    process.env.PUBLIC_API_URL ||
+    "https://casamento.olucastoledo.com.br";
 
   const paymentRecord = await pool.query(
     `INSERT INTO gift_payments
@@ -279,21 +307,31 @@ giftRoutes.post("/:id/checkout", async (c) => {
       },
     });
 
-    return c.json({
-      success: true,
-      data: {
-        checkoutUrl: preference.init_point || preference.sandbox_init_point,
+    return c.json(
+      {
+        success: true,
+        data: {
+          checkoutUrl: preference.init_point || preference.sandbox_init_point,
+        },
       },
-    }, 201);
+      201,
+    );
   } catch (error) {
     await pool.query(
       `UPDATE gift_payments
           SET status = 'rejected', raw_response = $1, updated_at = CURRENT_TIMESTAMP
         WHERE id = $2`,
-      [JSON.stringify(error.mpResponse || { message: error.message }), paymentRecord.rows[0].id],
+      [
+        JSON.stringify(error.mpResponse || { message: error.message }),
+        paymentRecord.rows[0].id,
+      ],
     );
     return c.json(
-      { success: false, error: error.mpResponse?.message || "Não foi possível iniciar o pagamento." },
+      {
+        success: false,
+        error:
+          error.mpResponse?.message || "Não foi possível iniciar o pagamento.",
+      },
       error.status || 500,
     );
   }
@@ -322,7 +360,9 @@ giftRoutes.post("/webhook/mercadopago", async (c) => {
       return c.json({ success: false, error: "Assinatura inválida." }, 401);
     }
   } else {
-    console.warn("[MercadoPago] MP_WEBHOOK_SECRET não configurado — assinatura do webhook não validada.");
+    console.warn(
+      "[MercadoPago] MP_WEBHOOK_SECRET não configurado — assinatura do webhook não validada.",
+    );
   }
 
   // Never trust the webhook body for the actual status — re-fetch from Mercado Pago.
@@ -334,7 +374,13 @@ giftRoutes.post("/webhook/mercadopago", async (c) => {
         SET status = $1, mp_payment_id = $2, raw_response = $3, updated_at = CURRENT_TIMESTAMP
       WHERE external_reference = $4 AND invitation_uid = $5
       RETURNING gift_product_id`,
-    [payment.status, String(payment.id), JSON.stringify(payment), payment.external_reference, uid],
+    [
+      payment.status,
+      String(payment.id),
+      JSON.stringify(payment),
+      payment.external_reference,
+      uid,
+    ],
   );
 
   if (paymentRow.rows[0] && payment.status === "approved") {
