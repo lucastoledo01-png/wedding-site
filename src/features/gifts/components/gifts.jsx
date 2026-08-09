@@ -100,7 +100,7 @@ function PixModal({ gift, onClose }) {
             )}
           >
             {gift.price ||
-              "Presenteie via Pix — qualquer contribuição será recebida com muito carinho."}
+              "Presenteie via Pix - qualquer contribuição será recebida com muito carinho."}
           </p>
 
           {qrImage && (
@@ -111,7 +111,7 @@ function PixModal({ gift, onClose }) {
             >
               <img
                 src={qrImage}
-                alt={`QR Code Pix — ${gift.name}`}
+                alt={`QR Code Pix - ${gift.name}`}
                 className={cn("h-full w-full")}
               />
             </div>
@@ -394,7 +394,10 @@ export default function Gifts() {
                 </h3>
                 {/* Once a gift is won there is nothing left to consult, so the
                     "valor a consultar" fallback is dropped for received ones. */}
-                {(gift.price || !gift.is_received) && (
+                {/* "Valor a consultar" only makes sense for a product still
+                    waiting on a price — not for a won gift, and not for the
+                    open Pix card where the guest picks the amount. */}
+                {(gift.price || (!gift.is_received && !isPixGift(gift))) && (
                   <p
                     className={cn(
                       "mt-2 flex flex-wrap items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#262626]/45",
