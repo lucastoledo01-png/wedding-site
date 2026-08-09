@@ -45,6 +45,28 @@ function getPageFromPath() {
   return ADMIN_PAGES.some((item) => item.id === page) ? page : null;
 }
 
+/**
+ * Reads a price typed in Brazilian notation into cents.
+ * Accepts "2.480,00", "2480,00", "2480.00" and "2.480" alike — a plain
+ * "2.480" previously parsed as R$ 2,48 and undercharged the gift.
+ */
+function parsePriceToCents(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+
+  let normalized = raw.replace(/[^\d.,]/g, "");
+  if (normalized.includes(",")) {
+    // Comma is the decimal separator, so dots only group thousands.
+    normalized = normalized.replace(/\./g, "").replace(",", ".");
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(normalized)) {
+    // Dots grouping thousands with no decimals, e.g. "2.480".
+    normalized = normalized.replace(/\./g, "");
+  }
+
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? Math.round(amount * 100) : null;
+}
+
 function formatDate(value) {
   if (!value) return "";
   return new Intl.DateTimeFormat("pt-BR", {
@@ -418,10 +440,7 @@ export default function AdminPanel() {
           giftForm.sortOrder === "" || giftForm.sortOrder === null
             ? undefined
             : Number(giftForm.sortOrder),
-        priceCents:
-          priceReais === "" || priceReais === null
-            ? null
-            : Math.round(Number(priceReais.replace(",", ".")) * 100),
+        priceCents: parsePriceToCents(priceReais),
       };
 
       return adminRequest(
