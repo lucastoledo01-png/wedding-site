@@ -38,11 +38,16 @@ function PixModal({ gift, onClose }) {
   if (!gift || typeof document === "undefined") return null;
 
   const pixKey = getPixKey(gift);
-  const qrImage = gift.pix_qr_image_url || gift.image_url;
+  // Only a real QR belongs in the QR frame — falling back to the product photo
+  // showed the pink Pix logo as if it were scannable.
+  const qrImage = gift.pix_qr_image_url || "";
   // The full Pix payload already carries the exact amount, so copying it
   // spares the guest from typing the value by hand. Fall back to the bare
   // key for gifts that don't have a payload yet.
   const pixPayload = gift.pix_payload || "";
+  // The open "carinho" card carries a code with no amount, so the guest picks
+  // how much to send; every other code already has its value baked in.
+  const hasFixedAmount = Boolean(gift.price_cents);
 
   async function copyPixCode() {
     try {
@@ -130,15 +135,18 @@ function PixModal({ gift, onClose }) {
                 ? "Copiar código Pix"
                 : "Copiar chave Pix"}
           </button>
-          {pixPayload && (
-            <p
-              className={cn(
-                "mt-3 text-[11px] font-medium leading-relaxed text-white/85",
-              )}
-            >
-              O código já vem com o valor preenchido.
-            </p>
-          )}
+          {/* Nubank sends us no payment notification, so the guest has to be
+              told plainly that finishing the payment is up to them. */}
+          <p
+            className={cn(
+              "mx-auto mt-3 max-w-xs text-[11px] font-medium leading-relaxed text-white/85",
+            )}
+          >
+            {`Copie ${pixPayload ? "o código" : "a chave"}${qrImage ? " ou escaneie o QR Code acima" : ""} no app do seu banco para concluir o pagamento.`}
+            {hasFixedAmount
+              ? " O valor já vem preenchido."
+              : " Você escolhe o valor."}
+          </p>
         </div>
 
         <div className={cn("px-5 py-4 text-[#262626]")}>
