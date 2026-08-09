@@ -7,11 +7,10 @@ import {
   ExternalLink,
   Gift,
   Heart,
-  Loader2,
   X,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchGiftProducts, createGiftCheckout } from "@/services/api";
+import { fetchGiftProducts } from "@/services/api";
 import { useInvitation } from "@/features/invitation";
 import { cn } from "@/lib/utils";
 
@@ -168,7 +167,7 @@ function PixModal({ gift, onClose }) {
   );
 }
 
-function GiftCardVisual({ gift, isLoading }) {
+function GiftCardVisual({ gift }) {
   return (
     <div
       className={cn(
@@ -193,16 +192,9 @@ function GiftCardVisual({ gift, isLoading }) {
       <div
         className={cn(
           "super-transition absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[8px] font-medium uppercase tracking-[0.14em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
-          isLoading && "!scale-100 !opacity-100",
         )}
       >
-        {isLoading ? (
-          <Loader2 className={cn("h-5 w-5 animate-spin")} />
-        ) : gift.price_cents ? (
-          "Presentear"
-        ) : (
-          "Ver"
-        )}
+        {gift.price_cents ? "Presentear" : "Ver"}
       </div>
 
       {gift.is_received && (
@@ -213,7 +205,7 @@ function GiftCardVisual({ gift, isLoading }) {
         >
           <span
             className={cn(
-              "flex items-center gap-1 rounded-full bg-[#262626] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white",
+              "flex items-center gap-1 rounded-full bg-[#ff4582] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white",
             )}
           >
             <CheckCircle className={cn("h-3 w-3")} />
@@ -228,52 +220,15 @@ function GiftCardVisual({ gift, isLoading }) {
 export default function Gifts() {
   const { uid } = useInvitation();
   const [pixModalGift, setPixModalGift] = useState(null);
-  const [checkoutLoadingId, setCheckoutLoadingId] = useState(null);
-  const [checkoutError, setCheckoutError] = useState("");
-  const [returnStatus, setReturnStatus] = useState(null);
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [visibleCount, setVisibleCount] = useState(8);
-  const {
-    data: gifts = [],
-    isLoading,
-    refetch: refetchGifts,
-  } = useQuery({
+  const { data: gifts = [], isLoading } = useQuery({
     queryKey: ["gift-products", uid],
     queryFn: async () => (await fetchGiftProducts(uid)).data,
     enabled: !!uid,
     staleTime: 60 * 1000,
   });
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get("gift_payment");
-    if (!status) return;
-
-    setReturnStatus(status);
-    window.history.replaceState(
-      {},
-      "",
-      window.location.pathname + window.location.hash,
-    );
-
-    if (status === "success" || status === "pending") {
-      // The webhook may take a moment to confirm the payment; give it a beat.
-      const timer = setTimeout(() => refetchGifts(), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [refetchGifts]);
-
-  async function handleGiftCheckout(gift) {
-    setCheckoutError("");
-    setCheckoutLoadingId(gift.id);
-    try {
-      const response = await createGiftCheckout(uid, gift.id);
-      window.location.href = response.data.checkoutUrl;
-    } catch (error) {
-      setCheckoutError(error.message);
-      setCheckoutLoadingId(null);
-    }
-  }
   const categories = useMemo(() => {
     const unique = [...new Set(gifts.map(getGiftCategory))].filter(Boolean);
     return unique.sort((a, b) => {
@@ -296,34 +251,6 @@ export default function Gifts() {
   return (
     <section id="gifts" className={cn("relative overflow-hidden bg-[#fdf8f3]")}>
       <PixModal gift={pixModalGift} onClose={() => setPixModalGift(null)} />
-      {returnStatus && (
-        <div
-          className={cn(
-            "mx-auto mb-6 max-w-md rounded-2xl border px-5 py-4 text-center text-sm font-medium",
-            returnStatus === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : returnStatus === "pending"
-                ? "border-amber-200 bg-amber-50 text-amber-700"
-                : "border-[#ff4582]/20 bg-[#fff1f6] text-[#b91853]",
-          )}
-        >
-          {returnStatus === "success" &&
-            "Presente confirmado! Muito obrigado pelo carinho."}
-          {returnStatus === "pending" &&
-            "Recebemos seu pagamento e estamos aguardando a confirmação."}
-          {returnStatus === "failure" &&
-            "Não foi possível concluir o pagamento. Tente novamente."}
-        </div>
-      )}
-      {checkoutError && (
-        <div
-          className={cn(
-            "mx-auto mb-6 max-w-md rounded-2xl border border-[#ff4582]/20 bg-[#fff1f6] px-5 py-4 text-center text-sm font-medium text-[#b91853]",
-          )}
-        >
-          {checkoutError}
-        </div>
-      )}
       <img
         src="/images/flowers.png"
         alt=""
@@ -429,18 +356,6 @@ export default function Gifts() {
                     </div>
                   </div>
                 </button>
-              ) : gift.price_cents && !gift.is_received ? (
-                <button
-                  type="button"
-                  onClick={() => handleGiftCheckout(gift)}
-                  disabled={checkoutLoadingId === gift.id}
-                  className={cn("block w-full text-left disabled:opacity-60")}
-                >
-                  <GiftCardVisual
-                    gift={gift}
-                    isLoading={checkoutLoadingId === gift.id}
-                  />
-                </button>
               ) : (
                 <a
                   href={gift.url || "#gifts"}
@@ -469,19 +384,23 @@ export default function Gifts() {
                 >
                   {gift.name}
                 </h3>
-                <p
-                  className={cn(
-                    "mt-2 flex flex-wrap items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#262626]/45",
-                  )}
-                >
-                  {gift.price || "Valor a consultar"}
-                  {gift.url && !isPixGift(gift) && (
-                    <>
-                      <span>•</span>
-                      <ExternalLink className={cn("h-4 w-4")} />
-                    </>
-                  )}
-                </p>
+                {/* Once a gift is won there is nothing left to consult, so the
+                    "valor a consultar" fallback is dropped for received ones. */}
+                {(gift.price || !gift.is_received) && (
+                  <p
+                    className={cn(
+                      "mt-2 flex flex-wrap items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#262626]/45",
+                    )}
+                  >
+                    {gift.price || "Valor a consultar"}
+                    {gift.url && !isPixGift(gift) && (
+                      <>
+                        <span>•</span>
+                        <ExternalLink className={cn("h-4 w-4")} />
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
             </article>
           ))}

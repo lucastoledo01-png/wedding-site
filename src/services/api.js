@@ -167,17 +167,6 @@ export async function fetchGiftProducts(uid) {
   return data;
 }
 
-export async function createGiftCheckout(uid, giftId) {
-  const response = await fetch(apiUrl(`/api/${uid}/gifts/${giftId}/checkout`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  const data = await readJsonResponse(response);
-  if (!response.ok)
-    throw new Error(data.error || "Não foi possível iniciar o pagamento");
-  return data;
-}
-
 function adminHeaders(token, hasFormData = false) {
   return {
     ...(hasFormData ? {} : { "Content-Type": "application/json" }),
