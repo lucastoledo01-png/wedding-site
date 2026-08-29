@@ -197,13 +197,15 @@ function GiftCardVisual({ gift }) {
         />
       ) : null}
 
-      <div
-        className={cn(
-          "super-transition absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[8px] font-medium uppercase tracking-[0.14em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
-        )}
-      >
-        {gift.price_cents ? "Presentear" : "Ver"}
-      </div>
+      {!gift.is_received && (
+        <div
+          className={cn(
+            "super-transition absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 scale-75 items-center justify-center rounded-full bg-[#262626] text-center text-[8px] font-medium uppercase tracking-[0.14em] text-white opacity-0 group-hover:scale-100 group-hover:opacity-100",
+          )}
+        >
+          {gift.price_cents ? "Presentear" : "Ver"}
+        </div>
+      )}
 
       {gift.is_received && (
         <div
@@ -218,6 +220,48 @@ function GiftCardVisual({ gift }) {
           >
             <CheckCircle className={cn("h-3 w-3")} />
             Ganhamos
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PixCardVisual({ gift }) {
+  return (
+    <div
+      className={cn(
+        "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#ff4582] text-[#fdf8f3]",
+      )}
+    >
+      <img
+        src={gift.image_url || "/images/pix-icon.jpg"}
+        alt="Pix"
+        className={cn("h-full w-full object-cover")}
+      />
+      {gift.is_received ? (
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center bg-[#fdf8f3]/80",
+          )}
+        >
+          <span
+            className={cn(
+              "flex items-center gap-1 rounded-full bg-[#ff4582] px-3 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white",
+            )}
+          >
+            <CheckCircle className={cn("h-3 w-3")} />
+            Ganhamos
+          </span>
+        </div>
+      ) : (
+        <div className={cn("absolute inset-x-3 bottom-3 flex justify-center")}>
+          <span
+            className={cn(
+              "rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582] shadow-lg",
+            )}
+          >
+            Presentear
           </span>
         </div>
       )}
@@ -333,36 +377,24 @@ export default function Gifts() {
         <div className={cn("grid grid-cols-2 gap-4")}>
           {visibleGifts.map((gift) => (
             <article key={gift.id} className={cn("group min-w-0")}>
-              {isPixGift(gift) ? (
+              {/* A won gift is informational only — no navigation, no Pix
+                  modal — so the guest is never nudged toward a gift that is
+                  already taken. */}
+              {gift.is_received ? (
+                <div className={cn("block w-full cursor-default")}>
+                  {isPixGift(gift) ? (
+                    <PixCardVisual gift={gift} />
+                  ) : (
+                    <GiftCardVisual gift={gift} />
+                  )}
+                </div>
+              ) : isPixGift(gift) ? (
                 <button
                   type="button"
                   onClick={() => setPixModalGift(gift)}
                   className={cn("block w-full text-left")}
                 >
-                  <div
-                    className={cn(
-                      "relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#ff4582] text-[#fdf8f3]",
-                    )}
-                  >
-                    <img
-                      src={gift.image_url || "/images/pix-icon.jpg"}
-                      alt="Pix"
-                      className={cn("h-full w-full object-cover")}
-                    />
-                    <div
-                      className={cn(
-                        "absolute inset-x-3 bottom-3 flex justify-center",
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "rounded-full bg-white px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#ff4582] shadow-lg",
-                        )}
-                      >
-                        Presentear
-                      </span>
-                    </div>
-                  </div>
+                  <PixCardVisual gift={gift} />
                 </button>
               ) : (
                 <a
@@ -381,7 +413,7 @@ export default function Gifts() {
                     "text-[8px] font-black uppercase tracking-[0.24em] text-[#ff4582]",
                   )}
                 >
-                  {isPixGift(gift)
+                  {isPixGift(gift) && !gift.is_received
                     ? "Presenteie com Pix"
                     : getGiftCategory(gift)}
                 </p>
