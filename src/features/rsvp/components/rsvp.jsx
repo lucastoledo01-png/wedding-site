@@ -429,6 +429,13 @@ export default function Rsvp() {
                 required
               />
             </div>
+            <span
+              className={cn(
+                "font-light normal-case tracking-normal text-[#262626]/45",
+              )}
+            >
+              Confirme uma pessoa por vez.
+            </span>
           </label>
           {nameEntered && (
             <label
