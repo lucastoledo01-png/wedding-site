@@ -131,16 +131,17 @@ rsvpRoutes.post("/confirm", async (c) => {
     console.error("Google Sheets RSVP backup failed:", backupError.message);
   }
 
-  try {
-    await triggerWhatsAppNotification(c, {
-      invitationUid: uid,
-      guestName: confirmedGuest.full_name,
-      phone: confirmedGuest.confirmed_phone,
-      attendance: confirmedGuest.attendance,
-    });
-  } catch (waError) {
+  // The RSVP is already saved, and the n8n webhook now waits for the whole
+  // WhatsApp flow before answering — so dispatch in the background instead of
+  // making the guest wait on Chatwoot. The log row records the real outcome.
+  triggerWhatsAppNotification(c, {
+    invitationUid: uid,
+    guestName: confirmedGuest.full_name,
+    phone: confirmedGuest.confirmed_phone,
+    attendance: confirmedGuest.attendance,
+  }).catch((waError) => {
     console.error("WhatsApp notification dispatch failed:", waError.message);
-  }
+  });
 
   return c.json({ success: true, data: confirmedGuest });
 });

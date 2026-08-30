@@ -1,5 +1,27 @@
 import { getDbClient } from "./db-client.js";
 
+const WEBHOOK_TIMEOUT_MS = 20000;
+
+/**
+ * Summarises the n8n response for the admin log. On success the workflow
+ * returns the Chatwoot message, whose own `status` tells whether WhatsApp
+ * accepted it, so surface that instead of dumping the whole payload.
+ */
+function describeResult(responseText) {
+  try {
+    const data = JSON.parse(responseText);
+    if (data && typeof data === "object" && data.status) {
+      const parts = [`mensagem ${data.id ?? "?"} - ${data.status}`];
+      const error = data.content_attributes?.external_error;
+      if (error) parts.push(`erro do WhatsApp: ${error}`);
+      return parts.join(" | ");
+    }
+  } catch {
+    // Not JSON (an n8n error page, for instance) — fall back to the raw text.
+  }
+  return responseText.slice(0, 500);
+}
+
 /**
  * Triggers a WhatsApp notification via the configured n8n webhook URL.
  * Also logs the dispatch attempt and result in the whatsapp_logs table.
@@ -62,7 +84,10 @@ export async function triggerWhatsAppNotification(
     );
   }
 
-  // 2. Perform the fetch request to the n8n Webhook URL
+  // 2. Perform the fetch request to the n8n Webhook URL.
+  // The workflow responds only after it finishes (responseMode "lastNode"), so
+  // this answer reflects whether the message really went out — earlier it
+  // replied "Workflow was started" straight away and every attempt looked sent.
   try {
     const response = await fetch(webhookUrl, {
       method: "POST",
@@ -76,11 +101,13 @@ export async function triggerWhatsAppNotification(
         attendance,
         timestamp: new Date().toISOString(),
       }),
+      // Bounded so a hanging workflow cannot keep the request open forever.
+      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
     });
 
     const responseText = await response.text();
     const status = response.ok ? "sent" : "failed";
-    const responseDetails = `HTTP ${response.status}: ${responseText}`;
+    const responseDetails = `HTTP ${response.status}: ${describeResult(responseText)}`;
 
     // 3. Update the log record with the dispatch result
     if (logId) {
@@ -96,7 +123,16 @@ export async function triggerWhatsAppNotification(
   } catch (fetchError) {
     console.error("[WhatsApp] Webhook dispatch error:", fetchError.message);
 
-    // 3b. Update log to failed state
+    // A timeout means the workflow was started but we never learned the
+    // outcome, so it must not be recorded as failed — or as sent.
+    const timedOut =
+      fetchError.name === "TimeoutError" || fetchError.name === "AbortError";
+    const status = timedOut ? "triggered" : "failed";
+    const detail = timedOut
+      ? `Sem resposta do n8n em ${WEBHOOK_TIMEOUT_MS / 1000}s - resultado desconhecido, confira no Chatwoot`
+      : `Fetch Error: ${fetchError.message}`;
+
+    // 3b. Update log with what we actually know
     if (logId) {
       try {
         await pool.query(
@@ -105,7 +141,7 @@ export async function triggerWhatsAppNotification(
                   response_body = $2,
                   updated_at = CURRENT_TIMESTAMP
             WHERE id = $3`,
-          ["failed", `Fetch Error: ${fetchError.message}`, logId],
+          [status, detail, logId],
         );
       } catch (dbError) {
         console.error(
