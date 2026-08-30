@@ -32,6 +32,7 @@ import { useMotionPreset } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import AdminPanel from "@/features/admin/admin-panel";
 import TransitionHearts from "@/components/transition-hearts";
+import ErrorBoundary from "@/components/error-boundary";
 
 // Lazy load components for better performance
 const Layout = lazy(() => import("@/components/layout/layout"));
@@ -237,34 +238,36 @@ function WeddingApp() {
           </div>
         }
       >
-        <AnimatePresence mode="wait">
-          {!isInvitationOpen ? (
-            <motion.div
-              key="landing"
-              variants={pageEnter}
-              initial="hidden"
-              animate="visible"
-              exit={pageExit}
-            >
-              <LandingPage onOpenInvitation={handleOpenInvitation} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="main"
-              variants={pageEnter}
-              initial="hidden"
-              animate="visible"
-              exit={pageExit}
-            >
-              <Layout
-                audioControls={audioControls}
-                currentTrackIndex={currentTrackIndex}
+        <ErrorBoundary name="app-shell">
+          <AnimatePresence mode="wait">
+            {!isInvitationOpen ? (
+              <motion.div
+                key="landing"
+                variants={pageEnter}
+                initial="hidden"
+                animate="visible"
+                exit={pageExit}
               >
-                <MainContent />
-              </Layout>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <LandingPage onOpenInvitation={handleOpenInvitation} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="main"
+                variants={pageEnter}
+                initial="hidden"
+                animate="visible"
+                exit={pageExit}
+              >
+                <Layout
+                  audioControls={audioControls}
+                  currentTrackIndex={currentTrackIndex}
+                >
+                  <MainContent />
+                </Layout>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </ErrorBoundary>
       </Suspense>
 
       {hasSoundCloudAudio && (
@@ -286,14 +289,18 @@ function WeddingApp() {
 }
 
 function App() {
-  if (
+  const isAdmin =
     window.location.pathname === "/admin" ||
-    window.location.pathname.startsWith("/admin/")
-  ) {
-    return <AdminPanel />;
-  }
+    window.location.pathname.startsWith("/admin/");
 
-  return <WeddingApp />;
+  // Top-level safety net: a render/commit error anywhere below (including a DOM
+  // node ripped out by an in-app translator) shows a "recarregar" card instead
+  // of a blank page.
+  return (
+    <ErrorBoundary name="root">
+      {isAdmin ? <AdminPanel /> : <WeddingApp />}
+    </ErrorBoundary>
+  );
 }
 
 export default App;

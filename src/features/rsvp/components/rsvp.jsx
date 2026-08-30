@@ -158,11 +158,84 @@ function ConfirmDecisionModal({
   );
 }
 
+const CONFETTI_COLORS = [
+  "#ff4582",
+  "#ff85a2",
+  "#ffb3c1",
+  "#10b981",
+  "#34d399",
+  "#fbbf24",
+];
+
 export default function Rsvp() {
   const { uid } = useInvitation();
   const canvasRef = useRef(null);
+  const confettiRef = useRef(null);
   const [name, setName] = useState("");
   const [attendance, setAttendance] = useState("ATTENDING");
+
+  // Confetti must never be able to break the confirmation UI: every call is
+  // guarded, promises are swallowed, and we reuse a single main-thread instance
+  // (no web worker / transferControlToOffscreen, which threw on some phones).
+  const celebrate = () => {
+    let fire = confetti;
+    try {
+      if (canvasRef.current && !confettiRef.current) {
+        confettiRef.current = confetti.create(canvasRef.current, {
+          resize: true,
+        });
+      }
+      if (confettiRef.current) fire = confettiRef.current;
+    } catch {
+      fire = confetti;
+    }
+
+    const burst = (options) => {
+      try {
+        const result = fire(options);
+        if (result && typeof result.catch === "function") {
+          result.catch(() => {});
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+
+    burst({
+      particleCount: 140,
+      spread: 80,
+      origin: { x: 0.5, y: 0.8 },
+      colors: CONFETTI_COLORS,
+      gravity: 0.9,
+      ticks: 200,
+    });
+    setTimeout(
+      () =>
+        burst({
+          particleCount: 70,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.85 },
+          colors: CONFETTI_COLORS,
+          gravity: 0.9,
+          ticks: 200,
+        }),
+      180,
+    );
+    setTimeout(
+      () =>
+        burst({
+          particleCount: 70,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.85 },
+          colors: CONFETTI_COLORS,
+          gravity: 0.9,
+          ticks: 200,
+        }),
+      360,
+    );
+  };
 
   const [feedback, setFeedback] = useState(null);
   const [confirmDecisionOpen, setConfirmDecisionOpen] = useState(false);
@@ -219,80 +292,21 @@ export default function Rsvp() {
       });
     },
     onSuccess: (response) => {
-      try {
-        setConfirmDecisionOpen(false);
-        setPhone("");
-        const isAbsence = response.data?.attendance === "NOT_ATTENDING";
-        if (!isAbsence) {
-          const myConfetti = canvasRef.current
-            ? confetti.create(canvasRef.current, {
-                resize: true,
-                useWorker: true,
-              })
-            : confetti;
+      const isAbsence = response?.data?.attendance === "NOT_ATTENDING";
 
-          myConfetti({
-            particleCount: 140,
-            spread: 80,
-            origin: { x: 0.5, y: 0.8 },
-            colors: [
-              "#ff4582",
-              "#ff85a2",
-              "#ffb3c1",
-              "#10b981",
-              "#34d399",
-              "#fbbf24",
-            ],
-            gravity: 0.9,
-            ticks: 200,
-          });
-          setTimeout(() => {
-            try {
-              myConfetti({
-                particleCount: 70,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0, y: 0.85 },
-                colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
-                gravity: 0.9,
-                ticks: 200,
-              });
-            } catch (e) {
-              console.error("Confetti second burst error:", e);
-            }
-          }, 180);
-          setTimeout(() => {
-            try {
-              myConfetti({
-                particleCount: 70,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1, y: 0.85 },
-                colors: ["#ff4582", "#ff85a2", "#10b981", "#34d399"],
-                gravity: 0.9,
-                ticks: 200,
-              });
-            } catch (e) {
-              console.error("Confetti third burst error:", e);
-            }
-          }, 360);
-        }
-        setFeedback({
-          type: "success",
-          isAbsence,
-          title: isAbsence ? "Ausência Confirmada" : "Presença confirmada!",
-          message: isAbsence
-            ? "Registramos que você não poderá ir. Obrigado por avisar."
-            : "Sua presença foi confirmada com sucesso. Esperamos você!",
-        });
-      } catch {
-        setFeedback({
-          type: "success",
-          isAbsence: false,
-          title: "Presença confirmada!",
-          message: "Sua presença foi confirmada com sucesso. Esperamos você!",
-        });
-      }
+      // Show the confirmation UI first so nothing after this can hide it.
+      setConfirmDecisionOpen(false);
+      setPhone("");
+      setFeedback({
+        type: "success",
+        isAbsence,
+        title: isAbsence ? "Ausência Confirmada" : "Presença confirmada!",
+        message: isAbsence
+          ? "Registramos que você não poderá ir. Obrigado por avisar."
+          : "Sua presença foi confirmada com sucesso. Esperamos você!",
+      });
+
+      if (!isAbsence) celebrate();
     },
     onError: (error) => {
       setConfirmDecisionOpen(false);
@@ -328,7 +342,11 @@ export default function Rsvp() {
   });
 
   return (
-    <section id="rsvp" className={cn("relative overflow-hidden bg-[#f5f0eb]")}>
+    <section
+      id="rsvp"
+      translate="no"
+      className={cn("relative overflow-hidden bg-[#f5f0eb]")}
+    >
       <FeedbackModal
         feedback={feedback}
         onClose={() => {

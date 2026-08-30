@@ -1,11 +1,55 @@
 export function normalizeName(value = "") {
-  return value
+  return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function nameTokens(value) {
+  const normalized = normalizeName(value);
+  return normalized ? normalized.split(" ") : [];
+}
+
+/**
+ * Resolve a typed name to a single guest, tolerating case, accents and extra
+ * whitespace (via normalizeName). Matching order:
+ *
+ *   1. Exact match on the normalized full name.
+ *   2. Unambiguous partial match: the typed tokens are a subset of exactly one
+ *      guest's tokens ("Vit\u00f3ria" -> "Vit\u00f3ria Casaloti"), or one guest's tokens
+ *      are a subset of the typed name ("Vit\u00f3ria Casaloti Silva" -> "Vit\u00f3ria
+ *      Casaloti"). If two or more guests qualify we return null so the caller
+ *      shows "n\u00e3o encontrado" instead of ever confirming the wrong person.
+ *
+ * @param {string} name
+ * @param {Array<{full_name: string}>} guests
+ * @returns {object | null}
+ */
+export function matchGuestByName(name, guests = []) {
+  const normalized = normalizeName(name);
+  if (!normalized || !Array.isArray(guests) || guests.length === 0) return null;
+
+  const exact = guests.find(
+    (guest) => normalizeName(guest.full_name) === normalized,
+  );
+  if (exact) return exact;
+
+  const typedTokens = normalized.split(" ");
+  const typedSet = new Set(typedTokens);
+
+  const partialMatches = guests.filter((guest) => {
+    const guestTokens = nameTokens(guest.full_name);
+    if (guestTokens.length === 0) return false;
+    const guestSet = new Set(guestTokens);
+    const typedInGuest = typedTokens.every((token) => guestSet.has(token));
+    const guestInTyped = guestTokens.every((token) => typedSet.has(token));
+    return typedInGuest || guestInTyped;
+  });
+
+  return partialMatches.length === 1 ? partialMatches[0] : null;
 }
 
 function levenshtein(a, b) {

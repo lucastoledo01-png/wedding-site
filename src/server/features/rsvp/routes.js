@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { getDbClient } from "../../lib/db-client.js";
-import { normalizeName } from "../../lib/text-match.js";
+import { normalizeName, matchGuestByName } from "../../lib/text-match.js";
 import { NotFoundError } from "../../lib/errors.js";
 import { appendRsvpBackup } from "../../lib/google-sheets-backup.js";
 import { getClientIp, getDevice } from "../../lib/request-metadata.js";
@@ -8,14 +8,8 @@ import { triggerWhatsAppNotification } from "../../lib/whatsapp.js";
 
 const rsvpRoutes = new Hono();
 
-function findExactGuest(name, guests) {
-  const normalized = normalizeName(name);
-  if (!normalized) return null;
-
-  return (
-    guests.find((guest) => normalizeName(guest.full_name) === normalized) ||
-    null
-  );
+function findGuest(name, guests) {
+  return matchGuestByName(name, guests);
 }
 
 function cleanPhone(value) {
@@ -42,7 +36,7 @@ rsvpRoutes.get("/search", async (c) => {
   const pool = await getDbClient(c);
 
   const guests = await loadGuests(pool, uid);
-  const match = findExactGuest(name, guests);
+  const match = findGuest(name, guests);
 
   return c.json({
     success: true,
@@ -80,12 +74,12 @@ rsvpRoutes.post("/confirm", async (c) => {
 
   const pool = await getDbClient(c);
   const guests = await loadGuests(pool, uid);
-  const exactGuest = findExactGuest(name, guests);
-  const best = guestId
-    ? exactGuest?.id === guestId
-      ? exactGuest
-      : null
-    : exactGuest;
+  // The client sends the id it already resolved through /search; trust it when
+  // it still points at a real guest for this invitation, otherwise fall back to
+  // matching the typed name again.
+  const best =
+    (guestId ? guests.find((guest) => guest.id === guestId) : null) ||
+    findGuest(name, guests);
 
   if (!best) {
     return c.json(
