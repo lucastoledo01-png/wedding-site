@@ -424,12 +424,12 @@ export default function Gifts() {
                 >
                   {gift.name}
                 </h3>
-                {/* Once a gift is won there is nothing left to consult, so the
-                    "valor a consultar" fallback is dropped for received ones. */}
-                {/* "Valor a consultar" only makes sense for a product still
-                    waiting on a price — not for a won gift, and not for the
-                    open Pix card where the guest picks the amount. */}
-                {(gift.price || (!gift.is_received && !isPixGift(gift))) && (
+                {/* Won gifts hide their price entirely — the value is not
+                    interesting to consult any more, and it keeps guests from
+                    adding up how much the couple received. "Valor a consultar"
+                    only makes sense for a product still waiting on a price, not
+                    for the open Pix card where the guest picks the amount. */}
+                {!gift.is_received && (gift.price || !isPixGift(gift)) && (
                   <p
                     className={cn(
                       "mt-2 flex flex-wrap items-center gap-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[#262626]/45",
